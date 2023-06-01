@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/nvdb_beta" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
