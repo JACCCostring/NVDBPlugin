@@ -12,8 +12,7 @@ email=alexander.casado@vegvesen.no
 
 about=NVDB Les it's a beta plugin to display and manipulate Norwegian Objects Roads, it need access to a Python Library for reading located in GitHub made by Jan Kristian
 https://github.com/LtGlahn/nvdbapi-V3 but the library is allready inlcuded in the plugin directory, but for writing or manipulate data
-there are some classess wrapper made utilizing trusted endpoints from NVDB documentation https://nvdb.atlas.vegvesen.no/docs/category/nvdb-api-skriv/
-and this plugin was made and tested in Windows
+there are some classess wrapper made utilizing trusted endpoints from NVDB documentation https://nvdb.atlas.vegvesen.no/docs/category/nvdb-api-skriv and this plugin was made and tested in Windows
 
 tracker=https://github.com/vegvesen/NVDB-Datakatalogen/issues
 repository=https://github.com/JACCCostring/NVDBPlugin
