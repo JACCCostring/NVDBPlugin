@@ -214,6 +214,8 @@ class Ui_windowProgress():
         
     def itemClicked(self):
         if self.isVegObjektThere():
+            print('current selected item: ', self.current_item['status_after_sent'])
+            
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])
 
 if __name__ == "__main__":

@@ -282,7 +282,7 @@ color: rgb(52, 116, 14);</string>
     <rect>
      <x>10</x>
      <y>20</y>
-     <width>181</width>
+     <width>194</width>
      <height>26</height>
     </rect>
    </property>
@@ -291,15 +291,16 @@ color: rgb(52, 116, 14);</string>
      <widget class="QLabel" name="nvdbIdLabel">
       <property name="font">
        <font>
-        <weight>75</weight>
-        <bold>true</bold>
+        <pointsize>11</pointsize>
+        <weight>50</weight>
+        <bold>false</bold>
        </font>
       </property>
       <property name="styleSheet">
        <string notr="true">color: rgb(151, 255, 158);</string>
       </property>
       <property name="text">
-       <string>Objekt Navn</string>
+       <string>Objektettype</string>
       </property>
      </widget>
     </item>
@@ -491,7 +492,7 @@ color: rgb(52, 116, 14);</string>
   <widget class="QSlider" name="changeObjectsSize">
    <property name="geometry">
     <rect>
-     <x>60</x>
+     <x>80</x>
      <y>120</y>
      <width>111</width>
      <height>22</height>
@@ -512,9 +513,14 @@ color: rgb(52, 116, 14);</string>
     <rect>
      <x>10</x>
      <y>120</y>
-     <width>41</width>
+     <width>71</width>
      <height>16</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="styleSheet">
     <string notr="true">color: rgb(151, 255, 158);</string>

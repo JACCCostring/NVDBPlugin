@@ -611,6 +611,7 @@ class Ui_SkrivDialog(object):
                             
                             if 'Geometri' in feat_field.name():
                                 self.geometry_found = feature.geometry().asWkt()
+                                # print(self.geometry_found)
                                 
                                 if 'PointZ' in self.geometry_found:
                                     self.geometry_found = self.geometry_found.replace('PointZ', 'Point Z')
