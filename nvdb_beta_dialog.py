@@ -6,11 +6,6 @@ nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfra
 nvdblibrary = nvdblibrary.replace('\\', '/')
 nvdblibrary = nvdblibrary + '/nvdbapi'
 
-# print(nvdblibrary)
-
-# nvdblibrary = 'C:\Users\<DITT BRUKERNAVN>\Downloads\\nvdbapi-V3-master\\nvdbapi-V3-master'
-# nvdblibrary = '/home/jan/Documents/jobb/nvdbapi-V3'
-
 ## Hvis vi ikke klarer å importere nvdbapiv3 så prøver vi å føye
 ## mappen nvdblibrary til søkestien. 
 try: 
@@ -41,16 +36,17 @@ from qgis.core import *
 
 from PyQt5.QtWidgets import QCompleter, QVBoxLayout, QLabel, QTableWidgetItem, QAbstractItemView
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtCore import  QSortFilterProxyModel
+from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal
 
 from .nvdbskriv_beta import Ui_SkrivDialog
+
 from .nvdbLesWrapper import AreaGeoDataParser
 #========================================
 #includes need it for development
-
 import os
 import json
 import requests
+import threading
 
 # -*- coding: utf-8 -*-
 """
@@ -84,6 +80,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 
 class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
+    ready_for_setting_searched_objekt = pyqtSignal(list)
+    
     def __init__(self, parent=None):
         """Constructor."""
         super(NvdbBetaProductionDialog, self).__init__(parent)
@@ -283,12 +281,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.visKartCheck.setEnabled(True)
         self.visKartCheck.setChecked(False)
         
-#        clear content before a new search
-#        self.tableResult.clear()
-        
-#        setting row count to 0 again
-#        self.tableResult.setRowCount(0)
-        
 #        clearing layer map in QGIS in case exist 
         self.removeActiveLayers()
             
@@ -343,15 +335,16 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             egenskAndVerdi = f"egenskap({egensk}){operator}{verdi}"
             
             self.v.filter( {'egenskap': egenskAndVerdi })
-            
-#            print(egenskAndVerdi)
-            
-#        retrieve data with applied filters
-        self.data = self.v.to_records()
         
-        objects = self.makeMyDataObjects(self.data)
+        #threading
+        target = self.handle_threaded_search_objeckt
         
-        self.setObjectsToUI(objects)
+        self.thread_search_objekt = threading.Thread(target = target)
+        
+        #connecting signal when objects ready for UI
+        self.ready_for_setting_searched_objekt.connect(self.setObjectsToUI)
+        
+        self.thread_search_objekt.start()
         
 #        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
         
@@ -362,6 +355,14 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
 #            this btn needs to be dissable if skriv windows was opened before the search
             self.openSkrivWindowBtn.setEnabled(False)  
+    
+    def handle_threaded_search_objeckt(self):
+#        retrieve data with applied filters
+        self.data = self.v.to_records()
+        
+        self.objects_for_ui = self.makeMyDataObjects(self.data)
+        
+        self.ready_for_setting_searched_objekt.emit(self.objects_for_ui)
 
     def makeMyDataObjects(self, data):
         listObjects = []
@@ -377,9 +378,16 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def onVisIKart(self, checked):
         if checked:
+            #threading
+            # target = self.showing_object_iKart
+            
+            # self.thread_showing_objekt_iKart = threading.Thread(target = target)
+            
+            # self.thread_showing_objekt_iKart.start()
+            
             self.v.refresh()
             nvdbsok2qgis(self.v)
-            
+
 #        setting size slider widget for objects size enabled, after features are in layer
             self.changeObjectsSize.setEnabled(True)
         
@@ -387,7 +395,14 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.removeActiveLayers()
 #            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
             self.openSkrivWindowBtn.setEnabled(False)
-            
+    
+    
+    def showing_object_iKart(self):
+        pass
+        #this method is used only if thread call is enabled
+        # self.v.refresh()
+        # nvdbsok2qgis(self.v)
+        
     def onIdCatalogEdited(self):
         self.searchObjectBtn.setEnabled(True)
         
@@ -429,52 +444,47 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         items = []
         row = 0
         
-#        parsing columns for adding to UI
-        columns = self.parseHeaders(objects)
-        index = self.indexHaders(columns)
+        try:
+            #try starts here ...
         
-#        self.tableResult.setColumnCount(len(columns))
-#        self.tableResult.setHorizontalHeaderLabels(columns)
+    #        parsing columns for adding to UI
+            columns = self.parseHeaders(objects)
+            index = self.indexHaders(columns)
 
-        self.tableViewResultModel.setColumnCount(len(columns))
-        self.tableViewResultModel.setHorizontalHeaderLabels(columns)
+            self.tableViewResultModel.setColumnCount(len(columns))
+            self.tableViewResultModel.setHorizontalHeaderLabels(columns)
+            
+            for object in objects:
+                for obj in enumerate(object):
+                    for idx in index:
+                        if obj[1] == idx['header']:
+                            
+                            if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
+                                numFylke = object[obj[1]]
+                                nameFylke = self.reversListOfCounties[numFylke]
+                                object[obj[1]] = nameFylke
+                                
+                            if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
+                                numKommune = object[obj[1]]
+                                nameKommune = self.reversListOfCommunities[numKommune]
+                                object[obj[1]] = nameKommune
+                                
+                            self.tableViewResultModel.setRowCount(row + 1)
+
+                            newItem = QStandardItem(str(object[obj[1]]))
+                            
+                            self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
+                            
+                            self.tableResult.setModel(self.proxyModel)
+                            
+                            if obj[1] == 'geometri':
+                                row = row + 1
+                        
+    #        set real time filter enabled when search is done searching and setting up objects UI.
+            self.filterByLineEdit.setEnabled(True)
         
-        for object in objects:
-            for obj in enumerate(object):
-                for idx in index:
-                    if obj[1] == idx['header']:
-                        
-                        if obj[1] == 'fylke': #if header is fylke, then use name isntead of fylke number
-                            numFylke = object[obj[1]]
-                            nameFylke = self.reversListOfCounties[numFylke]
-                            object[obj[1]] = nameFylke
-                            
-                        if obj[1] == 'kommune':  #if header is kommune, then use name isntead of kommune number
-                            numKommune = object[obj[1]]
-                            nameKommune = self.reversListOfCommunities[numKommune]
-                            object[obj[1]] = nameKommune
-                            
-#                        if int(idx['index']) % 26 == 0:
-#                        if obj[1] == 'geometri':
-#                            row = row + 1
-                        
-#                        self.tableResult.setRowCount(row+1)
-                        self.tableViewResultModel.setRowCount(row + 1)
-                        
-#                        newItem = QTableWidgetItem(str(object[obj[1]]))
-#                        self.tableResult.setItem(row, int(idx['index']), newItem)
-
-                        newItem = QStandardItem(str(object[obj[1]]))
-                        
-                        self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
-                        
-                        self.tableResult.setModel(self.proxyModel)
-                        
-                        if obj[1] == 'geometri':
-                            row = row + 1
-                    
-#        set real time filter enabled when search is done searching and setting up objects UI.
-        self.filterByLineEdit.setEnabled(True)
+        except Exception:
+            print('exception!')
         
     def parseHeaders(self, objects):
         headers = []
