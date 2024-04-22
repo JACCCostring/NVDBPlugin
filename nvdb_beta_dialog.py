@@ -300,7 +300,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.kommuneField.setCompleter(autoCompleter)
         
     def searchObj(self):
-#        here search is prepared depending on which filters user wants
+#        here search is prepared depending on which filters user has stablished
+        
+        #clearing tableview results everytime user search new road object
+        if self.tableViewResultModel.rowCount() > 0:
+            self.tableViewResultModel.clear()
 
 #        removing layres just in case there are some actives, before a new search
         self.removeActiveLayers()
@@ -375,10 +379,16 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #warning of search status has collected road objects
         self.amount_of_vegobjekter_collected.connect(lambda vegobjekter_amount: self.search_status_label.setText(f'samlet {vegobjekter_amount} objekter'))
         
+        #making sure QProgressbar is set to zero before setting new values
+        #on a new object search
+        if self.search_object_progress_bar.value() > 0:
+            self.search_object_progress_bar.setValue(0)
+        
         #connecting signal when objects ready for UI
         self.ready_for_setting_searched_objekt.connect(self.prepareObjectsForUI)
         
         self.thread_search_objekt.start()
+        # self.thread_search_objekt.join()
         
 #        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
         
@@ -392,19 +402,21 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def handle_threaded_search_objeckt(self):
 #        retrieve data with applied filters
-        max_obj_search = 5000
+        max_obj_search = 1000
         steps = 1
         sliced_data = []
         self.data = None
+        self.times_to_run: int = 0 
         
         self.data = self.v.to_records()
         
         #warn status label amount of road objects collected
-        self.amount_of_vegobjekter_collected.emit(len(self.data))
+        data_size = len(self.data)
+        self.amount_of_vegobjekter_collected.emit(data_size)
         
         #slicing data to show in table not in source data to sliced_data = 5000, 
         #only if it's over that number
-        if len(self.data) > max_obj_search:
+        if data_size > max_obj_search:
             
             sliced_data = self.data[0: max_obj_search: steps]
             
@@ -412,12 +424,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #if not then, just copy data source to sliced_data anyway
         #without modifying/slicing data size
-        elif len(self.data) < max_obj_search:
+        elif data_size < max_obj_search:
             sliced_data = self.data
             
             self.current_num_road_objects = len(sliced_data)
-        
+    
         objects_for_ui = self.makeMyDataObjects(sliced_data)
+        #undefined behavior when emiting signal, then prepareObjectsForUI method
+        #is calling itself multiple times, so self.times_to_run is to controll this behavior
+        self.times_to_run += 1 
         
         self.ready_for_setting_searched_objekt.emit(objects_for_ui)
 
@@ -435,12 +450,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def onVisIKart(self, checked):
         if checked:
-            #threading
-            # target = self.showing_object_iKart
+        #     #threading
+        #     target = self.showing_object_in_map
             
-            # self.thread_showing_objekt_iKart = threading.Thread(target = target)
+        #     self.thread_showing_objekt_iKart = threading.Thread(target = target)
             
-            # self.thread_showing_objekt_iKart.start()
+        #     self.thread_showing_objekt_iKart.start()
             
             self.v.refresh()
             nvdbsok2qgis(self.v)
@@ -452,6 +467,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.removeActiveLayers()
 #            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
             self.openSkrivWindowBtn.setEnabled(False)
+    
+    def showing_object_in_map(self):
+        self.v.refresh()
+        nvdbsok2qgis(self.v)
+        
+        # self.thread_showing_objekt_iKart.join()
     
     def onIdCatalogEdited(self):
         self.searchObjectBtn.setEnabled(True)
@@ -491,72 +512,81 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         return False
         
     def prepareObjectsForUI(self, objects):
-        columns = self.parseHeaders(objects)
-        index = self.indexHaders(columns)
-    
-        self.tableViewResultModel.setColumnCount(len(columns))
-        self.tableViewResultModel.setHorizontalHeaderLabels(columns)
+        if self.times_to_run == 1:
+            columns = self.parseHeaders(objects)
+            index = self.indexHaders(columns)
         
-        self.search_object_progress_bar.setRange(1, self.current_num_road_objects)
+            self.tableViewResultModel.setColumnCount(len(columns))
+            self.tableViewResultModel.setHorizontalHeaderLabels(columns)
+            
+            #if better if range start from 0 in case only 1 road object is fetched
+            self.search_object_progress_bar.setRange(0, self.current_num_road_objects)
+            
+            # thread_task_funct = self.threaded_loop_for_preparing_UI
+            # thread_args = [objects, index]
+            
+            # self.thread_loop = threading.Thread(target = thread_task_funct, args = thread_args)
+            
+            # self.setting_each_uiItem_inTable.connect(self.set_objects_to_tableView)
+            
+            # self.thread_loop.start()
+            # self.thread_loop.join()
+            
+            items = []
+            row = 0
+            
+            try:
+            #try starts here ...
+            #parsing columns for adding to UI
+                columns = self.parseHeaders(objects)
+                index = self.indexHaders(columns)
         
-        thread_task_funct = self.threaded_loop_for_preparing_UI
-        thread_args = [objects, index]
-        
-        thread_loop = threading.Thread(target = thread_task_funct, args = thread_args)
-        
-        self.setting_each_uiItem_inTable.connect(self.set_objects_to_tableView)
-        
-        thread_loop.start()
-        
+                self.tableViewResultModel.setColumnCount(len(columns))
+                self.tableViewResultModel.setHorizontalHeaderLabels(columns)
+            
+                for object in objects:
+                    for obj in enumerate(object):
+                        for idx in index:
+                            if obj[1] == idx['header']:
+                                # print('headers')
+                                
+                                if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
+                                    numFylke = object[obj[1]]
+                                    nameFylke = self.reversListOfCounties[numFylke]
+                                    object[obj[1]] = nameFylke
+                                    
+                                if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
+                                    numKommune = object[obj[1]]
+                                    nameKommune = self.reversListOfCommunities[numKommune]
+                                    object[obj[1]] = nameKommune
+                                    
+                                self.tableViewResultModel.setRowCount(row + 1)
+
+                                newItem = QStandardItem(str(object[obj[1]]))
+                                
+                                self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
+                                
+                                self.tableResult.setModel(self.proxyModel)
+                            
+                                if obj[1] == 'geometri':
+                                    row = row + 1
+                                
+                                # set real time filter enabled when search is done searching and setting up objects UI.
+                                self.filterByLineEdit.setEnabled(True)
+                                self.search_object_progress_bar.setValue(row)
+            
+            except Exception: #try ends here ...
+                print('exception!')
+                
+         # making it zero again
+        self.times_to_run = 0
+            
+    def threaded_loop_for_preparing_UI(self, objects, index):
+        pass
         # items = []
         # row = 0
         
         # try:
-        # #try starts here ...
-        # #parsing columns for adding to UI
-        #     columns = self.parseHeaders(objects)
-        #     index = self.indexHaders(columns)
-    
-            # self.tableViewResultModel.setColumnCount(len(columns))
-            # self.tableViewResultModel.setHorizontalHeaderLabels(columns)
-    
-        #     for object in objects:
-        #         for obj in enumerate(object):
-        #             for idx in index:
-        #                 if obj[1] == idx['header']:
-                            
-        #                     if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
-        #                         numFylke = object[obj[1]]
-        #                         nameFylke = self.reversListOfCounties[numFylke]
-        #                         object[obj[1]] = nameFylke
-                                
-                            # if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
-                            #     numKommune = object[obj[1]]
-                            #     nameKommune = self.reversListOfCommunities[numKommune]
-                            #     object[obj[1]] = nameKommune
-                                
-                            # self.tableViewResultModel.setRowCount(row + 1)
-
-                            # newItem = QStandardItem(str(object[obj[1]]))
-                            
-                            # self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
-                            
-                            # self.tableResult.setModel(self.proxyModel)
-                            
-                            # if obj[1] == 'geometri':
-                            #     row = row + 1
-                        
-                            #set real time filter enabled when search is done searching and setting up objects UI.
-                            # self.filterByLineEdit.setEnabled(True)
-        
-        # except Exception: #try ends here ...
-        #     print('exception!')
-    
-    def threaded_loop_for_preparing_UI(self, objects, index):
-        items = []
-        row = 0
-        
-        try:
         #try starts here ...
         #parsing columns for adding to UI
             # columns = self.parseHeaders(objects)
@@ -565,44 +595,52 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             # self.tableViewResultModel.setColumnCount(len(columns))
             # self.tableViewResultModel.setHorizontalHeaderLabels(columns)
     
-            for object in objects:
-                for obj in enumerate(object):
-                    for idx in index:
-                        if obj[1] == idx['header']:
+        #     for object in objects:
+        #         for obj in enumerate(object):
+        #             for idx in index:
+        #                 if obj[1] == idx['header']:
                                 
-                            if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
-                                numFylke = object[obj[1]]
-                                nameFylke = self.reversListOfCounties[numFylke]
-                                object[obj[1]] = nameFylke
+        #                     if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
+        #                         numFylke = object[obj[1]]
+        #                         nameFylke = self.reversListOfCounties[numFylke]
+        #                         object[obj[1]] = nameFylke
                                     
-                            if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
-                                numKommune = object[obj[1]]
-                                nameKommune = self.reversListOfCommunities[numKommune]
-                                object[obj[1]] = nameKommune
+        #                     if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
+        #                         numKommune = object[obj[1]]
+        #                         nameKommune = self.reversListOfCommunities[numKommune]
+        #                         object[obj[1]] = nameKommune
                                     
-                            self.setting_each_uiItem_inTable.emit(row, object, obj, idx)
+        #                     # self.setting_each_uiItem_inTable.emit(row, object, obj, idx)
+        #                     self.tableViewResultModel.setRowCount(row + 1)
+
+        #                     newItem = QStandardItem(str(object[obj[1]]))
+                                                
+        #                     self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
+                                                
+        #                     self.tableResult.setModel(self.proxyModel)
+        
+        #                     if obj[1] == 'geometri':
+        #                         row = row + 1
                                 
-                            if obj[1] == 'geometri':
-                                row = row + 1
-                                
-                            self.filterByLineEdit.setEnabled(True)
-                            
-        except Exception: #try ends here ...
-            print('exception!')
+        #                     self.filterByLineEdit.setEnabled(True)
+                        
+        # except Exception: #try block ends here ...
+        #     print('exception!')
     
     def set_objects_to_tableView(self, row, object, obj, idx):
-        self.tableViewResultModel.setRowCount(row + 1)
+        pass
+        # self.tableViewResultModel.setRowCount(row + 1)
 
-        newItem = QStandardItem(str(object[obj[1]]))
+        # newItem = QStandardItem(str(object[obj[1]]))
                             
-        self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
+        # self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
                             
-        self.tableResult.setModel(self.proxyModel)
+        # self.tableResult.setModel(self.proxyModel)
         
         #setting progressbar value for each table item
-        self.search_object_progress_bar.setValue(row)
+        # self.search_object_progress_bar.setValue(row)
         
-        self.filterByLineEdit.setEnabled(True)
+        # self.filterByLineEdit.setEnabled(True)
         
     def parseHeaders(self, objects):
         headers = []
