@@ -96,6 +96,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
         
+        #setting default road object limit info to 1
+        self.limit_roadObject_info_inTable.setValue(1)
+        self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
+        self.limit_roadObject_info_inTable.setEnabled(False)
+        
         self.skrivWindowInstance = None #making skriv window null
         self.skrivWindowOpened = False #making windows opened false
         
@@ -114,7 +119,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             'Akseptansetest': 'https://nvdbapiles-v3.test.atlas.vegvesen.no',
             'Systemtest': 'https://nvdbapiles-v3-stm.utv.atlas.vegvesen.no'
         }
-
+        
 #        creating a QStandardItemModel for being able to connect itemChange() signal
 #        rows, columns and headres will be assign later on self.setObjectsToUI() method
         self.tableViewResultModel = QStandardItemModel()
@@ -198,6 +203,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
 #        when changing objects size in layer then
         self.changeObjectsSize.valueChanged.connect(self.on_objectSizeOnLayerChange)
+        
+        #when QSlider value change then change label_limiter_info
+        self.limit_roadObject_info_inTable.valueChanged.connect(lambda: self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value())))
 
         
 #        rest of methods===============================
@@ -384,6 +392,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.search_object_progress_bar.value() > 0:
             self.search_object_progress_bar.setValue(0)
         
+        #enabling QSlider for road object limiter
+        #it's disabled at the begining of the program
+        self.limit_roadObject_info_inTable.setEnabled(True)
+        
         #connecting signal when objects ready for UI
         self.ready_for_setting_searched_objekt.connect(self.prepareObjectsForUI)
         
@@ -397,22 +409,33 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.skrivWindowInstance = None
             self.skrivWindowOpened = False
             
-#            this btn needs to be dissable if skriv windows was opened before the search
+            #this btn needs to be dissable if skriv windows was opened before the search
             self.openSkrivWindowBtn.setEnabled(False)  
     
     def handle_threaded_search_objeckt(self):
-#        retrieve data with applied filters
-        max_obj_search = 1000
+        #retrieve data with applied filters
         steps = 1
         sliced_data = []
         self.data = None
         self.times_to_run: int = 0 
         
         self.data = self.v.to_records()
-        
-        #warn status label amount of road objects collected
+
+        #collecting size of the current onject search, it can be different for 
+        #all of the road objects in NVDB
         data_size = len(self.data)
+        
+        #setting meximum value to limit_roadObject_info_inTable
+        self.limit_roadObject_info_inTable.setMaximum(data_size + 1)
+        
+        #emiting signal when total road objects are collected
         self.amount_of_vegobjekter_collected.emit(data_size)
+        
+        self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
+        self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
+        
+        #setting QSlider value to max_obj_search
+        max_obj_search = self.limit_roadObject_info_inTable.value()
         
         #slicing data to show in table not in source data to sliced_data = 5000, 
         #only if it's over that number
@@ -430,6 +453,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.current_num_road_objects = len(sliced_data)
     
         objects_for_ui = self.makeMyDataObjects(sliced_data)
+        
         #undefined behavior when emiting signal, then prepareObjectsForUI method
         #is calling itself multiple times, so self.times_to_run is to controll this behavior
         self.times_to_run += 1 
