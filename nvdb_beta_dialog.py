@@ -420,7 +420,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.times_to_run: int = 0 
         
         self.data = self.v.to_records()
-
+        
         #collecting size of the current onject search, it can be different for 
         #all of the road objects in NVDB
         data_size = len(self.data)
@@ -431,16 +431,35 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #emiting signal when total road objects are collected
         self.amount_of_vegobjekter_collected.emit(data_size)
         
-        self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
+        #checking if data_size > then 1, 10, 100 or 1000
+        #to configure limit of info display in table view
+        if data_size > 0 and data_size < 10:
+            data_size_for_info_inTable = data_size
+        
+        elif data_size > 10 and data_size < 100:
+            data_size_for_info_inTable = data_size
+        
+        elif data_size > 100 and data_size < 1000:
+            data_size_for_info_inTable = data_size
+        
+        elif data_size > 1000:
+            data_size_for_info_inTable = self.limit_roadObject_info_inTable.value()
+        
+        # self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
+        self.limit_roadObject_info_inTable.setValue(data_size_for_info_inTable)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
         
         #setting QSlider value to max_obj_search
         max_obj_search = self.limit_roadObject_info_inTable.value()
         
-        #slicing data to show in table not in source data to sliced_data = 5000, 
+        #slicing data to show in table not in source data to sliced_data = max_obj_search
         #only if it's over that number
-        if data_size > max_obj_search:
+        if data_size == max_obj_search:
+            sliced_data = self.data[0: max_obj_search: steps]
             
+            self.current_num_road_objects = len(sliced_data)
+            
+        if data_size > max_obj_search:
             sliced_data = self.data[0: max_obj_search: steps]
             
             self.current_num_road_objects = len(sliced_data)
@@ -451,7 +470,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             sliced_data = self.data
             
             self.current_num_road_objects = len(sliced_data)
-    
+        print('size: ', len(sliced_data))
         objects_for_ui = self.makeMyDataObjects(sliced_data)
         
         #undefined behavior when emiting signal, then prepareObjectsForUI method
@@ -475,11 +494,16 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def onVisIKart(self, checked):
         if checked:
         #     #threading
-        #     target = self.showing_object_in_map
+            # target = self.showing_object_in_map
             
-        #     self.thread_showing_objekt_iKart = threading.Thread(target = target)
+            # self.thread_showing_objekt_iKart = threading.Thread(target = target)
             
-        #     self.thread_showing_objekt_iKart.start()
+            # self.v.refresh()
+        
+            # if self.thread_showing_objekt_iKart.is_alive() == False:
+            #     self.thread_showing_objekt_iKart.start()
+        
+            # self.thread_showing_objekt_iKart.join()
             
             self.v.refresh()
             nvdbsok2qgis(self.v)
@@ -493,8 +517,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.openSkrivWindowBtn.setEnabled(False)
     
     def showing_object_in_map(self):
-        self.v.refresh()
-        nvdbsok2qgis(self.v)
+        pass
+        # self.v.refresh()
+        # nvdbsok2qgis(self.v)
         
         # self.thread_showing_objekt_iKart.join()
     
@@ -710,11 +735,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         layer = iface.activeLayer()
         
         if self.visKartCheck.isChecked():
-            for feature in layer.getFeatures():
-                for field in layer.fields():
-                    if 'nvdbid' in field.name():
-                        if str(nvdbid) in str(feature[field.name()]):
-                            layer.select(feature.id())
+            
+            try:
+                for feature in layer.getFeatures():
+                    for field in layer.fields():
+                        if 'nvdbid' in field.name():
+                            if str(nvdbid) in str(feature[field.name()]):
+                                layer.select(feature.id())
+            except Exception:
+                pass
                 
     def substractItemData(self, index):
         #for now the proxy model is the one in charge for filtrering
