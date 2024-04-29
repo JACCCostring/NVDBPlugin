@@ -36,7 +36,7 @@ from qgis.core import *
 
 from PyQt5.QtWidgets import QCompleter, QVBoxLayout, QLabel, QTableWidgetItem, QAbstractItemView
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal
+from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal, QAbstractTableModel
 
 from .nvdbskriv_beta import Ui_SkrivDialog
 
@@ -72,6 +72,8 @@ import threading
  ***************************************************************************/
 """
 
+from PyQt5 import QtCore
+
 import os
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
@@ -81,6 +83,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     ready_for_setting_searched_objekt = pyqtSignal(list)
+    setting_each_uiItem_inTable = pyqtSignal(int, dict, tuple, dict)
+    amount_of_vegobjekter_collected = pyqtSignal(int)
     
     def __init__(self, parent=None):
         """Constructor."""
@@ -91,6 +95,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        
+        #setting default road object limit info to 1
+        self.limit_roadObject_info_inTable.setValue(1)
+        self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
+        self.limit_roadObject_info_inTable.setEnabled(False)
         
         self.skrivWindowInstance = None #making skriv window null
         self.skrivWindowOpened = False #making windows opened false
@@ -110,7 +119,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             'Akseptansetest': 'https://nvdbapiles-v3.test.atlas.vegvesen.no',
             'Systemtest': 'https://nvdbapiles-v3-stm.utv.atlas.vegvesen.no'
         }
-
+        
 #        creating a QStandardItemModel for being able to connect itemChange() signal
 #        rows, columns and headres will be assign later on self.setObjectsToUI() method
         self.tableViewResultModel = QStandardItemModel()
@@ -194,52 +203,74 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
 #        when changing objects size in layer then
         self.changeObjectsSize.valueChanged.connect(self.on_objectSizeOnLayerChange)
+        
+        #when QSlider value change then change label_limiter_info
+        self.limit_roadObject_info_inTable.valueChanged.connect(lambda: self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value())))
 
         
 #        rest of methods===============================
     def fixNVDBObjects(self):
 #        all nvdb object types no all objects, to simulate datakatalog id
-        nvdbObjects = AreaGeoDataParser.fetchAllNvdbObjects()
+        nvdbObjects = []
         
-        listObjectNames = []
-        self.listOfnvdbObjects = {}
+        try:
+            nvdbObjects = AreaGeoDataParser.fetchAllNvdbObjects()
+            
+            listObjectNames = []
+            self.listOfnvdbObjects = {}
+            
+            for key, value in nvdbObjects.items():
+                listObjectNames.append(key)
+                self.listOfnvdbObjects[key] = value
         
-        for key, value in nvdbObjects.items():
-            listObjectNames.append(key)
-            self.listOfnvdbObjects[key] = value
+        except Exception:
+            print('datakatalog ikke lastett opp!')
             
         return listObjectNames
         
     def fixFylkeObjects(self):
-        nvdbObjects = AreaGeoDataParser.counties()
+        counties = []
         
-        listOfCountiesNames = []
-        self.listOfCounties = {}
-        self.reversListOfCounties = {}
+        try:
+            counties = AreaGeoDataParser.counties()
+            
+            listOfCountiesNames = []
+            self.listOfCounties = {}
+            self.reversListOfCounties = {}
+            
+            for key, value in counties.items():
+                listOfCountiesNames.append(key)
+                self.listOfCounties[key] = value
+                self.reversListOfCounties[value] = key
         
-        for key, value in nvdbObjects.items():
-            listOfCountiesNames.append(key)
-            self.listOfCounties[key] = value
-            self.reversListOfCounties[value] = key
+        except Exception:
+            print('flyke ikke lastett opp!')
             
         return listOfCountiesNames
         
     def fixCommunityObjects(self):
-        nvdbObjects = AreaGeoDataParser.communities()
+        communities = []
         
-        listOfCommunities = []
-        self.listOfCommunitiesObjects = {}
-        self.reversListOfCommunities = {}
+        try:
+            communities = AreaGeoDataParser.communities()
+            
+            listOfCommunities = []
+            self.listOfCommunitiesObjects = {}
+            self.reversListOfCommunities = {}
+            
+            for key, value in communities.items():
+                listOfCommunities.append(key)
+                self.listOfCommunitiesObjects[key] = value
+                self.reversListOfCommunities[value] = key
         
-        for key, value in nvdbObjects.items():
-            listOfCommunities.append(key)
-            self.listOfCommunitiesObjects[key] = value
-            self.reversListOfCommunities[value] = key
+        except Exception:
+            print('kommuner ikke lastett opp!')
             
         return listOfCommunities
         
     def checkComunitiesInCounty(self):
         data = []
+        
         if self.fylkeField.text() == '':
 #            print('empty')
             data = self.fixCommunityObjects()
@@ -248,8 +279,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         elif self.fylkeField.text() != '': 
             text = self.fylkeField.text()
             for key, value in AreaGeoDataParser.communitiesInCounties.items():
-                if value == self.listOfCounties[text]:
-                    data.append(key)
+                try:
+                    
+                    if value == self.listOfCounties[text]:
+                        data.append(key)
+                    
+                except Exception:
+                    pass
                 
         self.setCompleterCommunityObjects(data)
                 
@@ -272,7 +308,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.kommuneField.setCompleter(autoCompleter)
         
     def searchObj(self):
-#        here search is prepared depending on which filters user wants
+#        here search is prepared depending on which filters user has stablished
+        
+        #clearing tableview results everytime user search new road object
+        if self.tableViewResultModel.rowCount() > 0:
+            self.tableViewResultModel.clear()
 
 #        removing layres just in case there are some actives, before a new search
         self.removeActiveLayers()
@@ -341,10 +381,26 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.thread_search_objekt = threading.Thread(target = target)
         
+        #warn of search has started
+        self.search_status_label.setText('Samling vegobjekter ...')
+        
+        #warning of search status has collected road objects
+        self.amount_of_vegobjekter_collected.connect(lambda vegobjekter_amount: self.search_status_label.setText(f'samlet {vegobjekter_amount} objekter'))
+        
+        #making sure QProgressbar is set to zero before setting new values
+        #on a new object search
+        if self.search_object_progress_bar.value() > 0:
+            self.search_object_progress_bar.setValue(0)
+        
+        #enabling QSlider for road object limiter
+        #it's disabled at the begining of the program
+        self.limit_roadObject_info_inTable.setEnabled(True)
+        
         #connecting signal when objects ready for UI
-        self.ready_for_setting_searched_objekt.connect(self.setObjectsToUI)
+        self.ready_for_setting_searched_objekt.connect(self.prepareObjectsForUI)
         
         self.thread_search_objekt.start()
+        # self.thread_search_objekt.join()
         
 #        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
         
@@ -353,16 +409,75 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.skrivWindowInstance = None
             self.skrivWindowOpened = False
             
-#            this btn needs to be dissable if skriv windows was opened before the search
+            #this btn needs to be dissable if skriv windows was opened before the search
             self.openSkrivWindowBtn.setEnabled(False)  
     
     def handle_threaded_search_objeckt(self):
-#        retrieve data with applied filters
+        #retrieve data with applied filters
+        steps = 1
+        sliced_data = []
+        self.data = None
+        self.times_to_run: int = 0 
+        
         self.data = self.v.to_records()
         
-        self.objects_for_ui = self.makeMyDataObjects(self.data)
+        #collecting size of the current onject search, it can be different for 
+        #all of the road objects in NVDB
+        data_size = len(self.data)
         
-        self.ready_for_setting_searched_objekt.emit(self.objects_for_ui)
+        #setting meximum value to limit_roadObject_info_inTable
+        self.limit_roadObject_info_inTable.setMaximum(data_size + 1)
+        
+        #emiting signal when total road objects are collected
+        self.amount_of_vegobjekter_collected.emit(data_size)
+        
+        #checking if data_size > then 1, 10, 100 or 1000
+        #to configure limit of info display in table view
+        if data_size > 0 and data_size < 10:
+            data_size_for_info_inTable = data_size
+        
+        elif data_size > 10 and data_size < 100:
+            data_size_for_info_inTable = data_size
+        
+        elif data_size > 100 and data_size < 1000:
+            data_size_for_info_inTable = data_size
+        
+        elif data_size > 1000:
+            data_size_for_info_inTable = self.limit_roadObject_info_inTable.value()
+        
+        # self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
+        self.limit_roadObject_info_inTable.setValue(data_size_for_info_inTable)
+        self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
+        
+        #setting QSlider value to max_obj_search
+        max_obj_search = self.limit_roadObject_info_inTable.value()
+        
+        #slicing data to show in table not in source data to sliced_data = max_obj_search
+        #only if it's over that number
+        if data_size == max_obj_search:
+            sliced_data = self.data[0: max_obj_search: steps]
+            
+            self.current_num_road_objects = len(sliced_data)
+            
+        if data_size > max_obj_search:
+            sliced_data = self.data[0: max_obj_search: steps]
+            
+            self.current_num_road_objects = len(sliced_data)
+        
+        #if not then, just copy data source to sliced_data anyway
+        #without modifying/slicing data size
+        elif data_size < max_obj_search:
+            sliced_data = self.data
+            
+            self.current_num_road_objects = len(sliced_data)
+        print('size: ', len(sliced_data))
+        objects_for_ui = self.makeMyDataObjects(sliced_data)
+        
+        #undefined behavior when emiting signal, then prepareObjectsForUI method
+        #is calling itself multiple times, so self.times_to_run is to controll this behavior
+        self.times_to_run += 1 
+        
+        self.ready_for_setting_searched_objekt.emit(objects_for_ui)
 
     def makeMyDataObjects(self, data):
         listObjects = []
@@ -378,12 +493,17 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def onVisIKart(self, checked):
         if checked:
-            #threading
-            # target = self.showing_object_iKart
+        #     #threading
+            # target = self.showing_object_in_map
             
             # self.thread_showing_objekt_iKart = threading.Thread(target = target)
             
-            # self.thread_showing_objekt_iKart.start()
+            # self.v.refresh()
+        
+            # if self.thread_showing_objekt_iKart.is_alive() == False:
+            #     self.thread_showing_objekt_iKart.start()
+        
+            # self.thread_showing_objekt_iKart.join()
             
             self.v.refresh()
             nvdbsok2qgis(self.v)
@@ -396,13 +516,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
             self.openSkrivWindowBtn.setEnabled(False)
     
-    
-    def showing_object_iKart(self):
+    def showing_object_in_map(self):
         pass
-        #this method is used only if thread call is enabled
         # self.v.refresh()
         # nvdbsok2qgis(self.v)
         
+        # self.thread_showing_objekt_iKart.join()
+    
     def onIdCatalogEdited(self):
         self.searchObjectBtn.setEnabled(True)
         
@@ -440,51 +560,136 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         return False
         
-    def setObjectsToUI(self, objects):
-        items = []
-        row = 0
-        
-        try:
-            #try starts here ...
-        
-    #        parsing columns for adding to UI
+    def prepareObjectsForUI(self, objects):
+        if self.times_to_run == 1:
             columns = self.parseHeaders(objects)
             index = self.indexHaders(columns)
-
+        
             self.tableViewResultModel.setColumnCount(len(columns))
             self.tableViewResultModel.setHorizontalHeaderLabels(columns)
             
-            for object in objects:
-                for obj in enumerate(object):
-                    for idx in index:
-                        if obj[1] == idx['header']:
-                            
-                            if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
-                                numFylke = object[obj[1]]
-                                nameFylke = self.reversListOfCounties[numFylke]
-                                object[obj[1]] = nameFylke
-                                
-                            if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
-                                numKommune = object[obj[1]]
-                                nameKommune = self.reversListOfCommunities[numKommune]
-                                object[obj[1]] = nameKommune
-                                
-                            self.tableViewResultModel.setRowCount(row + 1)
-
-                            newItem = QStandardItem(str(object[obj[1]]))
-                            
-                            self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
-                            
-                            self.tableResult.setModel(self.proxyModel)
-                            
-                            if obj[1] == 'geometri':
-                                row = row + 1
-                        
-    #        set real time filter enabled when search is done searching and setting up objects UI.
-            self.filterByLineEdit.setEnabled(True)
+            #if better if range start from 0 in case only 1 road object is fetched
+            self.search_object_progress_bar.setRange(0, self.current_num_road_objects)
+            
+            # thread_task_funct = self.threaded_loop_for_preparing_UI
+            # thread_args = [objects, index]
+            
+            # self.thread_loop = threading.Thread(target = thread_task_funct, args = thread_args)
+            
+            # self.setting_each_uiItem_inTable.connect(self.set_objects_to_tableView)
+            
+            # self.thread_loop.start()
+            # self.thread_loop.join()
+            
+            items = []
+            row = 0
+            
+            try:
+            #try starts here ...
+            #parsing columns for adding to UI
+                columns = self.parseHeaders(objects)
+                index = self.indexHaders(columns)
         
-        except Exception:
-            print('exception!')
+                self.tableViewResultModel.setColumnCount(len(columns))
+                self.tableViewResultModel.setHorizontalHeaderLabels(columns)
+            
+                for object in objects:
+                    for obj in enumerate(object):
+                        for idx in index:
+                            if obj[1] == idx['header']:
+                                # print('headers')
+                                
+                                if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
+                                    numFylke = object[obj[1]]
+                                    nameFylke = self.reversListOfCounties[numFylke]
+                                    object[obj[1]] = nameFylke
+                                    
+                                if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
+                                    numKommune = object[obj[1]]
+                                    nameKommune = self.reversListOfCommunities[numKommune]
+                                    object[obj[1]] = nameKommune
+                                    
+                                self.tableViewResultModel.setRowCount(row + 1)
+
+                                newItem = QStandardItem(str(object[obj[1]]))
+                                
+                                self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
+                                
+                                self.tableResult.setModel(self.proxyModel)
+                            
+                                if obj[1] == 'geometri':
+                                    row = row + 1
+                                
+                                # set real time filter enabled when search is done searching and setting up objects UI.
+                                self.filterByLineEdit.setEnabled(True)
+                                self.search_object_progress_bar.setValue(row)
+            
+            except Exception: #try ends here ...
+                print('exception!')
+                
+         # making it zero again
+        self.times_to_run = 0
+            
+    def threaded_loop_for_preparing_UI(self, objects, index):
+        pass
+        # items = []
+        # row = 0
+        
+        # try:
+        #try starts here ...
+        #parsing columns for adding to UI
+            # columns = self.parseHeaders(objects)
+            # index = self.indexHaders(columns)
+    
+            # self.tableViewResultModel.setColumnCount(len(columns))
+            # self.tableViewResultModel.setHorizontalHeaderLabels(columns)
+    
+        #     for object in objects:
+        #         for obj in enumerate(object):
+        #             for idx in index:
+        #                 if obj[1] == idx['header']:
+                                
+        #                     if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
+        #                         numFylke = object[obj[1]]
+        #                         nameFylke = self.reversListOfCounties[numFylke]
+        #                         object[obj[1]] = nameFylke
+                                    
+        #                     if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
+        #                         numKommune = object[obj[1]]
+        #                         nameKommune = self.reversListOfCommunities[numKommune]
+        #                         object[obj[1]] = nameKommune
+                                    
+        #                     # self.setting_each_uiItem_inTable.emit(row, object, obj, idx)
+        #                     self.tableViewResultModel.setRowCount(row + 1)
+
+        #                     newItem = QStandardItem(str(object[obj[1]]))
+                                                
+        #                     self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
+                                                
+        #                     self.tableResult.setModel(self.proxyModel)
+        
+        #                     if obj[1] == 'geometri':
+        #                         row = row + 1
+                                
+        #                     self.filterByLineEdit.setEnabled(True)
+                        
+        # except Exception: #try block ends here ...
+        #     print('exception!')
+    
+    def set_objects_to_tableView(self, row, object, obj, idx):
+        pass
+        # self.tableViewResultModel.setRowCount(row + 1)
+
+        # newItem = QStandardItem(str(object[obj[1]]))
+                            
+        # self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
+                            
+        # self.tableResult.setModel(self.proxyModel)
+        
+        #setting progressbar value for each table item
+        # self.search_object_progress_bar.setValue(row)
+        
+        # self.filterByLineEdit.setEnabled(True)
         
     def parseHeaders(self, objects):
         headers = []
@@ -530,11 +735,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         layer = iface.activeLayer()
         
         if self.visKartCheck.isChecked():
-            for feature in layer.getFeatures():
-                for field in layer.fields():
-                    if 'nvdbid' in field.name():
-                        if str(nvdbid) in str(feature[field.name()]):
-                            layer.select(feature.id())
+            
+            try:
+                for feature in layer.getFeatures():
+                    for field in layer.fields():
+                        if 'nvdbid' in field.name():
+                            if str(nvdbid) in str(feature[field.name()]):
+                                layer.select(feature.id())
+            except Exception:
+                pass
                 
     def substractItemData(self, index):
         #for now the proxy model is the one in charge for filtrering
@@ -547,17 +756,22 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         nvdbId = None
         vref = None
         
-        for column in range(0, self.tableViewResultModel.columnCount()):
-            itemColumHeader = self.tableViewResultModel.horizontalHeaderItem(column)
+        try:
+            #starts here ...
+            for column in range(0, self.tableViewResultModel.columnCount()):
+                itemColumHeader = self.tableViewResultModel.horizontalHeaderItem(column)
+                
+                if itemColumHeader.text() == 'nvdbId':
+                    resultNvdbId = self.tableViewResultModel.item(row, column)
+                    nvdbId = resultNvdbId.text()
+                    
+                elif itemColumHeader.text() == 'vref':
+                    resultVref = self.tableViewResultModel.item(row, column)
+                    vref = resultVref.text()
+                
+        except Exception:
+            pass
             
-            if itemColumHeader.text() == 'nvdbId':
-                resultNvdbId = self.tableViewResultModel.item(row, column)
-                nvdbId = resultNvdbId.text()
-                
-            elif itemColumHeader.text() == 'vref':
-                resultVref = self.tableViewResultModel.item(row, column)
-                vref = resultVref.text()
-                
         return {'nvdbId': nvdbId, 'vref': vref}
         
     def onEgenskapChanged(self):
@@ -593,7 +807,14 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.removeL(name)
             
     def subEgenskaper(self):
-        nvdbId = self.listOfnvdbObjects[self.nvdbIdField.text()]
+        nvdbid = 0
+        
+        try:
+            nvdbId = self.listOfnvdbObjects[self.nvdbIdField.text()]
+            
+        except Exception:
+            pass
+            
         especificEgenskap = self.egenskapBox.currentText()
         
         verdier = AreaGeoDataParser.especificEgenskaper(nvdbId, especificEgenskap)

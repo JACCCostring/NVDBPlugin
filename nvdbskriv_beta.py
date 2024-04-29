@@ -15,13 +15,14 @@ from PyQt5.QtWidgets import QTableWidgetItem, QAbstractItemView, QCheckBox
 from qgis.utils import iface
 from qgis.core import *
 
-from .nvdb_endringsset_status_window import Ui_windowProgress
+from .nvdb_endringsset_status_window import Ui_windowProgress #dialog class
+
 from .nvdbLesWrapper import AreaGeoDataParser
 from .tokenManager import TokenManager
 from .delvisKorrigering import DelvisKorrigering
 
 import requests, io, json
-import xml.etree.ElementTree as ET 
+# import xml.etree.ElementTree as ET 
 
 class Ui_SkrivDialog(object):
     def __init__(self, data, listOfEgenskaper):
@@ -323,7 +324,7 @@ class Ui_SkrivDialog(object):
         
         tokenObj = tkManager.getToken()
         
-        # print(tokenObj)
+        # print(tokenObj) debug
         
         idToken = tokenObj['idToken']
         refreshToken = tokenObj['refreshToken']
@@ -373,49 +374,50 @@ class Ui_SkrivDialog(object):
         }
         
         endpoint = apiStatusEndpoints[self.miljoCombo.currentText()]
-        url =  endpoint + 'api/v1/systems'
+        url =  endpoint + 'api/v1/systemer'
                 
         response = requests.get(url)
         
-        systems = json.loads(response.text)
-        
-        APILesName = ''
-        APILesHealth = ''
-        APISkrivName = ''
-        APISkrivHealth = ''
-        
-        for system in systems['status']:
-            if system['name'] == 'API Les':
-                APILesName = system['name']
-                APILesHealth = system['healthCondition']
+        if response.ok:
+            systems = json.loads(response.text)
             
-            elif system['name'] == 'API Skriv':
-                APISkrivName = system['name']
-                APISkrivHealth = system['healthCondition']
-        
-# making sure api les/skriv flags are set to true or false
-#        api les flag
-        if APILesName == 'API Les' and APILesHealth == 'HEALTHY':
-            self.apiLes = True
-        
-        elif APILesName == 'API Les' and APILesHealth != 'HEALTHY':
-            self.apiLes = False
-        
-#        api skriv flag
-        if APISkrivName == 'API Skriv' and APISkrivHealth == 'HEALTHY':
-            self.apiSkriv = True
-        
-        elif APISkrivName == 'API Skriv' and APISkrivHealth != 'HEALTHY':
-            self.apiSkriv = False
+            APILesName = ''
+            APILesHealth = ''
+            APISkrivName = ''
+            APISkrivHealth = ''
+    
+            for system in systems['systemer']:
+                if system['navn'] == 'API Les':
+                    APILesName = system['navn']
+                    APILesHealth = system['helse']
+                
+                elif system['navn'] == 'API Skriv':
+                    APISkrivName = system['navn']
+                    APISkrivHealth = system['helse']
             
-        self.nvdbStatusObj = {
-            'APILesRunning': self.apiLes,
-            'APISkrivRunning': self.apiSkriv
-        }
-        
-#        print(self.apiLes, self.apiSkriv)
-        
-        self.defaultUISettings() #callinf default UI settings  after check status
+    # making sure api les/skriv flags are set to true or false
+    #        api les flag
+            if APILesName == 'API Les' and APILesHealth == 'FRISK':
+                self.apiLes = True
+            
+            elif APILesName == 'API Les' and APILesHealth != 'FRISK':
+                self.apiLes = False
+            
+    #        api skriv flag
+            if APISkrivName == 'API Skriv' and APISkrivHealth == 'FRISK':
+                self.apiSkriv = True
+            
+            elif APISkrivName == 'API Skriv' and APISkrivHealth != 'FRISK':
+                self.apiSkriv = False
+                
+            self.nvdbStatusObj = {
+                'APILesRunning': self.apiLes,
+                'APISkrivRunning': self.apiSkriv
+            }
+            
+    #        print(self.apiLes, self.apiSkriv)
+            
+            self.defaultUISettings() #callinf default UI settings  after check status
     
     def defaultUISettings(self):
 #        API Les
@@ -582,7 +584,7 @@ class Ui_SkrivDialog(object):
 #        nvdbid = self.tableSelectedObjects.item(row, column_index).text()
 #        self.idsOfSelectedItems.append(nvdbid)
         
-    def getFieldsOfSelectedObject(self):
+    def getFieldEgenskaper(self):
         layer = iface.activeLayer()
 
         selected_object_fields = {}
@@ -593,25 +595,56 @@ class Ui_SkrivDialog(object):
                 nvdbid = self.getTextFieldFromColumnIndex(item, 'nvdbid')
                 self.current_nvdbid = nvdbid
                 
-#        TODO: make this method iterable with n-elements nvdbid iterable
-#        to make it usefull for more then 1 selected items from the table:
-
-#        ex: num_nvdbids = self.getSelectedItemsInTable()
-#        
-#        for index_nvdbid in range(0, len(num_nvdbids)):
-#            fields_selected_feature = self.getFieldsOfSelectedObject(num_nvdbids[index_nvdbid])
-#            do something with fields_selected_feature dict
-                            
         for feature in layer.selectedFeatures():
             for field in feature.fields():
                 if 'nvdbid' in field.name():
                     if str(nvdbid) in str(feature[field.name()]):
                         for feat_field in feature.fields():
-#                            print(feat_field.name(), ': ', feature[feat_field.name()])
+                            # print(feat_field.name(), ': ', feature[feat_field.name()])
                             
                             if 'Geometri' in feat_field.name():
                                 self.geometry_found = feature.geometry().asWkt()
-                                # print(self.geometry_found)
+                                
+                                if 'PointZ' in self.geometry_found:
+                                    self.geometry_found = self.geometry_found.replace('PointZ', 'Point Z')
+                                    
+                                if 'LineStringZ' in self.geometry_found:
+                                    self.geometry_found = self.geometry_found.replace('LineStringZ', 'LineString Z')
+                                
+                                if 'PolygonZ' in self.geometry_found:
+                                    self.geometry_found = self.geometry_found.replace('PolygonZ', 'Polygon Z')
+                                
+                            selected_object_fields[feat_field.name()] = feature[feat_field.name()]
+                
+        return selected_object_fields
+    
+    def list_of_nvdbids(self):
+        nvdbid_list = []
+        for item in self.tableSelectedObjects.selectedItems():
+            if item.isSelected():
+                nvdbid = self.getTextFieldFromColumnIndex(item, 'nvdbid')
+                nvdbid_list.append(nvdbid)
+        
+        nvdbid_list = list(set(nvdbid_list)) #remove duplicates
+        
+        return nvdbid_list
+        
+    def getFieldEgenskaperByNVDBid(self, nvdbid):
+        layer = iface.activeLayer()
+
+        selected_object_fields = {}
+        
+        self.current_nvdbid = nvdbid
+        
+        for feature in layer.selectedFeatures():
+            for field in feature.fields():
+                if 'nvdbid' in field.name():
+                    if str(nvdbid) in str(feature[field.name()]):
+                        for feat_field in feature.fields():
+                            # print(feat_field.name(), ': ', feature[feat_field.name()])
+                            
+                            if 'Geometri' in feat_field.name():
+                                self.geometry_found = feature.geometry().asWkt()
                                 
                                 if 'PointZ' in self.geometry_found:
                                     self.geometry_found = self.geometry_found.replace('PointZ', 'Point Z')
@@ -626,7 +659,6 @@ class Ui_SkrivDialog(object):
                 
         return selected_object_fields
         
-
     def getSistModifisert(self, type, nvdbid, versjon):
         endpoint = self.getMiljoLesEndpoint() + '/' + 'vegobjekter' + '/' + str(type) + '/' + str(nvdbid) + '/' + str(versjon)
                 
@@ -645,7 +677,8 @@ class Ui_SkrivDialog(object):
                     if key == 'sist_modifisert':
                         return value
     
-    def getNVDBID_from_item(self):
+    '''
+    def get_nvdbid_from_SelectedItem(self):
         nvdbid = None
         
         for item in self.tableSelectedObjects.selectedItems():
@@ -653,23 +686,24 @@ class Ui_SkrivDialog(object):
                 nvdbid = self.getTextFieldFromColumnIndex(item, 'nvdbid')
         
         return nvdbid
+    '''
     
-    def getIDsRelation(self, data):
+    '''
+    def getVegObjektRelasjoner(self):
 #        data is a collection of objects from NVDB 
 #        data is formed by nvdb python API in github
         id_collections = {}
         egenskapid = None
         
         for main_data in self.data:
-            for _data in main_data:
-                if _data == 'nvdbId':
-                    if str(main_data[_data]) == self.getNVDBID_from_item():
+            for key in main_data:
+                if key == 'nvdbId':
+                    if str(main_data[key]) == self.get_nvdbid_from_SelectedItem():
                         for referense_data in main_data:
                             if referense_data == 'relasjoner':
                                 for k, v in main_data[referense_data].items():
 #                                    if k == 'foreldre' or 'barn': #vegobjekter relasjoner kun barn ikke foreldre
                                     if k == 'barn':
-                                        
                                         for ss in v:
                                             for key, value in ss.items():
                                                 if key == 'id':
@@ -677,9 +711,32 @@ class Ui_SkrivDialog(object):
                                                     
                                                 if key == 'vegobjekter':
                                                     id_collections[egenskapid] = value
+        
         return id_collections
-    
-    def getFieldFromSelectedObjects(self, data, field):
+    '''
+    def getVegObjektRelasjoner(self, nvdbid):
+        relation_collection = {}
+        relation_id = None
+        
+        for refdata in self.data:
+            for key, value in refdata.items():
+                if key == 'nvdbId':
+                    if str(refdata[key]) == nvdbid:
+                        for key, value in refdata.items():
+                            if key == 'relasjoner':
+                                for rel_name, rel_value in value.items():
+                                    if rel_name == 'barn':
+                                        for relation in rel_value:
+                                            for key, value in relation.items():
+                                                if key == 'id':
+                                                    relation_id = value
+                                                
+                                                if key == 'vegobjekter':
+                                                    relation_collection[relation_id] = value
+        
+        return relation_collection
+        
+    def getEspecificFieldContent(self, data, field):
         # data argument is a dictionary allready populated with data, after objects is selected
         vegobjekt_field = None
         
@@ -689,20 +746,21 @@ class Ui_SkrivDialog(object):
         
         return vegobjekt_field
         
+    '''
     def writeToNVDB(self):
         data = None
-        data = self.getFieldsOfSelectedObject() #pay attention
+        data = self.getFieldEgenskaper() #pay attention
         
         if self.successLogin == False: #if user is not logged in, then ask to log in again
             self.mainTab.setCurrentIndex(1)
         
-        relations = self.getIDsRelation(self.data) #getting relasjoner av vegobjekter
+        relations = self.getVegObjektRelasjoner(self.data) #getting relasjoner av vegobjekter
         
-        if data and self.successLogin: #if user is logged in and data no null then continue
+        if data and self.successLogin: #if user is logged in and data no is populated then continue
             
             object_type = self.data[0]['objekttype'] #ex: Anttenna: 470, Veganlegg: 30
             
-            vegobjekternavn = self.getFieldFromSelectedObjects(data, 'Navn')
+            vegobjektnavn = self.getFieldFromSelectedObjects(data, 'Navn')
             
             username = self.usernameLine.text()
             
@@ -710,10 +768,8 @@ class Ui_SkrivDialog(object):
             
             skrivEndPoint = self.getMiljoSkrivEndpoint()
             
-            sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, data['nvdbid'], 
-                                                                                                        data['versjon'], 
-                                                                                                        self.miljoCombo.currentText())
-                        
+            sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, data['nvdbid'], data['versjon'], self.miljoCombo.currentText())
+
             extra = {
                 'nvdb_object_type': object_type, 
                 'username': username, 
@@ -723,7 +779,7 @@ class Ui_SkrivDialog(object):
                 'current_nvdbid': self.current_nvdbid,
                 'relation': relations, #dict
                 'geometry_found': self.geometry_found,
-                'objekt_navn': vegobjekternavn
+                'objekt_navn': vegobjektnavn
             }
             
             token = self.tokens['idToken']
@@ -734,12 +790,71 @@ class Ui_SkrivDialog(object):
             # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
             self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
             
-            # when xml form finished,  and endringsett_form_done signal is triggered then post
+            # when xml form finished,  and endringsett_form_done signal is triggered then prepare post
             self.delvis.endringsett_form_done.connect(self.preparePost)
             
-            # calling formXMLRequest method to form xml template
+            # calling formXMLRequest method to form delviskorrigering xml template
             self.delvis.formXMLRequest(self.listOfEgenskaper)
-
+    '''
+    def writeToNVDB(self):
+        egenskaperfields = None
+        token: str = str()
+        
+        try:
+            token = self.tokens['idToken']
+            
+        except AttributeError:
+            pass
+            
+        #get all nvdb id of selected features
+        for nvdbid in self.list_of_nvdbids():
+            
+        #get egenskaper data from each of the nvdbids
+            egenskaperfields = self.getFieldEgenskaperByNVDBid(nvdbid)
+            
+        #continue with same precedure as before
+            if self.successLogin == False: #if user is not logged in, then ask to log in again
+                self.mainTab.setCurrentIndex(1)
+            
+            if egenskaperfields and self.successLogin: #if user is logged in and data no is populated then continue
+                
+                object_type = self.data[0]['objekttype'] #ex: Anttenna: 470, Veganlegg: 30
+                
+                vegobjektnavn = self.getEspecificFieldContent(egenskaperfields, 'Navn')
+                
+                username = self.usernameLine.text()
+                
+                datakatalog_versjon = AreaGeoDataParser.getDatakatalogVersion(self.miljoCombo.currentText())
+                
+                miljoSkrivEndepunkter = self.getMiljoSkrivEndpoint()
+                
+                sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'], self.miljoCombo.currentText())
+                relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter
+                
+                extra = {
+                    'nvdb_object_type': object_type, 
+                    'username': username, 
+                    'datakatalog_version': datakatalog_versjon,
+                    'endpoint': miljoSkrivEndepunkter,
+                    'sistmodifisert': sistmodifisert,
+                    'current_nvdbid': self.current_nvdbid,
+                    'relation': relations, #dict
+                    'geometry_found': self.geometry_found,
+                    'objekt_navn': vegobjektnavn
+                }
+            
+                # creating DelvisKorrigering object
+                self.delvis = DelvisKorrigering(token, egenskaperfields, extra)
+                
+                # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
+                self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
+                
+                # when xml form finished,  and endringsett_form_done signal is triggered then prepare post
+                self.delvis.endringsett_form_done.connect(self.preparePost)
+                
+                # calling formXMLRequest method to form delviskorrigering xml template
+                self.delvis.formXMLRequest(self.listOfEgenskaper)
+                
     def getMiljoSkrivEndpoint(self):
         currentMiljo = self.miljoCombo.currentText()
         url = None
@@ -808,11 +923,10 @@ class Ui_SkrivDialog(object):
         #    self.progressWindowInstance.show()
     
     def on_new_endringsset(self, endringsset):
-        # it meas new endringssett is ready and added to the list
         self.info_after_sent_objects.append(endringsset)
         
         # opening progress window after andringset is added to list
-        self.openProgressWindow()
+        # self.openProgressWindow()
         
     def preparePost(self):
         # prepare_post will send post request after preparing it

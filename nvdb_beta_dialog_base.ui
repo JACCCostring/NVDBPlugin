@@ -52,6 +52,22 @@ border-color: rgb(0, 255, 127);</string>
     <string>Filter</string>
    </property>
    <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="1">
+     <widget class="QComboBox" name="operatorCombo">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(244, 239, 239);
+color: rgb(125, 85, 255);
+color: rgb(255, 47, 252);</string>
+      </property>
+     </widget>
+    </item>
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
@@ -82,23 +98,6 @@ color: rgb(255, 47, 252);</string>
       </item>
      </layout>
     </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="label_4">
-      <property name="font">
-       <font>
-        <pointsize>10</pointsize>
-        <weight>50</weight>
-        <bold>false</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(151, 255, 158);</string>
-      </property>
-      <property name="text">
-       <string>Operator</string>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="2">
      <widget class="QLabel" name="label_7">
       <property name="styleSheet">
@@ -106,68 +105,6 @@ color: rgb(255, 47, 252);</string>
       </property>
       <property name="text">
        <string>Egenskap</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="QComboBox" name="egenskapBox">
-      <property name="font">
-       <font>
-        <pointsize>10</pointsize>
-        <weight>50</weight>
-        <bold>false</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(244, 239, 239);
-color: rgb(125, 85, 255);
-color: rgb(255, 47, 252);</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="styleSheet">
-         <string notr="true">color: rgb(151, 255, 158);</string>
-        </property>
-        <property name="text">
-         <string>Kommune</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="kommuneField">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: rgb(244, 239, 239);
-color: rgb(125, 85, 255);
-color: rgb(255, 47, 252);</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="1" column="1">
-     <widget class="QComboBox" name="operatorCombo">
-      <property name="font">
-       <font>
-        <pointsize>10</pointsize>
-        <weight>50</weight>
-        <bold>false</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(244, 239, 239);
-color: rgb(125, 85, 255);
-color: rgb(255, 47, 252);</string>
       </property>
      </widget>
     </item>
@@ -181,8 +118,8 @@ color: rgb(255, 47, 252);</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="3">
-     <widget class="QLineEdit" name="verdiField">
+    <item row="0" column="3">
+     <widget class="QComboBox" name="egenskapBox">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
@@ -227,6 +164,52 @@ color: rgb(255, 47, 252);</string>
       </item>
      </layout>
     </item>
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="styleSheet">
+         <string notr="true">color: rgb(151, 255, 158);</string>
+        </property>
+        <property name="text">
+         <string>Kommune</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="kommuneField">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(244, 239, 239);
+color: rgb(125, 85, 255);
+color: rgb(255, 47, 252);</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="3">
+     <widget class="QLineEdit" name="verdiField">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(244, 239, 239);
+color: rgb(125, 85, 255);
+color: rgb(255, 47, 252);</string>
+      </property>
+     </widget>
+    </item>
     <item row="2" column="2" colspan="2">
      <widget class="QCheckBox" name="visKartCheck">
       <property name="sizePolicy">
@@ -243,10 +226,28 @@ color: rgb(255, 47, 252);</string>
       </property>
       <property name="styleSheet">
        <string notr="true">color: rgb(255, 193, 254);
+border-color: rgb(255, 255, 0);
 alternate-background-color: rgb(255, 170, 255);</string>
       </property>
       <property name="text">
        <string>Vis i kart</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="label_4">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(151, 255, 158);</string>
+      </property>
+      <property name="text">
+       <string>Operator</string>
       </property>
      </widget>
     </item>
@@ -529,26 +530,61 @@ color: rgb(52, 116, 14);</string>
     <string>Størrelse</string>
    </property>
   </widget>
-  <widget class="QTableView" name="tableResult">
+  <widget class="QLabel" name="search_status_label">
+   <property name="geometry">
+    <rect>
+     <x>950</x>
+     <y>10</y>
+     <width>141</width>
+     <height>29</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: rgb(55, 212, 255);</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>200</y>
-     <width>1091</width>
+     <width>1101</width>
      <height>301</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">background-color: rgb(244, 239, 239);
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QTableView" name="tableResult">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(244, 239, 239);
 border-color: rgb(255, 255, 0);
 color: rgb(0, 0, 255);</string>
-   </property>
-   <property name="editTriggers">
-    <set>QAbstractItemView::NoEditTriggers</set>
-   </property>
-   <property name="selectionBehavior">
-    <enum>QAbstractItemView::SelectRows</enum>
-   </property>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="search_object_progress_bar">
+      <property name="styleSheet">
+       <string notr="true">font: 75 8pt &quot;MS Shell Dlg 2&quot;;
+color: rgb(10, 14, 255);
+background-color: rgb(244, 239, 239);
+</string>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>
