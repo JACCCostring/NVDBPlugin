@@ -22,6 +22,7 @@ from .tokenManager import TokenManager
 from .delvisKorrigering import DelvisKorrigering
 
 import requests, io, json
+import threading
 # import xml.etree.ElementTree as ET 
 
 class Ui_SkrivDialog(object):
@@ -797,6 +798,68 @@ class Ui_SkrivDialog(object):
             self.delvis.formXMLRequest(self.listOfEgenskaper)
     '''
     def writeToNVDB(self):
+        self.thread = threading.Thread(target=self.sennding_endrings_thread)
+        self.thread.start()
+        
+        # egenskaperfields = None
+        # token: str = str()
+        
+        # try:
+        #     token = self.tokens['idToken']
+            
+        # except AttributeError:
+        #     pass
+            
+        # #get all nvdb id of selected features
+        # for nvdbid in self.list_of_nvdbids():
+            
+        # #get egenskaper data from each of the nvdbids
+        #     egenskaperfields = self.getFieldEgenskaperByNVDBid(nvdbid)
+            
+        # #continue with same precedure as before
+        #     if self.successLogin == False: #if user is not logged in, then ask to log in again
+        #         self.mainTab.setCurrentIndex(1)
+            
+        #     if egenskaperfields and self.successLogin: #if user is logged in and data no is populated then continue
+                
+        #         object_type = self.data[0]['objekttype'] #ex: Anttenna: 470, Veganlegg: 30
+                
+        #         vegobjektnavn = self.getEspecificFieldContent(egenskaperfields, 'Navn')
+                
+        #         username = self.usernameLine.text()
+                
+        #         datakatalog_versjon = AreaGeoDataParser.getDatakatalogVersion(self.miljoCombo.currentText())
+                
+        #         miljoSkrivEndepunkter = self.getMiljoSkrivEndpoint()
+                
+        #         sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'], self.miljoCombo.currentText())
+        #         relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter
+                
+        #         extra = {
+        #             'nvdb_object_type': object_type, 
+        #             'username': username, 
+        #             'datakatalog_version': datakatalog_versjon,
+        #             'endpoint': miljoSkrivEndepunkter,
+        #             'sistmodifisert': sistmodifisert,
+        #             'current_nvdbid': self.current_nvdbid,
+        #             'relation': relations, #dict
+        #             'geometry_found': self.geometry_found,
+        #             'objekt_navn': vegobjektnavn
+        #         }
+            
+        #         # creating DelvisKorrigering object
+        #         self.delvis = DelvisKorrigering(token, egenskaperfields, extra)
+                
+        #         # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
+        #         self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
+                
+        #         # when xml form finished,  and endringsett_form_done signal is triggered then prepare post
+        #         self.delvis.endringsett_form_done.connect(self.preparePost)
+                
+        #         # calling formXMLRequest method to form delviskorrigering xml template
+        #         self.delvis.formXMLRequest(self.listOfEgenskaper)
+    
+    def sennding_endrings_thread(self):
         egenskaperfields = None
         token: str = str()
         
@@ -854,7 +917,8 @@ class Ui_SkrivDialog(object):
                 
                 # calling formXMLRequest method to form delviskorrigering xml template
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
-                
+        
+        
     def getMiljoSkrivEndpoint(self):
         currentMiljo = self.miljoCombo.currentText()
         url = None
