@@ -142,31 +142,37 @@ class Ui_windowProgress():
         
         # print(response.text)
         
-        file_stream = io.StringIO(response.text)
-        tree = ET.parse(file_stream)
-        root = tree.getroot()
-        
-        concat_str = str('')
-        show_melding = str('')
- 
-        
-        for element in root.findall('.//'):
-            if 'vegobjekt' in element.tag:
+        #if response is not ok, then we just clear all the items
+        if response.ok != True:
+            if self.tableProgress.rowCount():
+                self.tableProgress.clear()
                 
-                for melding in element.findall('.//'):
-                    if 'melding' in melding.tag:
-                        show_melding += f'<p style="color:blue">{melding.text}</p>'
+        if response.ok:
+            file_stream = io.StringIO(response.text)
+            tree = ET.parse(file_stream)
+            root = tree.getroot()
             
-            if 'fremdrift' in element.tag:
-                if 'BEHANDLES' or 'UTFØRT_OG_ETTERBEHANDLET' in element.text:
-                    concat_str += f'<p style="color:green">{element.text}</p>'
+            concat_str = str('')
+            show_melding = str('')
+     
+            
+            for element in root.findall('.//'):
+                if 'vegobjekt' in element.tag:
                     
-                if 'AVVIST' in element.text:
-                    concat_str = f'<p style="color:red">{element.text}</p>'
+                    for melding in element.findall('.//'):
+                        if 'melding' in melding.tag:
+                            show_melding += f'<p style="color:blue">{melding.text}</p>'
+                
+                if 'fremdrift' in element.tag:
+                    if 'BEHANDLES' or 'UTFØRT_OG_ETTERBEHANDLET' in element.text:
+                        concat_str += f'<p style="color:green">{element.text}</p>'
+                        
+                    if 'AVVIST' in element.text:
+                        concat_str = f'<p style="color:red">{element.text}</p>'
+            
+            if concat_str:
+                self.statusText.setText(concat_str + show_melding)
         
-        if concat_str:
-            self.statusText.setText(concat_str + show_melding)
-    
     def cancell_endringssett(self):
         self.send_cancell_post(self.current_item['endringsett_id'], self.current_item['token'])
     
