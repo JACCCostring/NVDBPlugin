@@ -10,7 +10,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem, QAbstractItemView, QTextEdit
-# from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject
+# from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
 
 import requests, io
 import xml.etree.ElementTree as ET
@@ -139,11 +139,11 @@ class Ui_windowProgress():
         }
         
         response = requests.get(url, headers = header)
-        
         # print(response.text)
         
         #if response is not ok, then we just clear all the items
         if response.ok != True:
+            
             if self.tableProgress.rowCount():
                 self.tableProgress.clear()
                 
@@ -155,7 +155,6 @@ class Ui_windowProgress():
             concat_str = str('')
             show_melding = str('')
      
-            
             for element in root.findall('.//'):
                 if 'vegobjekt' in element.tag:
                     
@@ -174,7 +173,8 @@ class Ui_windowProgress():
                 self.statusText.setText(concat_str + show_melding)
         
     def cancell_endringssett(self):
-        self.send_cancell_post(self.current_item['endringsett_id'], self.current_item['token'])
+        if self.tableProgress.rowCount() > 0:
+            self.send_cancell_post(self.current_item['endringsett_id'], self.current_item['token'])
     
     def send_cancell_post(self, url, token):
         header = {
@@ -221,7 +221,7 @@ class Ui_windowProgress():
     def itemClicked(self):
         if self.isVegObjektThere():
             print('current selected item: ', self.current_item['status_after_sent'])
-            
+        
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])
 
 if __name__ == "__main__":
