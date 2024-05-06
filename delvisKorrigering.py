@@ -116,31 +116,45 @@ class DelvisKorrigering(AbstractPoster, QObject):
                 
                 for egenskap_navn, value in new_modified_data.items():
                     # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
+                    # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
                         
                     if 'Assosierte' not in egenskap_navn: #avoiding adding objekt relasjoner here
                                                     
                         val = str(self.modified_data[egenskap_navn])
-                            
+                        # val = str(new_modified_data[egenskap_navn])
+                        
                         if 'NULL' not in val: #if not 'null' value then a valid value
-                            if '.' not in val: #if not '.' value then its a valid value
+                        
+                            #here we having a logic issue about '.', because if for example val = decimal point number ex: 11.00000
+                            #then val will get lose because we are comparing if val is '.', but if we wanna make sure wether val is a value number or not
+                            #we need to try a int conversion and if raise an exception so we know now val is a '.' and not a number
+                            
+                            if val != '.': #if not '.' value then its a valid value
                                 
                                 if egenskap_navn == 'Geometri, punkt' or egenskap_navn == 'Geometri, linje' or egenskap_navn == 'Geometri, flate':
                                     geometri_egenskap_found = True
                                     
-#                                those are the rest of the egenskaper
-#                                will only add egenskaper that is not Geometri and assosiasjoner
+                                #those are the rest of the egenskaper
+                                #will only add egenskaper that is not Geometri and assosiasjoner
                                 if geometri_egenskap_found == False:
                                     # operation will depend on if value is 'N/A' or not
                                     # if 'N/A' then we delete egenskap and if not then update egenskap
                                     operation = 'slett' if self.modified_data[egenskap_navn] == 'N/A' else 'oppdater'
+                                    # operation = 'slett' if new_modified_data[egenskap_navn] == 'N/A' else 'oppdater'
+                                        
                                     print(operation) #debug
-                                    
+                                    print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
+                                            
                                     new_egenskap = ET.SubElement(egenskaper, 'egenskap')
                                     new_egenskap.attrib = {'typeId': str(value), 'operasjon': operation}
-                                    
+                                            
+                                        #debug
+                                        # print(egenskap_navn, ': ', val, ' type ', type(val))
+                                            
                                     if operation == 'oppdater':
                                         egenskap_value = ET.SubElement(new_egenskap, 'verdi')
                                         egenskap_value.text = str(self.modified_data[egenskap_navn])
+                                            # egenskap_value.text = str(new_modified_data[egenskap_navn])
                                 
                             if 'Geometri' in egenskap_navn: #this is a especial case, when vegobjekter has geometri
                             
@@ -242,5 +256,5 @@ class DelvisKorrigering(AbstractPoster, QObject):
         
         self.vegobjekter_after_send.append(list_vegobjekter_info)
         
-#        emiting signal
+        #        emiting signal
         self.new_endringsset_sent.emit(self.vegobjekter_after_send)
