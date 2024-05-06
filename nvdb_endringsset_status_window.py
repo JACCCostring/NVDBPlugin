@@ -10,7 +10,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem, QAbstractItemView, QTextEdit
-# from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject
+# from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
 
 import requests, io
 import xml.etree.ElementTree as ET
@@ -139,36 +139,42 @@ class Ui_windowProgress():
         }
         
         response = requests.get(url, headers = header)
-        
         # print(response.text)
         
-        file_stream = io.StringIO(response.text)
-        tree = ET.parse(file_stream)
-        root = tree.getroot()
-        
-        concat_str = str('')
-        show_melding = str('')
- 
-        
-        for element in root.findall('.//'):
-            if 'vegobjekt' in element.tag:
-                
-                for melding in element.findall('.//'):
-                    if 'melding' in melding.tag:
-                        show_melding += f'<p style="color:blue">{melding.text}</p>'
+        #if response is not ok, then we just clear all the items
+        if response.ok != True:
             
-            if 'fremdrift' in element.tag:
-                if 'BEHANDLES' or 'UTFØRT_OG_ETTERBEHANDLET' in element.text:
-                    concat_str += f'<p style="color:green">{element.text}</p>'
+            if self.tableProgress.rowCount():
+                self.tableProgress.clear()
+                
+        if response.ok:
+            file_stream = io.StringIO(response.text)
+            tree = ET.parse(file_stream)
+            root = tree.getroot()
+            
+            concat_str = str('')
+            show_melding = str('')
+     
+            for element in root.findall('.//'):
+                if 'vegobjekt' in element.tag:
                     
-                if 'AVVIST' in element.text:
-                    concat_str = f'<p style="color:red">{element.text}</p>'
+                    for melding in element.findall('.//'):
+                        if 'melding' in melding.tag:
+                            show_melding += f'<p style="color:blue">{melding.text}</p>'
+                
+                if 'fremdrift' in element.tag:
+                    if 'BEHANDLES' or 'UTFØRT_OG_ETTERBEHANDLET' in element.text:
+                        concat_str += f'<p style="color:green">{element.text}</p>'
+                        
+                    if 'AVVIST' in element.text:
+                        concat_str = f'<p style="color:red">{element.text}</p>'
+            
+            if concat_str:
+                self.statusText.setText(concat_str + show_melding)
         
-        if concat_str:
-            self.statusText.setText(concat_str + show_melding)
-    
     def cancell_endringssett(self):
-        self.send_cancell_post(self.current_item['endringsett_id'], self.current_item['token'])
+        if self.tableProgress.rowCount() > 0:
+            self.send_cancell_post(self.current_item['endringsett_id'], self.current_item['token'])
     
     def send_cancell_post(self, url, token):
         header = {
@@ -215,7 +221,7 @@ class Ui_windowProgress():
     def itemClicked(self):
         if self.isVegObjektThere():
             print('current selected item: ', self.current_item['status_after_sent'])
-            
+        
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])
 
 if __name__ == "__main__":
