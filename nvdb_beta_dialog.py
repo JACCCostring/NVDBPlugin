@@ -27,7 +27,7 @@ else:
 
 
 from nvdbapiv3 import nvdbFagdata, nvdbVegnett
-from .nvdbapiV3qgis3 import  nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
+from .nvdbapiV3qgis3 import nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
@@ -171,7 +171,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
 #        when seacrh button pressed
         self.searchObjectBtn.clicked.connect(self.searchObj)
-        
+
 #        when vis i kart checkbox active then
         self.visKartCheck.clicked.connect(self.onVisIKart)
         
@@ -207,7 +207,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #when QSlider value change then change label_limiter_info
         self.limit_roadObject_info_inTable.valueChanged.connect(lambda: self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value())))
 
-        
+    
 #        rest of methods===============================
     def fixNVDBObjects(self):
 #        all nvdb object types no all objects, to simulate datakatalog id
@@ -526,7 +526,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def onIdCatalogEdited(self):
         self.searchObjectBtn.setEnabled(True)
         
-        #        setting list of agenskaper objects
+        #        setting dict of agenskaper objects
         self.listOfEgenskaper = {}
         
 #        clean egenskaper combobox anyway

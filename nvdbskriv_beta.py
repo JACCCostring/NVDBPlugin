@@ -21,7 +21,7 @@ from .tokenManager import TokenManager
 from qgis.utils import iface
 from qgis.core import *
 
-import requests, io, json
+import requests, io, json, os
 import threading
 # import xml.etree.ElementTree as ET 
 
@@ -30,10 +30,10 @@ class Ui_SkrivDialog(object):
         self.data = data #all fetched nvdb objects in json format from Les vinduet 
         self.listOfEgenskaper = listOfEgenskaper #all fetched nvdb egenskaper from current nvdb searched objects
         self.successLogin = False
-        self.idsOfSelectedItems = []
-        self.progressWindowInstance = None
-        self.progressWindowOpened = False
-        self.info_after_sent_objects = []
+        self.idsOfSelectedItems = [] #list of selected ids from QGIS kart layer
+        self.progressWindowInstance = None #windows instance
+        self.progressWindowOpened = False #to check if windows is allready opened
+        self.info_after_sent_objects = [] #all endringer sent to NVDB
         
 #        self.apiLes = False
 #        self.apiSkriv = False
@@ -258,10 +258,19 @@ class Ui_SkrivDialog(object):
         
         #expected day and minutes
         self.expected_day = self.expected_date.day() + 1
+        # self.expected_day = self.expected_date.day()
+        
         expected_minutes = self.expected_time.minute()
+        # expected_minutes = self.expected_time.minute() + 1
         
         #expected hour
         self.expected_time.setHMS(self.expected_time.hour() + 8, expected_minutes, 0)
+        # self.expected_time.setHMS(self.expected_time.hour(), expected_minutes, 0)
+        
+        #try to log in at the start of the windows, in case there
+        #is allready a session started
+        self.login()
+        
         #end of
         
         #        connecting signals components
@@ -341,23 +350,48 @@ class Ui_SkrivDialog(object):
             #getting new current time and re-configured self.expected_time
             #then setting new expected time to self.expected_time
             new_expected_time = QTime.currentTime() #current time
+            
             new_expected_minutes = new_expected_time.minute()#setting current minute
+            # new_expected_minutes = new_expected_time.minute() + 1
+            
             new_expected_time.setHMS(new_expected_time.hour(), new_expected_minutes , 0) #setting current time
             self.expected_time.setHMS(0, 0, 0) #resetting expected time
             self.expected_time.setHMS(new_expected_time.hour() + 8, new_expected_minutes, 0) #setting current time to self.expected_time
+            # self.expected_time.setHMS(new_expected_time.hour(), new_expected_minutes, 0)
             
             #but as well as time we need to think about the date
             #if login time is expired, that measn that we are here
             #next thing to do is to re-configure date again to current date + 1
             current_date = QDate.currentDate()
             current_day = current_date.day()
+            
             new_expected_day = current_day + 1
             self.expected_day = 0 #reseting expected day
             self.expected_day = new_expected_day #re-assigning new expected day
             
         url = self.miljo[self.miljoCombo.currentText()]
-        username = self.usernameLine.text()
-        password = self.passwordLine.text()
+        
+        try:
+            if not os.environ['logged']:
+                if not os.environ['logged']:
+                    print('not existing !, setting logged ...')
+                    os.environ['svv_user_name'] = self.usernameLine.text()
+                    os.environ['svv_pass'] = self.passwordLine.text()
+                    
+                    if os.environ['svv_user_name'] and os.environ['svv_pass']:
+                        os.environ['logged'] = 'true'
+                    
+        except KeyError:
+            print('exception')
+            
+        username = os.environ['svv_user_name']
+        password = os.environ['svv_pass']
+        
+        # print(os.environ['svv_user_name'])
+        # print(os.environ['svv_pass'])
+        
+        self.usernameLine.setText(username)
+        self.passwordLine.setText(password)
         
         tkManager = TokenManager(username, password, url)
         
@@ -378,9 +412,16 @@ class Ui_SkrivDialog(object):
                 'refreshToken': refreshToken
         }
         
+        #if logging not succeded then, clear enviroment variables
+        #pass, username and logged flag
+        if not self.successLogin:
+            os.environ['svv_user_name'] =''
+            os.environ['svv_pass'] = ''
+            os.environ['logged'] = ''
+        
         self.defaultUILogin() #calling to set new default UI according to access or not
         
-        if self.successLogin == False:
+        if self.successLogin == False and self.usernameLine.text() != '' or self.passwordLine.text() != '':
             self.loginMsg.setText('Brukernavn eller passord er feil!')
             
         if self.successLogin:
@@ -476,6 +517,10 @@ class Ui_SkrivDialog(object):
     def changeUser(self):
         self.usernameLine.clear()
         self.passwordLine.clear()
+        
+        os.environ['svv_user_name'] =''
+        os.environ['svv_pass'] = ''
+        os.environ['logged'] = ''
         
         self.successLogin = False #setting login to false again
         self.defaultUILogin() #calling default ui again to set up default ui values
@@ -1032,8 +1077,8 @@ class Ui_SkrivDialog(object):
             #here we need to re-open status windows, for re-sending new tokens
             #and endringssett again
             self.progressWindowInstance = None
-            self.openProgressWindow()
             
+            # self.openProgressWindow() #be carefull it can be a loop and block main thread
             return
             
         if self.progressWindowInstance:
@@ -1112,7 +1157,7 @@ class Ui_SkrivDialog(object):
             return True
         
         return False
-        
+    
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)

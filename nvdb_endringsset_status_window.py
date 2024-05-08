@@ -139,13 +139,14 @@ class Ui_windowProgress():
         }
         
         response = requests.get(url, headers = header)
-        # print(response.text)
+        print('nvdb_endringsset_status_windows: ', response.text)
         
         #if response is not ok, then we just clear all the items
         if response.ok != True:
             
             if self.tableProgress.rowCount():
                 self.tableProgress.clear()
+                self.endringsett.clear()
                 
         if response.ok:
             file_stream = io.StringIO(response.text)
