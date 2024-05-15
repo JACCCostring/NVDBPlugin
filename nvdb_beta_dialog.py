@@ -137,7 +137,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #        selecting a default environment
         self.comboEnvironment.setCurrentText('Akseptansetest')
 #        setting an environment for default
-        AreaGeoDataParser.setEnvironmentEndPoint(self.environment[self.comboEnvironment.currentText()])
+        AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
         
 #        setting up  combobox default values
         self.operatorCombo.addItems({'ikke verdi', '>', '<', '>=', '<=', '=', '!='})
@@ -163,7 +163,20 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #        autocompletion for kommune field
         listOfCommunities = self.fixCommunityObjects()
         self.setCompleterCommunityObjects(listOfCommunities)
+        
+        #checking if there is a user session already,
+        #and if is then, remove it
+        try:
+            
+            if os.environ['logged']:
+                print('there is a session !, removing it ...')
+                os.environ['svv_username'] = ''
+                os.environ['svv_pass'] = ''
+                os.environ['logged'] = ''
                 
+        except KeyError:
+            pass
+            
 #        connecting signals and slots
 
 #        very important to fecth kommuner when field fylke change

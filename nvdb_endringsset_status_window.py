@@ -146,7 +146,7 @@ class Ui_windowProgress():
             
             if self.tableProgress.rowCount():
                 self.tableProgress.clear()
-                self.endringsett.clear()
+                # self.endringsett.clear()
                 
         if response.ok:
             file_stream = io.StringIO(response.text)

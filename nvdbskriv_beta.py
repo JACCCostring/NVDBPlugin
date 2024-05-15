@@ -987,7 +987,7 @@ class Ui_SkrivDialog(object):
                 
                 miljoSkrivEndepunkter = self.getMiljoSkrivEndpoint()
                 
-                sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'], self.miljoCombo.currentText())
+                sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'])
                 relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter
                 
                 extra = {
@@ -1076,7 +1076,7 @@ class Ui_SkrivDialog(object):
             
             #here we need to re-open status windows, for re-sending new tokens
             #and endringssett again
-            self.progressWindowInstance = None
+            # self.progressWindowInstance = None
             
             # self.openProgressWindow() #be carefull it can be a loop and block main thread
             return
