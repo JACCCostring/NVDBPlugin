@@ -132,7 +132,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.proxyModel.setFilterCaseSensitivity(0) #0 means insensitive
         
 #        set combo box data to choose environmen if production/test/development
-        self.comboEnvironment.addItems({'Produksjon', 'Utvikling', 'Akseptansetest', 'Systemtest'})
+        self.comboEnvironment.addItems({'Produksjon', 'Utvikling', 'Akseptansetest'})
         
 #        selecting a default environment
         self.comboEnvironment.setCurrentText('Akseptansetest')
@@ -206,7 +206,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.filterByLineEdit.textChanged.connect(self.proxyModel.setFilterRegExp)
                 
 #        when current index in miljø combobox changed then
-        self.comboEnvironment.currentIndexChanged.connect(lambda: AreaGeoDataParser.setEnvironmentEndPoint(self.environment[self.comboEnvironment.currentText()]))
+        self.comboEnvironment.currentIndexChanged.connect(self.onComboMiljoChange)
         
 #        when open button clicked then
         self.openSkrivWindowBtn.clicked.connect(self.openSkrivWindow)
@@ -549,9 +549,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.listOfEgenskaper.clear() #cleaning before use in case of re-use
         
         is_nvdbfield_valid = self.verifyNvdbField(self.nvdbIdField.text())
-        print('is nvdb field valid', is_nvdbfield_valid)
+        print('is nvdb field valid: ', is_nvdbfield_valid)
         
         if is_nvdbfield_valid:
+            print(AreaGeoDataParser.get_env())
             egenskaper = AreaGeoDataParser.egenskaper(self.listOfnvdbObjects[self.nvdbIdField.text()])
         
             for key, value in egenskaper.items():
@@ -566,6 +567,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     #        removing layres just in case there are some actives
     #        self.removeActiveLayers()
     
+    def onComboMiljoChange(self):
+        print('changing to: ', self.comboEnvironment.currentText())
+        # if len(self.listOfnvdbObjects) > 0:
+        AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
+        print(AreaGeoDataParser.get_env())
+        
     def verifyNvdbField(self, vegobjekt_type):
         for key, value in self.listOfnvdbObjects.items():
             if key == vegobjekt_type:

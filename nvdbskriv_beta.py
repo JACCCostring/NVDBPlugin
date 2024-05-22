@@ -382,7 +382,11 @@ class Ui_SkrivDialog(object):
                         os.environ['logged'] = 'true'
                     
         except KeyError:
-            print('exception')
+            os.environ['svv_user_name'] =''
+            os.environ['svv_pass'] = ''
+            os.environ['logged'] = ''
+            
+            return
             
         username = os.environ['svv_user_name']
         password = os.environ['svv_pass']

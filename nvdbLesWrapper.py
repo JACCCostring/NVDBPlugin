@@ -150,7 +150,7 @@ class AreaGeoDataParser:
 
     @classmethod
     def get_env(self, version: str = 'v3') -> str:
-        currentMiljo = self.env  # this variable value must be already set, before use with, object.set_env() method
+        currentMiljo = self.env.lower()  # this variable value must be already set, before use with, object.set_env() method
         master_endpoint: str = str()
         
         lesUrl = None
@@ -162,7 +162,7 @@ class AreaGeoDataParser:
         elif version == 'v4':
             master_endpoint = 'https://nvdbapiles.'
         
-        if 'prod' in currentMiljo:
+        if 'prod' or 'Produksjon' in currentMiljo:
             lesUrl = master_endpoint + 'atlas.vegvesen.no'
 
         if 'test' in currentMiljo:
