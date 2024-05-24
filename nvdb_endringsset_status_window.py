@@ -144,7 +144,7 @@ class Ui_windowProgress():
         #if response is not ok, then we just clear all the items
         if response.ok != True:
             
-            if self.tableProgress.rowCount():
+            if self.tableProgress.rowCount() > 0:
                 self.tableProgress.clear()
                 # self.endringsett.clear()
                 

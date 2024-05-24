@@ -34,6 +34,7 @@ class Ui_SkrivDialog(object):
         self.progressWindowInstance = None #windows instance
         self.progressWindowOpened = False #to check if windows is allready opened
         self.info_after_sent_objects = [] #all endringer sent to NVDB
+        self.session_expired = False
         
 #        self.apiLes = False
 #        self.apiSkriv = False
@@ -368,7 +369,7 @@ class Ui_SkrivDialog(object):
             new_expected_day = current_day + 1
             self.expected_day = 0 #reseting expected day
             self.expected_day = new_expected_day #re-assigning new expected day
-            
+
         url = self.miljo[self.miljoCombo.currentText()]
         
         try:
@@ -1078,6 +1079,11 @@ class Ui_SkrivDialog(object):
             
             self.login() # update login
             
+            #making session expired to True, so when try opening status windows
+            #can know if session has been expired or not, and no matter what
+            #it can re-assign new token
+            self.session_expired = True
+            
             #here we need to re-open status windows, for re-sending new tokens
             #and endringssett again
             # self.progressWindowInstance = None
@@ -1092,9 +1098,23 @@ class Ui_SkrivDialog(object):
 #        only make instance of windows if this is None
         if self.progressWindowInstance == None:
             self.progressWindowInstance = QtWidgets.QDialog()
+            
+            #re-assigning new generated token if session has been expired
+            #at this point if session has been expired, then will loop through hole
+            #list looking for any token and replacing it with new generated
+            if self.session_expired:
+                for item in self.info_after_sent_objects:
+                    for endring in item:
+                        endring['token'] = self.tokens['idToken']
+            
             self.ui = Ui_windowProgress(self.info_after_sent_objects) #passing list of ids as parameter
             self.ui.setupUi(self.progressWindowInstance)
             self.progressWindowInstance.show()
+            
+            #making session expired to False after showing the windows
+            #after this it means that session is first time loging or re-loging
+            self.session_expired = False
+            
             # self.progressWindowOpened = True
             
 #        only shows windows again if this is allready opened
@@ -1103,7 +1123,6 @@ class Ui_SkrivDialog(object):
     
     def on_new_endringsset(self, endringsset):
         self.info_after_sent_objects.append(endringsset)
-        
         # opening progress window after andringset is added to list
         # self.openProgressWindow()
         
