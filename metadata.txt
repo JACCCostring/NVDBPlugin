@@ -1,0 +1,48 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=NVDB Les
+qgisMinimumVersion=3.0
+description= NVDB (Norwegian Administration Road Database) it's a Plugin for analyse and manipulate road objects, like (road references, trees, light poles, traffic signs, construction area, smart devices like IP Camera, tunnels, bridges, etc)
+
+version=0.3
+author=Alexander Casado
+email=alexander.casado@vegvesen.no
+
+about= (NVDB) (Norwegian Administration Road Database) it's a Plugin for analyse and manipulate road objects, like (road references, trees, light poles, traffic signs, construction area, smart devices like IP Camera, tunnels, bridges, etc).The only dependency is a third party python library that is already there, this library is for reading NVDB data from the Norwegian Road Administration Database, the library is already there in a folder called 'nvdbapi', and plugin does the job to find the library itself. So no need for manual installation. Plug-In has been run on Windows and Mac OS.
+
+tracker=https://github.com/JACCCostring/NVDBPlugin
+repository=https://github.com/JACCCostring/NVDBPlugin
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=no
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=Norway, NVDB, Norge, fagdata, vegdata
+
+homepage=https://github.com/JACCCostring/NVDBPlugin
+category=Analysis
+icon=icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+Category of the plugin: Raster, Vector, Database or Web
+# category=
+
+# If the plugin can run on QGIS Server.
+server=False
+
