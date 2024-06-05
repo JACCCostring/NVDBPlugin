@@ -993,7 +993,7 @@ class Ui_SkrivDialog(object):
                 miljoSkrivEndepunkter = self.getMiljoSkrivEndpoint()
                 
                 sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'])
-                relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter only childs nor parents
+                relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parents
                 
                 extra = {
                     'nvdb_object_type': object_type, 

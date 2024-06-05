@@ -34,6 +34,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
         }
         
 #        sending xml data endringset to NVDB waiting queue
+#remember xml_string variable is comming from formXMLRequest method
         response = requests.post(endpoint, headers = header, data = self.xml_string)
         
         # print(response.text) #debugin

@@ -328,14 +328,14 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.tableViewResultModel.clear()
 
 #        removing layres just in case there are some actives, before a new search
-        self.removeActiveLayers()
+        # self.removeActiveLayers()
         
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
         self.visKartCheck.setChecked(False)
         
 #        clearing layer map in QGIS in case exist 
-        self.removeActiveLayers()
+        # self.removeActiveLayers()
             
         if self.nvdbIdField.text() != '':
             nvdbId = self.listOfnvdbObjects[self.nvdbIdField.text()]
