@@ -43,7 +43,7 @@ from .nvdbskriv_beta import Ui_SkrivDialog
 from .nvdbLesWrapper import AreaGeoDataParser
 #========================================
 #includes need it for development
-import os
+# import os
 import json
 import requests
 import threading
@@ -219,6 +219,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #when QSlider value change then change label_limiter_info
         self.limit_roadObject_info_inTable.valueChanged.connect(lambda: self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value())))
+        
+        self.more_btn.clicked.connect(lambda: print('clicking ...'))
 
     
 #        rest of methods===============================
@@ -882,7 +884,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
     def onAnyFeatureSelected(self):
         self.openSkrivWindowBtn.setEnabled(True)
-        
+
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
     

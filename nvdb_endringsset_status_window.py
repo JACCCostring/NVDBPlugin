@@ -229,9 +229,14 @@ class Ui_windowProgress():
 
 if __name__ == "__main__":
     import sys
+    
     app = QtWidgets.QApplication(sys.argv)
+    
     windowProgress = QtWidgets.QDialog()
+    
     ui = Ui_windowProgress()
     ui.setupUi(windowProgress)
+    
     windowProgress.show()
+    
     sys.exit(app.exec_())
