@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MoreDialog</class>
+ <widget class="QDialog" name="MoreDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>581</width>
+    <height>553</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Mer</string>
+  </property>
+  <widget class="QTabWidget" name="more_main_tab">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>0</y>
+     <width>561</width>
+     <height>481</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="location_tab">
+    <attribute name="title">
+     <string>Stedfesting</string>
+    </attribute>
+   </widget>
+   <widget class="QWidget" name="relation_tab">
+    <attribute name="title">
+     <string>Kobling</string>
+    </attribute>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
