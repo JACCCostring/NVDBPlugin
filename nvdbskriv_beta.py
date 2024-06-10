@@ -32,8 +32,8 @@ class Ui_SkrivDialog(object):
         self.successLogin = False
         self.idsOfSelectedItems = [] #list of selected ids from QGIS kart layer
         self.progressWindowInstance = None #windows instance
-        self.progressWindowOpened = False #to check if windows is allready opened
-        self.info_after_sent_objects = [] #all endringer sent to NVDB
+        self.progressWindowOpened = False #to check if windows is already opened
+        self.info_after_sent_objects = [] #all changes sent to NVDB
         self.session_expired = False
         
 #        self.apiLes = False
@@ -339,8 +339,8 @@ class Ui_SkrivDialog(object):
         self.miljoCombo.setCurrentText('Akseptansetest')
         
     def login(self):
-        #verifying if login time still valid
-        #if login time is greater then 8 hours
+        #verifying if login time is still valid
+        #if login time greater than 8 hours
         #then is not valid anymore, so we update login
         if self.login_time_expired():
             #getting new current time and re-configured self.expected_time
