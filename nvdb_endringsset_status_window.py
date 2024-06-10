@@ -185,14 +185,16 @@ class Ui_windowProgress():
         }
         
         response = requests.post(url + '/kanseller', headers = header)
+        
+        # if response.ok:
         msg = 'endringssett er kansellert !'
-        
+            
         self.statusText.setText(f'<p style="color:green">{msg}</p>')
-        
+            
         file_stream = io.StringIO(response.text)
         tree = ET.parse(file_stream)
         root = tree.getroot()
-        
+            
         for tag in root.findall('.//'):
             if 'message' in tag.tag:
                 self.statusText.setText(f'<p style="color:red">{tag.text}</p>')
@@ -227,9 +229,14 @@ class Ui_windowProgress():
 
 if __name__ == "__main__":
     import sys
+    
     app = QtWidgets.QApplication(sys.argv)
+    
     windowProgress = QtWidgets.QDialog()
+    
     ui = Ui_windowProgress()
     ui.setupUi(windowProgress)
+    
     windowProgress.show()
+    
     sys.exit(app.exec_())
