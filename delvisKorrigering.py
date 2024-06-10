@@ -34,47 +34,49 @@ class DelvisKorrigering(AbstractPoster, QObject):
         }
         
 #        sending xml data endringset to NVDB waiting queue
+#remember xml_string variable is comming from formXMLRequest method
         response = requests.post(endpoint, headers = header, data = self.xml_string)
         
         # print(response.text) #debugin
-        
-        file_stream = io.StringIO(response.text)
-        tree = ET.parse(file_stream)
-        root = tree.getroot()
-        
-        for child in root.findall('.//'):
-            for tag, src in child.attrib.items():
-                if 'src' in tag:
-                    if 'start' in src:
-                        start = src
-                        
-                    if 'src' in tag:
-                        if 'kanseller' in src:
-                            kanseller = src
-                    
-                    if 'src' in tag:
-                        if 'status' in src:
-                            status = src
-                    
-                    if 'src' in tag:
-                        if 'fremdrift' in src:
-                            fremdrift = src
-                        
-        self.tokensBeforePost = {
-            'start': start, 
-            'kanseller': kanseller, 
-            'status': status,
-            'fremdrift': fremdrift
-        }
-        
-        print('prepare post: ', self.tokensBeforePost['status'])
-        
-#        print(self.tokensBeforePost) #debuging
+        if response.ok:
+            file_stream = io.StringIO(response.text)
 
-#        now start/send the current data to NVDB
-#        only if start endpoint exist
-        if self.tokensBeforePost['start']:
-            self.startPosting()
+            tree = ET.parse(file_stream)
+            root = tree.getroot()
+            
+            for child in root.findall('.//'):
+                for tag, src in child.attrib.items():
+                    if 'src' in tag:
+                        if 'start' in src:
+                            start = src
+                            
+                        if 'src' in tag:
+                            if 'kanseller' in src:
+                                kanseller = src
+                        
+                        if 'src' in tag:
+                            if 'status' in src:
+                                status = src
+                        
+                        if 'src' in tag:
+                            if 'fremdrift' in src:
+                                fremdrift = src
+                            
+            self.tokensBeforePost = {
+                'start': start, 
+                'kanseller': kanseller, 
+                'status': status,
+                'fremdrift': fremdrift
+            }
+            
+            print('prepare post: ', self.tokensBeforePost['status'])
+            
+    #        print(self.tokensBeforePost) #debuging
+
+    #        now start/send the current data to NVDB
+    #        only if start endpoint exist
+            if self.tokensBeforePost['start']:
+                self.startPosting()
         
     def formXMLRequest(self, egenskaper_list):
         root = ET.Element('endringssett')
