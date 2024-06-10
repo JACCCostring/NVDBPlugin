@@ -39,8 +39,9 @@ from PyQt5.QtWidgets import QCompleter, QVBoxLayout, QLabel, QTableWidgetItem, Q
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal, QAbstractTableModel
 
-from .nvdbskriv_beta import Ui_SkrivDialog
+# from .nvdbskriv_beta import Ui_SkrivDialog
 # from .more_window import Ui_MoreDialog
+from .source_skriv_window import SourceSkrivDialog
 from .source_more_window import SourceMoreWindow
 
 from .nvdbLesWrapper import AreaGeoDataParser
@@ -331,7 +332,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.tableViewResultModel.clear()
 
 #        removing layres just in case there are some actives, before a new search
-        # self.removeActiveLayers()
+        self.removeActiveLayers()
         
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
@@ -873,10 +874,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def openSkrivWindow(self):        
 #        only make instance of windows if this is None
         if self.skrivWindowInstance == None:
-            self.skrivWindowInstance = QtWidgets.QDialog()
-            self.ui = Ui_SkrivDialog(self.data, self.listOfEgenskaper) #instance self.v only exist after seacrh btn is pressed
-            self.ui.setupUi(self.skrivWindowInstance)
+            # self.skrivWindowInstance = QtWidgets.QDialog()
+            
+            # self.ui = SourceSkrivDialog(self.data, self.listOfEgenskaper) #instance self.v only exist after seacrh btn is pressed
+            # self.ui.setupUi(self.skrivWindowInstance)
+            
+            self.skrivWindowInstance = SourceSkrivDialog(self.data, self.listOfEgenskaper)
+            
             self.skrivWindowInstance.show()
+            
             self.skrivWindowOpened = True
             
 #        only shows windows again if this is allready opened
@@ -885,12 +891,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     
     
     def open_more_window(self):
-        self.more_window = QtWidgets.QDialog()
+        # self.more_window = QtWidgets.QWidget(None)
         
         self.source_more_window = SourceMoreWindow()
-        self.source_more_window.setupUi(self.more_window)
+        # self.source_more_window.setupUi(self.more_window)
         
-        self.more_window.show()
+        # self.more_window.show()
+        self.source_more_window.show()
         
     def onAnyFeatureSelected(self):
         self.openSkrivWindowBtn.setEnabled(True)

@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="tabObjectList">
     <attribute name="title">
@@ -52,45 +52,6 @@
       <string>overfør valgt</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="transferAllBtn">
-     <property name="geometry">
-      <rect>
-       <x>100</x>
-       <y>670</y>
-       <width>93</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>overfør alt</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="cancelBtn">
-     <property name="geometry">
-      <rect>
-       <x>200</x>
-       <y>670</y>
-       <width>93</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>kanseller valgt</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="cancelAllBtn">
-     <property name="geometry">
-      <rect>
-       <x>300</x>
-       <y>670</y>
-       <width>93</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>kanseller alt</string>
-     </property>
-    </widget>
     <widget class="QPushButton" name="updateSelectedObjectsBtn">
      <property name="geometry">
       <rect>
@@ -114,7 +75,20 @@
       </rect>
      </property>
      <property name="text">
-      <string/>
+      <string>uvalgt objekt</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="check_endringsBtn">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>670</y>
+       <width>141</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Sjekk Endrings Status</string>
      </property>
     </widget>
    </widget>
@@ -169,7 +143,7 @@
       <string/>
      </property>
     </widget>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>1</x>
@@ -220,7 +194,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>12</x>
@@ -255,7 +229,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>12</x>
@@ -412,7 +386,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>gjemme vindu</string>
+    <string>skjul vinduet</string>
    </property>
   </widget>
  </widget>

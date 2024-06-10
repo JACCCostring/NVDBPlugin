@@ -186,18 +186,18 @@ class Ui_windowProgress():
         
         response = requests.post(url + '/kanseller', headers = header)
         
-        if response.ok:
-            msg = 'endringssett er kansellert !'
+        # if response.ok:
+        msg = 'endringssett er kansellert !'
             
-            self.statusText.setText(f'<p style="color:green">{msg}</p>')
+        self.statusText.setText(f'<p style="color:green">{msg}</p>')
             
-            file_stream = io.StringIO(response.text)
-            tree = ET.parse(file_stream)
-            root = tree.getroot()
+        file_stream = io.StringIO(response.text)
+        tree = ET.parse(file_stream)
+        root = tree.getroot()
             
-            for tag in root.findall('.//'):
-                if 'message' in tag.tag:
-                    self.statusText.setText(f'<p style="color:red">{tag.text}</p>')
+        for tag in root.findall('.//'):
+            if 'message' in tag.tag:
+                self.statusText.setText(f'<p style="color:red">{tag.text}</p>')
 
     def getClicked_NVDBID(self):
         nvdbid = None

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MoreDialog</class>
- <widget class="QDialog" name="MoreDialog">
+ <class>more_window</class>
+ <widget class="QWidget" name="more_window">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>581</width>
-    <height>553</height>
+    <width>637</width>
+    <height>669</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,10 +16,10 @@
   <widget class="QTabWidget" name="more_main_tab">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>0</y>
-     <width>561</width>
-     <height>481</height>
+     <x>20</x>
+     <y>20</y>
+     <width>611</width>
+     <height>581</height>
     </rect>
    </property>
    <property name="currentIndex">
@@ -35,6 +35,19 @@
      <string>Kobling</string>
     </attribute>
    </widget>
+  </widget>
+  <widget class="QPushButton" name="click_btn">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>630</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>click</string>
+   </property>
   </widget>
  </widget>
  <resources/>
