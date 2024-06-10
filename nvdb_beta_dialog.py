@@ -422,7 +422,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.skrivWindowInstance = None
             self.skrivWindowOpened = False
             
-            #this btn needs to be dissable if skriv windows was opened before the search
+            #this btn needs to be dissabled if skriv windows was opened before the search
             self.openSkrivWindowBtn.setEnabled(False)  
     
     def handle_threaded_search_objeckt(self):
@@ -443,21 +443,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #emiting signal when total road objects are collected
         self.amount_of_vegobjekter_collected.emit(data_size)
-        
-        #checking if data_size > then 1, 10, 100 or 1000
-        #to configure limit of info display in table view
-        if data_size > 0 and data_size < 10:
+
+        # checking the amount of vegobjects found
+        # to configure limit of info display in table view
+        if data_size > 0 and data_size < 1000:
             data_size_for_info_inTable = data_size
-        
-        elif data_size > 10 and data_size < 100:
-            data_size_for_info_inTable = data_size
-        
-        elif data_size > 100 and data_size < 1000:
-            data_size_for_info_inTable = data_size
-        
-        elif data_size > 1000:
+
+        else:
             data_size_for_info_inTable = 1000
-        
+
         # self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
         self.limit_roadObject_info_inTable.setValue(data_size_for_info_inTable)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))

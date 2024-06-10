@@ -327,11 +327,6 @@ class Ui_SkrivDialog(object):
         self.checkStatusBtn.setText(_translate("SkrivDialog", "check status"))
         self.mainTab.setTabText(self.mainTab.indexOf(self.tabSettings), _translate("SkrivDialog", "instillinger"))
 
-
-
-
-
-
     def fixMiljo(self):
         self.miljo = {
         'Produksjon': 'https://nvdbapiskriv.atlas.vegvesen.no/rest/v1/oidc/authenticate',
@@ -552,7 +547,7 @@ class Ui_SkrivDialog(object):
 
                 selectedObjects.append(object)
                 
-#         looping throug selectedObjects from Layer       
+#         looping through selectedObjects from Layer
         for object in selectedObjects:
             
             if 'nvdbid' in object:
