@@ -456,7 +456,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             data_size_for_info_inTable = data_size
         
         elif data_size > 1000:
-            data_size_for_info_inTable = self.limit_roadObject_info_inTable.value()
+            data_size_for_info_inTable = 1000
         
         # self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
         self.limit_roadObject_info_inTable.setValue(data_size_for_info_inTable)
