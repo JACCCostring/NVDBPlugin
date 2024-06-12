@@ -657,13 +657,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
 
-
-
                 # when xml form finished,  and endringsett_form_done signal is triggered then prepare post
                 self.delvis.endringsett_form_done.connect(self.preparePost)
-
-                # when some events UB happens on DelvisKorrigering class side
-                #self.delvis.response_error.connect(lambda: print('something went wrong! '))
 
                 # calling formXMLRequest method to form delviskorrigering xml template
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
@@ -748,8 +743,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.progressWindowInstance == None:
             # self.progressWindowInstance = QtWidgets.QDialog()
             self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
-            #print("Hellp")
-            print(self.info_after_sent_objects)
+
+            #print(self.info_after_sent_objects)
+
             #re-assigning new generated token if session has been expired
             #at this point if session has been expired, then will loop through hole
             #list looking for any token and replacing it with new generated
