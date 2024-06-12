@@ -8,7 +8,9 @@ import xml.etree.ElementTree as ET #this is already included in .abstractPoster 
 class DelvisKorrigering(AbstractPoster, QObject):
     new_endringsset_sent = pyqtSignal(list)
     endringsett_form_done = pyqtSignal()
-    
+    response_error = pyqtSignal(str)
+
+
     def __init__(self, token, modified_data, extra):
         super().__init__(token, modified_data)
         QObject.__init__(self) #initializing QObject super class
@@ -36,8 +38,14 @@ class DelvisKorrigering(AbstractPoster, QObject):
 #        sending xml data endringset to NVDB waiting queue
 #remember xml_string variable is comming from formXMLRequest method
         response = requests.post(endpoint, headers = header, data = self.xml_string)
-        
-        # print(response.text) #debugin
+        #print("Delviskorrigering reponse: ")
+        #print(response.text) #debugin
+
+        if response.ok != True:
+            self.response_error.emit(response.text)
+            #print(response.text) # Error: Gir ikke beskjed når bruker ikke har tilgang
+            return
+
         if response.ok:
             file_stream = io.StringIO(response.text)
 
