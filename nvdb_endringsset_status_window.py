@@ -12,10 +12,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem, QAbstractItemView, QTextEdit
 # from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
 
-import requests, io
 import xml.etree.ElementTree as ET
-
 from qgis.PyQt import uic
+import requests, io
 
 import os
 # import inspect
@@ -194,17 +193,5 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
             print('current selected item: ', self.current_item['status_after_sent'])
         
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])
-
-# if __name__ == "__main__":
-#     import sys
-    
-#     app = QtWidgets.QApplication(sys.argv)
-    
-#     windowProgress = QtWidgets.QDialog()
-    
-#     ui = Ui_windowProgress()
-#     ui.setupUi(windowProgress)
     
 #     windowProgress.show()
-    
-#     sys.exit(app.exec_())

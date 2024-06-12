@@ -45,6 +45,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.defaultUILogin() #calling to set default UI login
         self.fixMiljo() #setting miljo data
         self.nvdbStatus() #calling nvdb status
+        
+        #set login tab at the start of the plug-in
+        self.mainTab.setCurrentIndex(1)
 
 #        setting columncount and headers here
         self.tableSelectedObjects.setColumnCount(3)
@@ -128,9 +131,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     def login(self):
         #verifying if login time still valid
         #if login time is greater then 8 hours
-        #then is not valid anymore, so we update login
-        print('logged in')
-        
+        #then is not valid anymore, so we update login        
         if self.login_time_expired():
             #getting new current time and re-configured self.expected_time
             #then setting new expected time to self.expected_time
@@ -412,6 +413,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                 self.selectedObjectsFromLayer() #re-read selected features from layer
             
             self.idsOfSelectedItems.clear() #clearing list of items everytime remove method is called
+            self.tableSelectedObjects.clearSelection()
     
     def textFromTableItem(self, item, columnName):
 #        pass
@@ -552,43 +554,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     if key == 'sist_modifisert':
                         return value
     
-    '''
-    def get_nvdbid_from_SelectedItem(self):
-        nvdbid = None
-        
-        for item in self.tableSelectedObjects.selectedItems():
-            if item.isSelected():
-                nvdbid = self.getTextFieldFromColumnIndex(item, 'nvdbid')
-        
-        return nvdbid
-    '''
-    
-    '''
-    def getVegObjektRelasjoner(self):
-#        data is a collection of objects from NVDB 
-#        data is formed by nvdb python API in github
-        id_collections = {}
-        egenskapid = None
-        
-        for main_data in self.data:
-            for key in main_data:
-                if key == 'nvdbId':
-                    if str(main_data[key]) == self.get_nvdbid_from_SelectedItem():
-                        for referense_data in main_data:
-                            if referense_data == 'relasjoner':
-                                for k, v in main_data[referense_data].items():
-#                                    if k == 'foreldre' or 'barn': #vegobjekter relasjoner kun barn ikke foreldre
-                                    if k == 'barn':
-                                        for ss in v:
-                                            for key, value in ss.items():
-                                                if key == 'id':
-                                                    egenskapid = value
-                                                    
-                                                if key == 'vegobjekter':
-                                                    id_collections[egenskapid] = value
-        
-        return id_collections
-    '''
     def getVegObjektRelasjoner(self, nvdbid):
         relation_collection = {}
         relation_id = None
@@ -621,56 +586,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
         return vegobjekt_field
         
-    '''
-    def writeToNVDB(self):
-        data = None
-        data = self.getFieldEgenskaper() #pay attention
-        
-        if self.successLogin == False: #if user is not logged in, then ask to log in again
-            self.mainTab.setCurrentIndex(1)
-        
-        relations = self.getVegObjektRelasjoner(self.data) #getting relasjoner av vegobjekter
-        
-        if data and self.successLogin: #if user is logged in and data no is populated then continue
-            
-            object_type = self.data[0]['objekttype'] #ex: Anttenna: 470, Veganlegg: 30
-            
-            vegobjektnavn = self.getFieldFromSelectedObjects(data, 'Navn')
-            
-            username = self.usernameLine.text()
-            
-            datakatalog_versjon = AreaGeoDataParser.getDatakatalogVersion(self.miljoCombo.currentText())
-            
-            skrivEndPoint = self.getMiljoSkrivEndpoint()
-            
-            sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, data['nvdbid'], data['versjon'], self.miljoCombo.currentText())
-
-            extra = {
-                'nvdb_object_type': object_type, 
-                'username': username, 
-                'datakatalog_version': datakatalog_versjon,
-                'endpoint': skrivEndPoint,
-                'sistmodifisert': sistmodifisert,
-                'current_nvdbid': self.current_nvdbid,
-                'relation': relations, #dict
-                'geometry_found': self.geometry_found,
-                'objekt_navn': vegobjektnavn
-            }
-            
-            token = self.tokens['idToken']
-            
-            # creating DelvisKorrigering object
-            self.delvis = DelvisKorrigering(token, data, extra)
-    
-            # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
-            self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
-            
-            # when xml form finished,  and endringsett_form_done signal is triggered then prepare post
-            self.delvis.endringsett_form_done.connect(self.preparePost)
-            
-            # calling formXMLRequest method to form delviskorrigering xml template
-            self.delvis.formXMLRequest(self.listOfEgenskaper)
-    '''
     def writeToNVDB(self):
         #verifying if login time still valid
         #if login time is greater then 8 hours
@@ -687,64 +602,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
         self.thread = threading.Thread(target=self.sennding_endrings_thread)
         self.thread.start()
-        
-        # egenskaperfields = None
-        # token: str = str()
-        
-        # try:
-        #     token = self.tokens['idToken']
-            
-        # except AttributeError:
-        #     pass
-            
-        # #get all nvdb id of selected features
-        # for nvdbid in self.list_of_nvdbids():
-            
-        # #get egenskaper data from each of the nvdbids
-        #     egenskaperfields = self.getFieldEgenskaperByNVDBid(nvdbid)
-            
-        # #continue with same precedure as before
-        #     if self.successLogin == False: #if user is not logged in, then ask to log in again
-        #         self.mainTab.setCurrentIndex(1)
-            
-        #     if egenskaperfields and self.successLogin: #if user is logged in and data no is populated then continue
-                
-        #         object_type = self.data[0]['objekttype'] #ex: Anttenna: 470, Veganlegg: 30
-                
-        #         vegobjektnavn = self.getEspecificFieldContent(egenskaperfields, 'Navn')
-                
-        #         username = self.usernameLine.text()
-                
-        #         datakatalog_versjon = AreaGeoDataParser.getDatakatalogVersion(self.miljoCombo.currentText())
-                
-        #         miljoSkrivEndepunkter = self.getMiljoSkrivEndpoint()
-                
-        #         sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'], self.miljoCombo.currentText())
-        #         relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter
-                
-        #         extra = {
-        #             'nvdb_object_type': object_type, 
-        #             'username': username, 
-        #             'datakatalog_version': datakatalog_versjon,
-        #             'endpoint': miljoSkrivEndepunkter,
-        #             'sistmodifisert': sistmodifisert,
-        #             'current_nvdbid': self.current_nvdbid,
-        #             'relation': relations, #dict
-        #             'geometry_found': self.geometry_found,
-        #             'objekt_navn': vegobjektnavn
-        #         }
-            
-        #         # creating DelvisKorrigering object
-        #         self.delvis = DelvisKorrigering(token, egenskaperfields, extra)
-                
-        #         # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
-        #         self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
-                
-        #         # when xml form finished,  and endringsett_form_done signal is triggered then prepare post
-        #         self.delvis.endringsett_form_done.connect(self.preparePost)
-                
-        #         # calling formXMLRequest method to form delviskorrigering xml template
-        #         self.delvis.formXMLRequest(self.listOfEgenskaper)
     
     def sennding_endrings_thread(self):
         egenskaperfields = None
@@ -894,7 +751,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     for endring in item:
                         endring['token'] = self.tokens['idToken']
             
-            # self.ui = Ui_windowProgress(self.info_after_sent_objects) #passing list of ids as parameter
             # self.ui.setupUi(self.progressWindowInstance)
             self.progressWindowInstance.show()
             
