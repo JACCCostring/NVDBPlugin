@@ -408,37 +408,33 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 
                 row += 1
                         
-    def on_removeSelectedObject(self):        
+    def on_removeSelectedObject(self):
         layer = iface.activeLayer()
         someSelected = False
-#        TODO: make sure only selected items are remove from layer and tableview
+        #        TODO: make sure only selected items are remove from layer and tableview
 
-#        Posible Solution: loop throug selectedItems in tableview
-#        if item selected then added to the self.idsOfSelectedItems
-#        only if item nvdbid doesn't exist in the list
+        #        Posible Solution: loop throug selectedItems in tableview
+        #        if item selected then added to the self.idsOfSelectedItems
+        #        only if item nvdbid doesn't exist in the list
 
-        numSelectedItems = len(self.tableSelectedObjects.selectedItems()) #number of selected items
-        
         for item in self.tableSelectedObjects.selectedItems():
             if item.isSelected():
+                someSelected = True
                 if self.textFromTableItem(item, 'nvdbid') not in self.idsOfSelectedItems:
                     self.idsOfSelectedItems.append(self.textFromTableItem(item, 'nvdbid'))
-                
-        if numSelectedItems > 0:
-            someSelected = True
-            
+
         if someSelected:
-            
-            for field in layer.fields(): #loop throug all feature fields in active layer
-                for feature in layer.selectedFeatures(): #loop throug all selected features in layer
-                    for itemIdToDeselect in self.idsOfSelectedItems: #loop throug all selected items from table
-                        if 'nvdbid' in field.name(): #if field is nvdbid then
-                            if str(itemIdToDeselect) in str(feature[field.name()]): #if item id selected from table is = to layer feature id then
-                                layer.deselect(feature.id()) #deselect feature
-                                self.selectedObjectsFromLayer() #re-read selected features from layer
-            
-            self.idsOfSelectedItems.clear() #clearing list of items everytime remove method is called
-    
+            for field in layer.fields():  # loop throug all feature fields in active layer
+                for feature in layer.selectedFeatures():  # loop throug all selected features in layer
+                    for itemIdToDeselect in self.idsOfSelectedItems:  # loop throug all selected items from table
+                        if 'nvdbid' in field.name():  # if field is nvdbid then
+                            if str(itemIdToDeselect) in str(feature[field.name()]):  # if item id selected from table is = to layer feature id then
+                                layer.deselect(feature.id())  # deselect feature
+                                self.selectedObjectsFromLayer()  # re-read selected features from layer
+
+            self.idsOfSelectedItems.clear()  # clearing list of items everytime remove method is called
+            self.tableSelectedObjects.clearSelection() # Clears the current selected item since it has been deleted, so it does not continue deleting other items
+
     def textFromTableItem(self, item, columnName):
 #        pass
         row = item.row()
