@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>407</width>
+    <width>833</width>
     <height>576</height>
    </rect>
   </property>
@@ -49,17 +49,14 @@
     <string>kanseller valgt</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="resendBtn">
+  <widget class="QTextEdit" name="statusText">
    <property name="geometry">
     <rect>
-     <x>110</x>
-     <y>540</y>
-     <width>111</width>
-     <height>28</height>
+     <x>410</x>
+     <y>10</y>
+     <width>411</width>
+     <height>191</height>
     </rect>
-   </property>
-   <property name="text">
-    <string>overfør igjen valgt</string>
    </property>
   </widget>
  </widget>

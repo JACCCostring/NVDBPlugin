@@ -883,7 +883,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
 #        only make instance of windows if this is None
         if self.progressWindowInstance == None:
-            self.progressWindowInstance = QtWidgets.QDialog()
+            # self.progressWindowInstance = QtWidgets.QDialog()
+            self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
             
             #re-assigning new generated token if session has been expired
             #at this point if session has been expired, then will loop through hole
@@ -893,8 +894,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     for endring in item:
                         endring['token'] = self.tokens['idToken']
             
-            self.ui = Ui_windowProgress(self.info_after_sent_objects) #passing list of ids as parameter
-            self.ui.setupUi(self.progressWindowInstance)
+            # self.ui = Ui_windowProgress(self.info_after_sent_objects) #passing list of ids as parameter
+            # self.ui.setupUi(self.progressWindowInstance)
             self.progressWindowInstance.show()
             
             #making session expired to False after showing the windows

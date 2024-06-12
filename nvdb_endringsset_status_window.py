@@ -15,50 +15,25 @@ from PyQt5.QtWidgets import QTableWidgetItem, QAbstractItemView, QTextEdit
 import requests, io
 import xml.etree.ElementTree as ET
 
-class Ui_windowProgress():
+from qgis.PyQt import uic
+
+import os
+# import inspect
+
+# from .more_window import Ui_MoreDialog
+
+FORM_CLASS, BASE_CLASS = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'nvdb_endringsset_status_window.ui'))
+    
+class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
     
     def __init__(self, endringsett):
-        # QObject.__init__(self)
+        super().__init__()
+        
+        self.setupUi(self)
+        
         self.endringsett = endringsett
-        # print(self.endringsett)
-        
-    def setupUi(self, windowProgress):
-        windowProgress.setObjectName("windowProgress")
-        windowProgress.resize(860, 576)
-        windowProgress.setMinimumSize(860, 576)
-        windowProgress.setStyleSheet("background-color: rgb(76, 76, 76);")
-        
-        self.hideBtn = QtWidgets.QPushButton(windowProgress)
-        self.hideBtn.setGeometry(QtCore.QRect(310, 540, 93, 28))
-        self.hideBtn.setStyleSheet("background-color: rgb(244, 239, 239);\nborder-color: rgb(255, 170, 255);\ncolor: rgb(52, 116, 14);")
-        self.hideBtn.setObjectName("hideBtn")
-        
-        self.tableProgress = QtWidgets.QTableWidget(windowProgress)
-        self.tableProgress.setGeometry(QtCore.QRect(10, 10, 391, 521))
-        self.tableProgress.setStyleSheet("background-color: rgb(244, 239, 239);\nborder-color: rgb(255, 255, 0);\ncolor: rgb(0, 0, 255);")
-        self.tableProgress.setObjectName("tableProgress")
-        self.tableProgress.setColumnCount(0)
-        self.tableProgress.setRowCount(0)
-        
-        self.cancelBtn = QtWidgets.QPushButton(windowProgress)
-        self.cancelBtn.setGeometry(QtCore.QRect(10, 540, 93, 28))
-        self.cancelBtn.setStyleSheet("background-color: rgb(244, 239, 239);\nborder-color: rgb(255, 170, 255);\ncolor: rgb(52, 116, 14);")
-        self.cancelBtn.setObjectName("cancelBtn")
-        
-        # self.resendBtn = QtWidgets.QPushButton(windowProgress)
-        # self.resendBtn.setGeometry(QtCore.QRect(110, 540, 111, 28))
-        # self.resendBtn.setStyleSheet("background-color: rgb(244, 239, 239);\nborder-color: rgb(255, 170, 255);\ncolor: rgb(52, 116, 14);")
-        # self.resendBtn.setObjectName("resendBtn")
-        
-        self.statusText = QtWidgets.QTextEdit(windowProgress)
-        self.statusText.setGeometry(QtCore.QRect(430, 35, 400, 200))
-        self.statusText.setStyleSheet("background-color: rgb(244, 239, 239);\nborder-color: rgb(255, 255, 0);\ncolor: rgb(0, 0, 255);")
-        self.statusText.setObjectName("statusText")
 
-        self.retranslateUi(windowProgress)
-        
-        QtCore.QMetaObject.connectSlotsByName(windowProgress)
-        
 #        starting up default UI values
         tableProgress_column_labels = {'nvdbid', 'navn'}
         
@@ -73,18 +48,11 @@ class Ui_windowProgress():
         
         self.statusText.setReadOnly(True)
         
-#        connecting signals
-        self.hideBtn.clicked.connect(lambda: windowProgress.hide()) #hide window
+        #        connecting signals
+        self.hideBtn.clicked.connect(lambda: self.hide()) #hide window
         self.tableProgress.clicked.connect(self.itemClicked) #checking status when item clicked
         self.cancelBtn.clicked.connect(self.cancell_endringssett)
-                
-    def retranslateUi(self, windowProgress):
-        _translate = QtCore.QCoreApplication.translate
-        windowProgress.setWindowTitle(_translate("windowProgress", "Endrings Status"))
-        self.hideBtn.setText(_translate("windowProgress", "skjul vinduet"))
-        self.cancelBtn.setText(_translate("windowProgress", "kanseller"))
-        # self.resendBtn.setText(_translate("windowProgress", "overfør"))
-        
+
     def populate_table(self, endringsetts):
         row = 0
         
@@ -227,16 +195,16 @@ class Ui_windowProgress():
         
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])
 
-if __name__ == "__main__":
-    import sys
+# if __name__ == "__main__":
+#     import sys
     
-    app = QtWidgets.QApplication(sys.argv)
+#     app = QtWidgets.QApplication(sys.argv)
     
-    windowProgress = QtWidgets.QDialog()
+#     windowProgress = QtWidgets.QDialog()
     
-    ui = Ui_windowProgress()
-    ui.setupUi(windowProgress)
+#     ui = Ui_windowProgress()
+#     ui.setupUi(windowProgress)
     
-    windowProgress.show()
+#     windowProgress.show()
     
-    sys.exit(app.exec_())
+#     sys.exit(app.exec_())
