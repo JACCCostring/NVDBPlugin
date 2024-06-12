@@ -105,6 +105,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.skrivWindowInstance = None #making skriv window null
         self.skrivWindowOpened = False #making windows opened false
+        self.isSourceMoreWindowOpen = False #making more window flag false
         
 #        development starts here
 #        setting up all data need it for starting up
@@ -332,7 +333,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.tableViewResultModel.clear()
 
 #        removing layres just in case there are some actives, before a new search
-        self.removeActiveLayers()
+        # self.removeActiveLayers()
         
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
@@ -568,9 +569,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
     #     setting size slider widget for objects size not enabled, after features are in layer
             self.changeObjectsSize.setEnabled(False)
-            
-    #        removing layres just in case there are some actives
-    #        self.removeActiveLayers()
     
     def onComboMiljoChange(self):
         print('changing to: ', self.comboEnvironment.currentText())
@@ -897,11 +895,16 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.source_more_window = SourceMoreWindow()
         # self.source_more_window.setupUi(self.more_window)
         
+        self.isSourceMoreWindowOpen = True
+        
         # self.more_window.show()
         self.source_more_window.show()
         
     def onAnyFeatureSelected(self):
         self.openSkrivWindowBtn.setEnabled(True)
+        
+        if self.isSourceMoreWindowOpen:
+            self.source_more_window.action_()
 
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()

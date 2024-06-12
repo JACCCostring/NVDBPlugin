@@ -41,12 +41,12 @@
     <rect>
      <x>20</x>
      <y>630</y>
-     <width>75</width>
+     <width>101</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
-    <string>click</string>
+    <string>Koble Vegobjekt</string>
    </property>
   </widget>
  </widget>
