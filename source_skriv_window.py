@@ -60,6 +60,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tableSelectedObjects.setEditTriggers(QAbstractItemView.NoEditTriggers)
         
         self.tableSelectedObjects.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        self.response_endringsset.setText("")
+
         
         #saving time when application starts to compare later on
         
@@ -778,7 +781,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def preparePost(self):
         # when some events UB happens on DelvisKorrigering class side
-        self.delvis.response_error.connect(lambda error: print('something went wrong! ', error))
+        #self.delvis.response_error.connect(lambda error: print('Error! ', error))
+        self.delvis.response_error.connect(lambda error : self.response_endringsset.setText(error))
+        self.delvis.response_success.connect(lambda successful: self.response_endringsset.setText(successful))
 
         # prepare_post will send post request after preparing it
         self.delvis.prepare_post()

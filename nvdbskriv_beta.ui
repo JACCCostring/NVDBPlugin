@@ -10,6 +10,11 @@
     <height>848</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>8</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>NVDB Skriv</string>
   </property>
@@ -45,7 +50,7 @@
        <x>0</x>
        <y>670</y>
        <width>93</width>
-       <height>28</height>
+       <height>31</height>
       </rect>
      </property>
      <property name="text">
@@ -148,8 +153,8 @@
       <rect>
        <x>1</x>
        <y>650</y>
-       <width>287</width>
-       <height>36</height>
+       <width>363</width>
+       <height>45</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
@@ -200,7 +205,7 @@
        <x>12</x>
        <y>9</y>
        <width>262</width>
-       <height>28</height>
+       <height>36</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -235,7 +240,7 @@
        <x>12</x>
        <y>79</y>
        <width>275</width>
-       <height>28</height>
+       <height>36</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -387,6 +392,24 @@
    </property>
    <property name="text">
     <string>skjul vinduet</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="response_endringsset">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>750</y>
+     <width>401</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string/>
    </property>
   </widget>
  </widget>

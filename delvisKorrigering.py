@@ -9,6 +9,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
     new_endringsset_sent = pyqtSignal(list)
     endringsett_form_done = pyqtSignal()
     response_error = pyqtSignal(str)
+    response_success = pyqtSignal(str)
 
 
     def __init__(self, token, modified_data, extra):
@@ -42,11 +43,14 @@ class DelvisKorrigering(AbstractPoster, QObject):
         #print(response.text) #debugin
 
         if response.ok != True:
-            self.response_error.emit(response.text)
             #print(response.text) # Error: Gir ikke beskjed når bruker ikke har tilgang
+            self.parseXml(response.text)
             return
 
         if response.ok:
+            successful = "Status: OK"
+            self.response_success.emit(successful)
+
             file_stream = io.StringIO(response.text)
 
             tree = ET.parse(file_stream)
@@ -85,7 +89,25 @@ class DelvisKorrigering(AbstractPoster, QObject):
     #        only if start endpoint exist
             if self.tokensBeforePost['start']:
                 self.startPosting()
-        
+
+    def parseXml(self, xml_text):
+        # Parse the XML content
+        root = ET.fromstring(xml_text)
+
+        # Defining the namespace input
+        ns = {'fault' :'http://nvdb.vegvesen.no/apiskriv/fault/v1'}
+
+        # Finding the message element and getting its text
+        msg = root.find('.//fault:message', ns)
+
+        if msg is not None:
+            # Sending message using a signal to display to user
+            self.response_error.emit(msg.text)
+
+        else:
+            print("Message element not found")
+
+
     def formXMLRequest(self, egenskaper_list):
         root = ET.Element('endringssett')
         root.attrib = {'xmlns': 'http://nvdb.vegvesen.no/apiskriv/domain/changeset/v3'}
