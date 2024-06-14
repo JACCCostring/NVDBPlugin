@@ -223,20 +223,22 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             self.loginMsg.setText('')
         
     def defaultUILogin(self):
+        self.response_endringsset.setText("")
         if self.successLogin:
             self.statusLabel.setText('Logged')
             self.statusLabel.setStyleSheet("color: green; font: 14pt 'MS Shell Dlg 2';")
             self.loginBtn.setEnabled(False)
             self.usernameLine.setEnabled(False)
-            self.passwordLine.setEnabled(False)
-        
+            #self.passwordLine.setEnabled(False)
+            self.passwordLine.setReadOnly(True)
         else:
             self.statusLabel.setText('må logg på')
             self.statusLabel.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")
             self.loginBtn.setEnabled(True)
             self.usernameLine.setEnabled(True)
-            self.passwordLine.setEnabled(True)
-    
+            #self.passwordLine.setEnabled(True)
+            self.passwordLine.setReadOnly(False)
+
     
     def updateLogin(self):
         self.login()
@@ -321,8 +323,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.defaultUILogin() #calling default ui again to set up default ui values
         
         self.usernameLine.setEnabled(True)
-        self.passwordLine.setEnabled(True)
-    
+        #self.passwordLine.setEnabled(True)
+        self.passwordLine.setReadOnly(True)
+
     def onMiljoChanged(self):
         self.successLogin = False
         
@@ -605,6 +608,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
         self.thread = threading.Thread(target=self.sennding_endrings_thread)
         self.thread.start()
+
     
     def sennding_endrings_thread(self):
         egenskaperfields = None
@@ -782,12 +786,17 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     def preparePost(self):
         # when some events UB happens on DelvisKorrigering class side
         #self.delvis.response_error.connect(lambda error: print('Error! ', error))
-        self.delvis.response_error.connect(lambda error : self.response_endringsset.setText(error))
-        self.delvis.response_success.connect(lambda successful: self.response_endringsset.setText(successful))
+
+        # Lambda fucntions pass correct feedback and color to function
+        self.delvis.response_error.connect(lambda error: self.update_status(error, "red"))
+        self.delvis.response_success.connect(lambda successful: self.update_status(successful, "green"))
 
         # prepare_post will send post request after preparing it
         self.delvis.prepare_post()
 
+    def update_status(self, text, color):
+        self.response_endringsset.setText(text)
+        self.response_endringsset.setStyleSheet(f"color: {color}; font: 12pt 'MS Shell Dlg 2';")
 
     def login_time_expired(self):
         #verify if current time and start time hours

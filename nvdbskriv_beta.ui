@@ -24,8 +24,11 @@
      <x>10</x>
      <y>0</y>
      <width>791</width>
-     <height>741</height>
+     <height>821</height>
     </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
    </property>
    <property name="currentIndex">
     <number>0</number>
@@ -94,6 +97,31 @@
      </property>
      <property name="text">
       <string>Sjekk Endrings Status</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="response_endringsset">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>730</y>
+       <width>481</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Arial</family>
+       <pointsize>7</pointsize>
+       <weight>75</weight>
+       <italic>true</italic>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color rgb(255, 255, 0)</string>
+     </property>
+     <property name="text">
+      <string/>
      </property>
     </widget>
    </widget>
@@ -392,24 +420,6 @@
    </property>
    <property name="text">
     <string>skjul vinduet</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="response_endringsset">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>750</y>
-     <width>401</width>
-     <height>71</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>9</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string/>
    </property>
   </widget>
  </widget>
