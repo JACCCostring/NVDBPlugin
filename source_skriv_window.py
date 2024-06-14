@@ -323,8 +323,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.defaultUILogin() #calling default ui again to set up default ui values
         
         self.usernameLine.setEnabled(True)
-        #self.passwordLine.setEnabled(True)
-        self.passwordLine.setReadOnly(True)
+        self.passwordLine.setEnabled(True)
 
     def onMiljoChanged(self):
         self.successLogin = False
