@@ -13,7 +13,7 @@ try:
 except ModuleNotFoundError:
     print( "Fant ikke nvdbapiv3 i sys.path, legger til mappen", nvdblibrary)
     sys.path.append( nvdblibrary ) 
-    
+
     try: 
         import nvdbapiv3
     except ModuleNotFoundError as e:

@@ -17,7 +17,26 @@ from qgis.core import *
 
 import requests, io, json
 import threading
-import os 
+import os
+from .helper import Logger
+
+#home_dir = Path.home()
+#log_path = home_dir / 'Documents' / 'log.log'
+
+#logger = logging.getLogger(__name__)
+
+#logging.basicConfig(
+  #  filename= home_dir / 'Documents' / 'log.log',
+ #   filemode='w',
+  #  format="%(asctime)s -%(levelname)s - %(message)s"
+#)
+
+
+#logger.debug("Harmless debug Message")
+#logger.info("Just an information")
+#logger.warning("Its a Warning")
+#logger.error("Did you try to divide by zero")
+#logger.critical("Internet is down")
 
 from qgis.PyQt import uic
 
@@ -35,7 +54,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.successLogin = False
         self.idsOfSelectedItems = [] #list of selected ids from QGIS kart layer
         self.progressWindowInstance = None #windows instance
-        self.progressWindowOpened = False #to check if windows is allready opened
+        self.progressWindowOpened = False #to check if windows is already opened
         self.info_after_sent_objects = [] #all endringer sent to NVDB
         self.session_expired = False
         
@@ -45,7 +64,15 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.defaultUILogin() #calling to set default UI login
         self.fixMiljo() #setting miljo data
         self.nvdbStatus() #calling nvdb status
-        
+
+        #self.logger = logging.getLogger("test.log")
+        #self.logger.setLevel(logging.DEBUG)
+
+        self.my_logger = Logger()
+
+        # log to console
+        self.my_logger.write_log("console")
+
         #set login tab at the start of the plug-in
         self.mainTab.setCurrentIndex(1)
 
@@ -163,7 +190,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         try:
             if not os.environ['logged']:
                 if not os.environ['logged']:
-                    print('not existing !, setting logged ...')
+                    self.my_logger.logger.info('not existing !, setting logged ...')
                     os.environ['svv_user_name'] = self.usernameLine.text()
                     os.environ['svv_pass'] = self.passwordLine.text()
                     
@@ -199,7 +226,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         if idToken and refreshToken and accessToken != ' ':
             self.successLogin = True
             
-            print('logged in')
+            #print('logged in')
+            self.my_logger.logger.info("logged in")
             
             self.tokens = {
                 'idToken': idToken, 
@@ -730,7 +758,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         #if login time is greater then 8 hours
         #then is not valid anymore, so we update login
         if self.login_time_expired():
-            print('login expired!')
+            #print('login expired!')
+            self.my_logger.logger.info("Login expired! ")
             
             self.login() # update login
             
@@ -824,9 +853,12 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         current_day = current_date.day()
         
         #debug
-        print('current day ', current_day, ' - expected day ', self.expected_day)
-        print('current time ', current_time, ' - expected time ', self.expected_time)
-        
+        #print('current day ', current_day, ' - expected day ', self.expected_day)
+        #print('current time ', current_time, ' - expected time ', self.expected_time)
+
+        self.my_logger.logger.info(f"current day {current_day} - expected day {self.expected_day}")
+        self.my_logger.logger.info(f"current time {current_time} - expected time {self.expected_time}")
+
         #comparing current and expected day, if this case happens
         #to be true, then means another day has passed and API Token
         #has expired even if current and expected hour case happens to be true
