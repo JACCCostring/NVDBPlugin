@@ -27,23 +27,27 @@ else:
 
 
 from nvdbapiv3 import nvdbFagdata, nvdbVegnett
-from .nvdbapiV3qgis3 import  nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
+from .nvdbapiV3qgis3 import nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 from qgis.utils import iface
 from qgis.core import *
+# from PyQt5 import QtCore
 
 from PyQt5.QtWidgets import QCompleter, QVBoxLayout, QLabel, QTableWidgetItem, QAbstractItemView
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal, QAbstractTableModel
 
-from .nvdbskriv_beta import Ui_SkrivDialog
+# from .nvdbskriv_beta import Ui_SkrivDialog
+# from .more_window import Ui_MoreDialog
+from .source_skriv_window import SourceSkrivDialog
+from .source_more_window import SourceMoreWindow
 
 from .nvdbLesWrapper import AreaGeoDataParser
 #========================================
 #includes need it for development
-import os
+# import os
 import json
 import requests
 import threading
@@ -72,9 +76,7 @@ import threading
  ***************************************************************************/
 """
 
-from PyQt5 import QtCore
-
-import os
+# import os
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -132,12 +134,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.proxyModel.setFilterCaseSensitivity(0) #0 means insensitive
         
 #        set combo box data to choose environmen if production/test/development
-        self.comboEnvironment.addItems({'Produksjon', 'Utvikling', 'Akseptansetest', 'Systemtest'})
+        self.comboEnvironment.addItems({'Produksjon', 'Utvikling', 'Akseptansetest'})
         
 #        selecting a default environment
         self.comboEnvironment.setCurrentText('Akseptansetest')
 #        setting an environment for default
-        AreaGeoDataParser.setEnvironmentEndPoint(self.environment[self.comboEnvironment.currentText()])
+        AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
         
 #        setting up  combobox default values
         self.operatorCombo.addItems({'ikke verdi', '>', '<', '>=', '<=', '=', '!='})
@@ -163,7 +165,20 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #        autocompletion for kommune field
         listOfCommunities = self.fixCommunityObjects()
         self.setCompleterCommunityObjects(listOfCommunities)
+        
+        #checking if there is a user session already,
+        #and if is then, remove it
+        try:
+            
+            if os.environ['logged']:
+                print('there is a session !, removing it ...')
+                os.environ['svv_username'] = ''
+                os.environ['svv_pass'] = ''
+                os.environ['logged'] = ''
                 
+        except KeyError:
+            pass
+            
 #        connecting signals and slots
 
 #        very important to fecth kommuner when field fylke change
@@ -171,7 +186,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
 #        when seacrh button pressed
         self.searchObjectBtn.clicked.connect(self.searchObj)
-        
+
 #        when vis i kart checkbox active then
         self.visKartCheck.clicked.connect(self.onVisIKart)
         
@@ -193,7 +208,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.filterByLineEdit.textChanged.connect(self.proxyModel.setFilterRegExp)
                 
 #        when current index in miljø combobox changed then
-        self.comboEnvironment.currentIndexChanged.connect(lambda: AreaGeoDataParser.setEnvironmentEndPoint(self.environment[self.comboEnvironment.currentText()]))
+        self.comboEnvironment.currentIndexChanged.connect(self.onComboMiljoChange)
         
 #        when open button clicked then
         self.openSkrivWindowBtn.clicked.connect(self.openSkrivWindow)
@@ -206,8 +221,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #when QSlider value change then change label_limiter_info
         self.limit_roadObject_info_inTable.valueChanged.connect(lambda: self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value())))
-
         
+        self.more_btn.clicked.connect(self.open_more_window)
+
+    
 #        rest of methods===============================
     def fixNVDBObjects(self):
 #        all nvdb object types no all objects, to simulate datakatalog id
@@ -322,7 +339,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.visKartCheck.setChecked(False)
         
 #        clearing layer map in QGIS in case exist 
-        self.removeActiveLayers()
+        # self.removeActiveLayers()
             
         if self.nvdbIdField.text() != '':
             nvdbId = self.listOfnvdbObjects[self.nvdbIdField.text()]
@@ -409,7 +426,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.skrivWindowInstance = None
             self.skrivWindowOpened = False
             
-            #this btn needs to be dissable if skriv windows was opened before the search
+            #this btn needs to be dissabled if skriv windows was opened before the search
             self.openSkrivWindowBtn.setEnabled(False)  
     
     def handle_threaded_search_objeckt(self):
@@ -430,21 +447,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #emiting signal when total road objects are collected
         self.amount_of_vegobjekter_collected.emit(data_size)
-        
-        #checking if data_size > then 1, 10, 100 or 1000
-        #to configure limit of info display in table view
-        if data_size > 0 and data_size < 10:
+
+        # checking the amount of vegobjects found
+        # to configure limit of info display in table view
+        if data_size > 0 and data_size < 1000:
             data_size_for_info_inTable = data_size
-        
-        elif data_size > 10 and data_size < 100:
-            data_size_for_info_inTable = data_size
-        
-        elif data_size > 100 and data_size < 1000:
-            data_size_for_info_inTable = data_size
-        
-        elif data_size > 1000:
-            data_size_for_info_inTable = self.limit_roadObject_info_inTable.value()
-        
+
+        else:
+            data_size_for_info_inTable = 1000
+
         # self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
         self.limit_roadObject_info_inTable.setValue(data_size_for_info_inTable)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
@@ -526,7 +537,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def onIdCatalogEdited(self):
         self.searchObjectBtn.setEnabled(True)
         
-        #        setting list of agenskaper objects
+        #        setting dict of agenskaper objects
         self.listOfEgenskaper = {}
         
 #        clean egenskaper combobox anyway
@@ -536,9 +547,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.listOfEgenskaper.clear() #cleaning before use in case of re-use
         
         is_nvdbfield_valid = self.verifyNvdbField(self.nvdbIdField.text())
-        print('is nvdb field valid', is_nvdbfield_valid)
+        print('is nvdb field valid: ', is_nvdbfield_valid)
         
         if is_nvdbfield_valid:
+            print(AreaGeoDataParser.get_env())
             egenskaper = AreaGeoDataParser.egenskaper(self.listOfnvdbObjects[self.nvdbIdField.text()])
         
             for key, value in egenskaper.items():
@@ -553,6 +565,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     #        removing layres just in case there are some actives
     #        self.removeActiveLayers()
     
+    def onComboMiljoChange(self):
+        print('changing to: ', self.comboEnvironment.currentText())
+        # if len(self.listOfnvdbObjects) > 0:
+        AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
+        print(AreaGeoDataParser.get_env())
+        
     def verifyNvdbField(self, vegobjekt_type):
         for key, value in self.listOfnvdbObjects.items():
             if key == vegobjekt_type:
@@ -850,19 +868,34 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def openSkrivWindow(self):        
 #        only make instance of windows if this is None
         if self.skrivWindowInstance == None:
-            self.skrivWindowInstance = QtWidgets.QDialog()
-            self.ui = Ui_SkrivDialog(self.data, self.listOfEgenskaper) #instance self.v only exist after seacrh btn is pressed
-            self.ui.setupUi(self.skrivWindowInstance)
+            # self.skrivWindowInstance = QtWidgets.QDialog()
+            
+            # self.ui = SourceSkrivDialog(self.data, self.listOfEgenskaper) #instance self.v only exist after seacrh btn is pressed
+            # self.ui.setupUi(self.skrivWindowInstance)
+            
+            self.skrivWindowInstance = SourceSkrivDialog(self.data, self.listOfEgenskaper)
+            
             self.skrivWindowInstance.show()
+            
             self.skrivWindowOpened = True
             
 #        only shows windows again if this is allready opened
         if self.skrivWindowOpened and self.skrivWindowInstance:
             self.skrivWindowInstance.show()
-            
+    
+    
+    def open_more_window(self):
+        # self.more_window = QtWidgets.QWidget(None)
+        
+        self.source_more_window = SourceMoreWindow()
+        # self.source_more_window.setupUi(self.more_window)
+        
+        # self.more_window.show()
+        self.source_more_window.show()
+        
     def onAnyFeatureSelected(self):
         self.openSkrivWindowBtn.setEnabled(True)
-        
+
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
     

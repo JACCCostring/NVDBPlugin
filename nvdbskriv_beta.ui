@@ -52,45 +52,6 @@
       <string>overfør valgt</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="transferAllBtn">
-     <property name="geometry">
-      <rect>
-       <x>100</x>
-       <y>670</y>
-       <width>93</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>overfør alt</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="cancelBtn">
-     <property name="geometry">
-      <rect>
-       <x>200</x>
-       <y>670</y>
-       <width>93</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>kanseller valgt</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="cancelAllBtn">
-     <property name="geometry">
-      <rect>
-       <x>300</x>
-       <y>670</y>
-       <width>93</width>
-       <height>28</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>kanseller alt</string>
-     </property>
-    </widget>
     <widget class="QPushButton" name="updateSelectedObjectsBtn">
      <property name="geometry">
       <rect>
@@ -114,7 +75,20 @@
       </rect>
      </property>
      <property name="text">
-      <string/>
+      <string>uvalgt objekt</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="check_endringsBtn">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>670</y>
+       <width>141</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Sjekk Endrings Status</string>
      </property>
     </widget>
    </widget>
@@ -134,54 +108,6 @@
      <property name="text">
       <string>Status</string>
      </property>
-    </widget>
-    <widget class="QWidget" name="layoutWidget">
-     <property name="geometry">
-      <rect>
-       <x>11</x>
-       <y>11</y>
-       <width>178</width>
-       <height>25</height>
-      </rect>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Brukernavn</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="usernameLine"/>
-      </item>
-     </layout>
-    </widget>
-    <widget class="QWidget" name="layoutWidget">
-     <property name="geometry">
-      <rect>
-       <x>11</x>
-       <y>92</y>
-       <width>159</width>
-       <height>25</height>
-      </rect>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Passord</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="passwordLine">
-        <property name="echoMode">
-         <enum>QLineEdit::Password</enum>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </widget>
     <widget class="QLabel" name="statusLabel">
      <property name="geometry">
@@ -220,15 +146,21 @@
     <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
-       <x>12</x>
-       <y>170</y>
-       <width>295</width>
-       <height>30</height>
+       <x>1</x>
+       <y>650</y>
+       <width>287</width>
+       <height>36</height>
       </rect>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QPushButton" name="loginBtn">
+        <property name="font">
+         <font>
+          <family>MS Reference Sans Serif</family>
+          <pointsize>16</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>Log In</string>
         </property>
@@ -236,6 +168,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="updateBtn">
+        <property name="font">
+         <font>
+          <family>MS Reference Sans Serif</family>
+          <pointsize>16</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>Oppdater</string>
         </property>
@@ -243,8 +181,87 @@
       </item>
       <item>
        <widget class="QPushButton" name="changeUserBtn">
+        <property name="font">
+         <font>
+          <family>MS Reference Sans Serif</family>
+          <pointsize>16</pointsize>
+         </font>
+        </property>
         <property name="text">
-         <string>bytt bruker</string>
+         <string>Log Out</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QWidget" name="layoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>12</x>
+       <y>9</y>
+       <width>262</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <family>MS Reference Sans Serif</family>
+          <pointsize>16</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Bruker</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="usernameLine">
+        <property name="font">
+         <font>
+          <family>MS Reference Sans Serif</family>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QWidget" name="layoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>12</x>
+       <y>79</y>
+       <width>275</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="font">
+         <font>
+          <family>MS Reference Sans Serif</family>
+          <pointsize>16</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Passord</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="passwordLine">
+        <property name="font">
+         <font>
+          <family>MS Reference Sans Serif</family>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="echoMode">
+         <enum>QLineEdit::Password</enum>
         </property>
        </widget>
       </item>
@@ -369,7 +386,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>gjemme vindu</string>
+    <string>skjul vinduet</string>
    </property>
   </widget>
  </widget>
