@@ -8,13 +8,6 @@ qgisMinimumVersion=3.0
 description= NVDB (Norwegian Administration Road Database) it's a Plugin for analyse and manipulate road objects, like (road references, trees, light poles, traffic signs, construction area, smart devices like IP Camera, tunnels, bridges, etc)
 
 version=0.7
-
-name=NVDB Les
-qgisMinimumVersion=3.0
-description= NVDB (Norwegian Administration Road Database) it's a Plugin for analyse and manipulate road objects, like (road references, trees, light poles, traffic signs, construction area, smart devices like IP Camera, tunnels, bridges, etc)
-
-version=0.3
-
 author=Alexander Casado
 email=alexander.casado@vegvesen.no
 

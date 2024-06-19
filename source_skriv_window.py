@@ -51,9 +51,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.nvdbStatus() #calling nvdb status
 
 
-        #self.logger = logging.getLogger("test.log")
-        #self.logger.setLevel(logging.DEBUG)
-
         self.my_logger = Logger()
 
         # log to console

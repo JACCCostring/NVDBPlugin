@@ -43,14 +43,11 @@ class DelvisKorrigering(AbstractPoster, QObject):
         #print(response.text) #debugin
 
         if response.ok != True:
-            self.response_error.emit(response.text)
+
+            self.parseXml_prepare_method(response.text)
             #print(response.text) # Error: Gir ikke beskjed når bruker ikke har tilgang
             return
 
-        if response.ok:
-            #print(response.text) # Error: Gir ikke beskjed når bruker ikke har tilgang
-            self.parseXml(response.text)
-            return
 
         if response.ok:
             successful = "Status: OK"
@@ -96,7 +93,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
                 self.startPosting()
 
 
-    def parseXml(self, xml_text):
+    def parseXml_prepare_method(self, xml_text):
         # Parse the XML content
         root = ET.fromstring(xml_text)
 
