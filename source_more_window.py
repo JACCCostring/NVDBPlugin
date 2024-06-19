@@ -15,19 +15,19 @@ FORM_CLASS, BASE_CLASS = uic.loadUiType(os.path.join(
 class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     def __init__(self):
         super().__init__()
-
+        
         self.setupUi(self)
-
-        # tab widget control flags
+        
+        #tab widget control flags
         self.location_tab_active = False
         self.relation_tab_active = False
-        # end of tab widget control flags
-
-        # setting default tab index flag according to current index
+        #end of tab widget control flags
+        
+        #setting default tab index flag according to current index
         self.setup_default_tab_index_flags()
-        # end of setting default index flag
-
-        self.more_main_tab.currentChanged.connect(self.activate_current_tab)  # when current tab changes
+        #end of setting default index flag
+        
+        self.more_main_tab.currentChanged.connect(self.activate_current_tab) #when current tab changes
 
     def activate_current_tab(self, index):
         if self.more_main_tab.currentIndex() == 0:
@@ -69,5 +69,9 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
             self.relation_tab_active = False
 
         elif self.more_main_tab.currentIndex() == 1:  # 1 kobling tab
+            self.relation_tab_active = True
+            self.location_tab_active = False
+
+        else:
             self.relation_tab_active = True
             self.location_tab_active = False

@@ -13,7 +13,7 @@ try:
 except ModuleNotFoundError:
     print( "Fant ikke nvdbapiv3 i sys.path, legger til mappen", nvdblibrary)
     sys.path.append( nvdblibrary ) 
-    
+
     try: 
         import nvdbapiv3
     except ModuleNotFoundError as e:
@@ -105,7 +105,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.skrivWindowInstance = None #making skriv window null
         self.skrivWindowOpened = False #making windows opened false
-        
+
+        self.isSourceMoreWindowOpen = False #making more window flag false
+
 #        development starts here
 #        setting up all data need it for starting up
         
@@ -333,7 +335,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
 #        removing layres just in case there are some actives, before a new search
         self.removeActiveLayers()
-        
+
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
         self.visKartCheck.setChecked(False)
@@ -426,8 +428,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.skrivWindowInstance = None
             self.skrivWindowOpened = False
             
-            #this btn needs to be dissabled if skriv windows was opened before the search
-            self.openSkrivWindowBtn.setEnabled(False)  
+            #this btn needs to be dissable if skriv windows was opened before the search
+            self.openSkrivWindowBtn.setEnabled(False)
     
     def handle_threaded_search_objeckt(self):
         #retrieve data with applied filters
@@ -456,6 +458,22 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             data_size_for_info_inTable = 1000
 
+
+#        #checking if data_size > then 1, 10, 100 or 1000
+        #to configure limit of info display in table view
+ #       if data_size > 0 and data_size < 10:
+#            data_size_for_info_inTable = data_size
+        
+ #       elif data_size > 10 and data_size < 100:
+  #          data_size_for_info_inTable = data_size
+        
+  #      elif data_size > 100 and data_size < 1000:
+   #         data_size_for_info_inTable = data_size
+        
+   #     elif data_size > 1000:
+            # data_size_for_info_inTable = self.limit_roadObject_info_inTable.value()
+   #         data_size_for_info_inTable = 1000
+        
         # self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
         self.limit_roadObject_info_inTable.setValue(data_size_for_info_inTable)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
@@ -561,9 +579,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
     #     setting size slider widget for objects size not enabled, after features are in layer
             self.changeObjectsSize.setEnabled(False)
-            
+
     #        removing layres just in case there are some actives
     #        self.removeActiveLayers()
+
     
     def onComboMiljoChange(self):
         print('changing to: ', self.comboEnvironment.currentText())
@@ -890,11 +909,18 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.source_more_window = SourceMoreWindow()
         # self.source_more_window.setupUi(self.more_window)
         
+
+        self.isSourceMoreWindowOpen = True
+        
         # self.more_window.show()
         self.source_more_window.show()
         
     def onAnyFeatureSelected(self):
         self.openSkrivWindowBtn.setEnabled(True)
+
+        
+        if self.isSourceMoreWindowOpen:
+            self.source_more_window.action_()
 
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()

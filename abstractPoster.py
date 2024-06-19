@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as ET 
+import xml.etree.ElementTree as ET
 
 class AbstractPoster:
     def __init__(self, token, modified_data):
