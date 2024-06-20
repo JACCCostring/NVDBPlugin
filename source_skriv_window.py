@@ -65,13 +65,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fixMiljo() #setting miljo data
         self.nvdbStatus() #calling nvdb status
 
-        #self.logger = logging.getLogger("test.log")
-        #self.logger.setLevel(logging.DEBUG)
-
         self.my_logger = Logger()
 
         # log to console
-        self.my_logger.write_log("console")
+        self.my_logger.write_log("file")
+
+        # disable logging
+        #self.my_logger.disable_logging()
 
         #set login tab at the start of the plug-in
         self.mainTab.setCurrentIndex(1)
