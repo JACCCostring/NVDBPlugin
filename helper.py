@@ -23,3 +23,7 @@ class Logger:
             file_handler = logging.FileHandler(log_path, mode='w')
             file_handler.setFormatter(self.format)
             self.logger.addHandler(file_handler)
+
+    def disable_logging(self):
+        # disable all logging with level equal to or lower than critical
+        logging.disable(logging.CRITICAL)
