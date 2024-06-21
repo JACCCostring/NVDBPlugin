@@ -25,32 +25,30 @@ except ModuleNotFoundError:
 else:
     print( "HURRA - vi kan importere nvdbapiv3 " ) 
 
-
-from nvdbapiv3 import nvdbFagdata, nvdbVegnett
-from .nvdbapiV3qgis3 import nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
-
-from qgis.PyQt import uic
-from qgis.PyQt import QtWidgets
-from qgis.utils import iface
-from qgis.core import *
-# from PyQt5 import QtCore
-
+#PyQt5 libs
 from PyQt5.QtWidgets import QCompleter, QVBoxLayout, QLabel, QTableWidgetItem, QAbstractItemView
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal, QAbstractTableModel
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
-# from .nvdbskriv_beta import Ui_SkrivDialog
-# from .more_window import Ui_MoreDialog
+#third party libs
+from .nvdbapiV3qgis3 import nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
+from nvdbapiv3 import nvdbFagdata, nvdbVegnett
+
+#user defined libs
 from .source_skriv_window import SourceSkrivDialog
 from .source_more_window import SourceMoreWindow
-
 from .nvdbLesWrapper import AreaGeoDataParser
-#========================================
-#includes need it for development
-# import os
-import json
-import requests
+
+#PyQt5 libs
+from qgis.PyQt import QtWidgets
+from qgis.utils import iface
+from qgis.PyQt import uic
+from qgis.core import *
+
+#python built-in libs
 import threading
+import requests
+import json
 
 # -*- coding: utf-8 -*-
 """
@@ -81,7 +79,6 @@ import threading
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'nvdb_beta_dialog_base.ui'))
-
 
 class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     ready_for_setting_searched_objekt = pyqtSignal(list)
@@ -579,10 +576,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
     #     setting size slider widget for objects size not enabled, after features are in layer
             self.changeObjectsSize.setEnabled(False)
-
-    #        removing layres just in case there are some actives
-    #        self.removeActiveLayers()
-
     
     def onComboMiljoChange(self):
         print('changing to: ', self.comboEnvironment.currentText())
