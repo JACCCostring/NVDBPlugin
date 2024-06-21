@@ -8,7 +8,10 @@ import xml.etree.ElementTree as ET #this is already included in .abstractPoster 
 class DelvisKorrigering(AbstractPoster, QObject):
     new_endringsset_sent = pyqtSignal(list)
     endringsett_form_done = pyqtSignal()
-    
+    response_error = pyqtSignal(str)
+    response_success = pyqtSignal(str)
+
+
     def __init__(self, token, modified_data, extra):
         super().__init__(token, modified_data)
         QObject.__init__(self) #initializing QObject super class
@@ -36,9 +39,20 @@ class DelvisKorrigering(AbstractPoster, QObject):
 #        sending xml data endringset to NVDB waiting queue
 #remember xml_string variable is comming from formXMLRequest method
         response = requests.post(endpoint, headers = header, data = self.xml_string)
-        
-        # print(response.text) #debugin
+        #print("Delviskorrigering reponse: ")
+        #print(response.text) #debugin
+
+        if response.ok != True:
+
+            self.parseXml_prepare_method(response.text)
+            #print(response.text) # Error: Gir ikke beskjed når bruker ikke har tilgang
+            return
+
+
         if response.ok:
+            successful = "Status: OK"
+            self.response_success.emit(successful)
+
             file_stream = io.StringIO(response.text)
 
             tree = ET.parse(file_stream)
@@ -77,7 +91,26 @@ class DelvisKorrigering(AbstractPoster, QObject):
     #        only if start endpoint exist
             if self.tokensBeforePost['start']:
                 self.startPosting()
-        
+
+
+    def parseXml_prepare_method(self, xml_text):
+        # Parse the XML content
+        root = ET.fromstring(xml_text)
+
+        # Defining the namespace input
+        ns = {'fault' :'http://nvdb.vegvesen.no/apiskriv/fault/v1'}
+
+        # Finding the message element and getting its text
+        msg = root.find('.//fault:message', ns)
+
+        if msg is not None:
+            # Sending message using a signal to display to user
+            self.response_error.emit(msg.text)
+
+        else:
+            print("Message element not found")
+
+
     def formXMLRequest(self, egenskaper_list):
         root = ET.Element('endringssett')
         root.attrib = {'xmlns': 'http://nvdb.vegvesen.no/apiskriv/domain/changeset/v3'}

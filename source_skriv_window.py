@@ -17,7 +17,10 @@ from qgis.core import *
 
 import requests, io, json
 import threading
-import os 
+
+import os
+from .helper import Logger
+
 
 from qgis.PyQt import uic
 
@@ -36,6 +39,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.idsOfSelectedItems = [] #list of selected ids from QGIS kart layer
         self.progressWindowInstance = None #windows instance
         self.progressWindowOpened = False #to check if windows is allready opened
+        self.progressWindowOpened = False #to check if windows is already opened
         self.info_after_sent_objects = [] #all endringer sent to NVDB
         self.session_expired = False
         
@@ -45,7 +49,15 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.defaultUILogin() #calling to set default UI login
         self.fixMiljo() #setting miljo data
         self.nvdbStatus() #calling nvdb status
-        
+
+        self.my_logger = Logger()
+
+        # log to console/file
+        self.my_logger.write_log("file")
+
+        # disable logging
+        #self.my_logger.disable_logging()
+
         #set login tab at the start of the plug-in
         self.mainTab.setCurrentIndex(1)
 
@@ -58,9 +70,12 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
 #        deativating edit triger to tableview and change of selection behavior
         self.tableSelectedObjects.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        
+
         self.tableSelectedObjects.setSelectionBehavior(QAbstractItemView.SelectRows)
-        
+
+        self.response_endringsset.setText("")
+
+
         #saving time when application starts to compare later on
         
         #setting hour + 8, for expected time, so we can compare later
@@ -160,7 +175,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         try:
             if not os.environ['logged']:
                 if not os.environ['logged']:
-                    print('not existing !, setting logged ...')
+
+                    self.my_logger.logger.info('not existing !, setting logged ...')
                     os.environ['svv_user_name'] = self.usernameLine.text()
                     os.environ['svv_pass'] = self.passwordLine.text()
                     
@@ -196,8 +212,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         if idToken and refreshToken and accessToken != ' ':
             self.successLogin = True
             
-            print('logged in')
-            
+
+            #print('logged in')
+            self.my_logger.logger.info("logged in")
+
             self.tokens = {
                 'idToken': idToken, 
                 'accessToken': accessToken, 
@@ -220,21 +238,25 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             self.loginMsg.setText('')
         
     def defaultUILogin(self):
+
+        self.response_endringsset.setText("")
+
         if self.successLogin:
             self.statusLabel.setText('Logged')
             self.statusLabel.setStyleSheet("color: green; font: 14pt 'MS Shell Dlg 2';")
             self.loginBtn.setEnabled(False)
             self.usernameLine.setEnabled(False)
-            self.passwordLine.setEnabled(False)
-        
+            #self.passwordLine.setEnabled(False)
+            self.passwordLine.setReadOnly(True)
         else:
             self.statusLabel.setText('må logg på')
             self.statusLabel.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")
             self.loginBtn.setEnabled(True)
             self.usernameLine.setEnabled(True)
-            self.passwordLine.setEnabled(True)
-    
-    
+            #self.passwordLine.setEnabled(True)
+            self.passwordLine.setReadOnly(False)
+
+
     def updateLogin(self):
         self.login()
         
@@ -319,7 +341,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.usernameLine.setEnabled(True)
         self.passwordLine.setEnabled(True)
-    
+
+
     def onMiljoChanged(self):
         self.successLogin = False
         
@@ -602,6 +625,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
         self.thread = threading.Thread(target=self.sennding_endrings_thread)
         self.thread.start()
+
     
     def sennding_endrings_thread(self):
         egenskaperfields = None
@@ -652,21 +676,25 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
                 # creating DelvisKorrigering object
                 self.delvis = DelvisKorrigering(token, egenskaperfields, extra)
-                
+
+
                 # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
-                
+
                 # when xml form finished,  and endringsett_form_done signal is triggered then prepare post
                 self.delvis.endringsett_form_done.connect(self.preparePost)
-                
+
+                # when some events UB happens on DelvisKorrigering class side
+                #self.delvis.response_error.connect(lambda: print('something went wrong! '))
+
                 # calling formXMLRequest method to form delviskorrigering xml template
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
-        
-        
+
+
     def getMiljoSkrivEndpoint(self):
         currentMiljo = self.miljoCombo.currentText()
         url = None
-        
+
         if 'Produksjon' in currentMiljo:
             url = 'https://nvdbapiskriv.atlas.vegvesen.no/rest/v3/endringssett'
         
@@ -718,8 +746,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         #if login time is greater then 8 hours
         #then is not valid anymore, so we update login
         if self.login_time_expired():
-            print('login expired!')
-            
+            #print('login expired!')
+            self.my_logger.logger.info("Login expired! ")
+
             self.login() # update login
             
             #making session expired to True, so when try opening status windows
@@ -742,7 +771,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.progressWindowInstance == None:
             # self.progressWindowInstance = QtWidgets.QDialog()
             self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
-            
+            #print("Hellp")
+            print(self.info_after_sent_objects)
+
             #re-assigning new generated token if session has been expired
             #at this point if session has been expired, then will loop through hole
             #list looking for any token and replacing it with new generated
@@ -770,9 +801,21 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         # self.openProgressWindow()
         
     def preparePost(self):
+        # when some events UB happens on DelvisKorrigering class side
+
+        #self.delvis.response_error.connect(lambda error: print('Error! ', error))
+
+        # Lambda functions pass correct feedback and color to function
+        self.delvis.response_error.connect(lambda error: self.update_status(error, "red"))
+        self.delvis.response_success.connect(lambda successful: self.update_status(successful, "green"))
+
         # prepare_post will send post request after preparing it
         self.delvis.prepare_post()
-        
+
+    def update_status(self, text, color):
+        self.response_endringsset.setText(text)
+        self.response_endringsset.setStyleSheet(f"color: {color}; font: 12pt 'MS Shell Dlg 2';")
+
     def login_time_expired(self):
         #verify if current time and start time hours
         #is over 8 hours difference, 8 hours is the set hours
@@ -800,9 +843,12 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         current_day = current_date.day()
         
         #debug
-        print('current day ', current_day, ' - expected day ', self.expected_day)
-        print('current time ', current_time, ' - expected time ', self.expected_time)
-        
+        #print('current day ', current_day, ' - expected day ', self.expected_day)
+        #print('current time ', current_time, ' - expected time ', self.expected_time)
+
+        self.my_logger.logger.info(f"current day {current_day} - expected day {self.expected_day}")
+        self.my_logger.logger.info(f"current time {current_time} - expected time {self.expected_time}")
+
         #comparing current and expected day, if this case happens
         #to be true, then means another day has passed and API Token
         #has expired even if current and expected hour case happens to be true

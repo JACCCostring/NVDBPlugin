@@ -54,8 +54,7 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
 
     def populate_table(self, endringsetts):
         row = 0
-        
-        # print(endringsetts) #debugin
+        #print(endringsetts) #debugin
         
         for endringsett in endringsetts:
             for item in endringsett:
@@ -107,19 +106,24 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         
         response = requests.get(url, headers = header)
         print('nvdb_endringsset_status_windows: ', response.text)
+        print(response.text)
         
         #if response is not ok, then we just clear all the items
         if response.ok != True:
-            
+            print("Response not ok: ",response)
             if self.tableProgress.rowCount() > 0:
                 self.tableProgress.clear()
-                # self.endringsett.clear()
-                
+                self.endringsett.clear()
+
         if response.ok:
             file_stream = io.StringIO(response.text)
             tree = ET.parse(file_stream)
             root = tree.getroot()
-            
+            print("Response ok: ",response)
+
+
+
+
             concat_str = str('')
             show_melding = str('')
      
@@ -139,6 +143,7 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
             
             if concat_str:
                 self.statusText.setText(concat_str + show_melding)
+
         
     def cancell_endringssett(self):
         if self.tableProgress.rowCount() > 0:
@@ -189,7 +194,10 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         return False
         
     def itemClicked(self):
+        #print("Hellooo")
         if self.isVegObjektThere():
             print('current selected item: ', self.current_item['status_after_sent'])
         
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])
+    
+#     windowProgress.show()

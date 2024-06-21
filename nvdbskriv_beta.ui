@@ -19,7 +19,7 @@
      <x>10</x>
      <y>0</y>
      <width>791</width>
-     <height>741</height>
+     <height>831</height>
     </rect>
    </property>
    <property name="currentIndex">
@@ -91,6 +91,24 @@
       <string>Sjekk Endrings Status</string>
      </property>
     </widget>
+    <widget class="QLabel" name="response_endringsset">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>730</y>
+       <width>611</width>
+       <height>61</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Arial</family>
+      </font>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="tabLogin">
     <attribute name="title">
@@ -148,8 +166,8 @@
       <rect>
        <x>1</x>
        <y>650</y>
-       <width>287</width>
-       <height>36</height>
+       <width>363</width>
+       <height>45</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
@@ -200,7 +218,7 @@
        <x>12</x>
        <y>9</y>
        <width>262</width>
-       <height>28</height>
+       <height>36</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -235,7 +253,7 @@
        <x>12</x>
        <y>79</y>
        <width>275</width>
-       <height>28</height>
+       <height>36</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
