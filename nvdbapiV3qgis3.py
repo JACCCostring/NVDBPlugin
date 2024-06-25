@@ -32,6 +32,7 @@ class memlayerwrap():
         self.active = False
         self.geomtype = geomtype
         self.layer = QgsVectorLayer(geomtype + '?crs=epsg:25833&index=yes&' + egenskapdef, navn, 'memory')
+
         
     def addFeature(self, egenskaper, qgisgeom):
         if not self.active:
@@ -45,10 +46,10 @@ class memlayerwrap():
             
         success = self.layer.addFeature( feat )
         if not success: 
-            print( "Klarte ikke føye til feature") 
-            print( 'egenskaper:', egenskaper ) 
-            print( 'geometri', qgisgeom ) 
-        
+            print( "Klarte ikke føye til feature")
+            print( 'egenskaper:', egenskaper )
+            print( 'geometri', qgisgeom )
+
         
         return( success ) 
         
@@ -153,7 +154,7 @@ def nvdbFeat2qgisProperties( mittobj, egIds, qgisEg):
         # if isinstance( egVal, str) and len( egVal ) > max_text_length: 
         #     egVal = json.dumps( f'Egenskapsverdi { egType } SLETTET, tekstfelt med lengde {len(egVal)} > max_text_length {max_text_length} tegn'  )
         #     print( egVal )
-            
+
         qgisprops.append( egVal )
     
     return qgisprops
@@ -244,9 +245,9 @@ def nvdb2kart( nvdbref, iface, kunfagdata=True, kunvegnett=False,
             nvdbsok2qgis( sokeobj, lagnavn=lagnavn, **kwargs)  
         
     else: 
-        print( "kjente ikke igjen", nvdbref, 
-                        "som NVDB referanse eller søkeobjekt") 
-        
+        print( "kjente ikke igjen", nvdbref,
+                        "som NVDB referanse eller søkeobjekt")
+
 
 
 def nvdbsok2qgis( sokeobjekt, lagnavn=None, 
@@ -318,9 +319,9 @@ def nvdbsok2qgis( sokeobjekt, lagnavn=None,
     # Kortform geometritype 
     gt = geometritype
     
-    if debug: 
+    if debug:
         print( "Her skal det debugges, ja")
-    
+
     # Sjekker input data    
     gtyper = [ 'flate', 'linje', 'punkt', 'vegnett', 'alle', 'beste', 'vegkart' ]
     if gt and isinstance(gt, str ) and gt.lower() not in gtyper: 

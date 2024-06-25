@@ -20,23 +20,6 @@ import threading
 import os
 from .helper import Logger
 
-#home_dir = Path.home()
-#log_path = home_dir / 'Documents' / 'log.log'
-
-#logger = logging.getLogger(__name__)
-
-#logging.basicConfig(
-  #  filename= home_dir / 'Documents' / 'log.log',
- #   filemode='w',
-  #  format="%(asctime)s -%(levelname)s - %(message)s"
-#)
-
-
-#logger.debug("Harmless debug Message")
-#logger.info("Just an information")
-#logger.warning("Its a Warning")
-#logger.error("Did you try to divide by zero")
-#logger.critical("Internet is down")
 
 from qgis.PyQt import uic
 
@@ -68,10 +51,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.my_logger = Logger()
 
         # log to console
-        self.my_logger.write_log("file")
+        self.my_logger.write_log("console")
 
-        # disable logging
-        #self.my_logger.disable_logging()
+        self.my_logger.disable_logging()
 
         #set login tab at the start of the plug-in
         self.mainTab.setCurrentIndex(1)
@@ -209,23 +191,26 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
         # print(os.environ['svv_user_name'])
         # print(os.environ['svv_pass'])
-        
+
+
         self.usernameLine.setText(username)
         self.passwordLine.setText(password)
         
         tkManager = TokenManager(username, password, url)
         
         tokenObj = tkManager.getToken()
-        
+
         # print(tokenObj) debug
-        
+        self.my_logger.logger.debug(f"tokenObj: {tokenObj}")
+
         idToken = tokenObj['idToken']
         refreshToken = tokenObj['refreshToken']
         accessToken = tokenObj['accessToken']
                 
         if idToken and refreshToken and accessToken != ' ':
             self.successLogin = True
-            
+
+            self.my_logger.enable_logging()
             #print('logged in')
             self.my_logger.logger.info("logged in")
             
@@ -321,7 +306,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             }
             
     #        print(self.apiLes, self.apiSkriv)
-            
+            #self.my_logger.logger.info(f"{self.apiLes}, {self.apiSkriv}")
+
             self.defaultUISettings() #callinf default UI settings  after check status
     
     def defaultUISettings(self):
@@ -511,7 +497,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     if str(nvdbid) in str(feature[field.name()]):
                         for feat_field in feature.fields():
                             # print(feat_field.name(), ': ', feature[feat_field.name()])
-                            
+                            self.my_logger.logger.info(f"{feat_field.name()} : {feature[feat_field.name()]}")
                             if 'Geometri' in feat_field.name():
                                 self.geometry_found = feature.geometry().asWkt()
                                 
@@ -552,7 +538,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     if str(nvdbid) in str(feature[field.name()]):
                         for feat_field in feature.fields():
                             # print(feat_field.name(), ': ', feature[feat_field.name()])
-                            
+                            self.my_logger.logger.info(f"{feat_field.name()} : {feature[feat_field.name()]}")
+
                             if 'Geometri' in feat_field.name():
                                 self.geometry_found = feature.geometry().asWkt()
                                 
@@ -783,8 +770,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.progressWindowInstance == None:
             # self.progressWindowInstance = QtWidgets.QDialog()
             self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
-            #print("Hellp")
-            print(self.info_after_sent_objects)
+            self.my_logger.logger.info(self.info_after_sent_objects)
             #re-assigning new generated token if session has been expired
             #at this point if session has been expired, then will loop through hole
             #list looking for any token and replacing it with new generated
@@ -802,7 +788,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
             # self.progressWindowOpened = True
             
-#        only shows windows again if this is allready opened
+#        only shows windows again if this is already opened
         # if self.progressWindowOpened and self.progressWindowInstance:
         #    self.progressWindowInstance.show()
     
@@ -856,8 +842,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         #print('current day ', current_day, ' - expected day ', self.expected_day)
         #print('current time ', current_time, ' - expected time ', self.expected_time)
 
-        self.my_logger.logger.info(f"current day {current_day} - expected day {self.expected_day}")
-        self.my_logger.logger.info(f"current time {current_time} - expected time {self.expected_time}")
+        self.my_logger.logger.debug(f"current day {current_day} - expected day {self.expected_day}")
+        self.my_logger.disable_logging()
+        self.my_logger.logger.debug(f"current time {current_time} - expected time {self.expected_time}")
+
 
         #comparing current and expected day, if this case happens
         #to be true, then means another day has passed and API Token
