@@ -53,7 +53,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.my_logger = Logger()
 
         # log to console/file
-        self.my_logger.write_log("file")
+        self.my_logger.write_log("console")
 
         # disable logging
         #self.my_logger.disable_logging()
@@ -578,6 +578,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                         return value
     
     def getVegObjektRelasjoner(self, nvdbid):
+        #this method only  parsed road object's relationship 
+        #allready laying  on the fetched data in self.data, not generic ones
+        
         relation_collection = {}
         relation_id = None
         
