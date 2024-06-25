@@ -191,14 +191,30 @@ class AreaGeoDataParser:
                         return value
     
     @classmethod
-    def get_relationship_type(self, type: int = 0):
+    def get_dataCataloge_roadObjectType_parents(self, type: int = 0):
         endpoint = self.get_env() + '/' + 'vegobjekttyper' + '/' + str(type)
         header = {
         'ContentType': 'application/json',
         'X-Client': 'ny klient Les'
         }
+        
         params = {'inkluder': 'relasjonstyper'}
         
         response = requests.get(endpoint, headers = header, params = params)
         
-        print(response)
+        if response.ok:
+            for in_content in response.json():
+                if in_content == 'relasjonstyper':
+                    relationtype = response.json()[in_content]
+                    try:
+                        foreldre = relationtype['foreldre']
+                        for object_type in foreldre:
+                            for items, value_items in object_type.items():
+                                if items == 'innhold':
+                                    for itm in object_type[items]['type']:
+                                        print(itm, object_type[items]['type'][itm])
+
+                    except:
+                        pass
+                    
+        return {}
