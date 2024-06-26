@@ -1,10 +1,16 @@
 import sys
 import os
 import inspect
+#from .helper import Logger
 
 nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 nvdblibrary = nvdblibrary.replace('\\', '/')
 nvdblibrary = nvdblibrary + '/nvdbapi'
+
+#my_logger = Logger()
+#my_logger.write_log("console")
+#my_logger.disable_logging()
+
 
 ## Hvis vi ikke klarer å importere nvdbapiv3 så prøver vi å føye
 ## mappen nvdblibrary til søkestien. 
@@ -12,18 +18,22 @@ try:
     import nvdbapiv3
 except ModuleNotFoundError:
     print( "Fant ikke nvdbapiv3 i sys.path, legger til mappen", nvdblibrary)
+    #my_logger.logger.info(f"Fant ikke nvdbapiv3 i sys.path, legger til mappen {nvdblibrary}")
     sys.path.append( nvdblibrary ) 
 
     try: 
         import nvdbapiv3
     except ModuleNotFoundError as e:
         print( "\nImport av nvdbapiv3 feiler for", nvdblibrary  )
+        #my_logger.logger.info(f"\nImport av nvdbapiv3 feiler for {nvdblibrary}")
         raise ModuleNotFoundError( "==> Variabel nvdblibrary skal peke til mappen https://github.com/LtGlahn/nvdbapi-V3  <==" )
             
     else: 
         print( "SUKSESS - kan importere nvdbapiv3 etter at vi la til", nvdblibrary, "i sys.path" )
+        #my_logger.logger.info(f"SUKSESS - kan importere nvdbapiv3 etter at vi la til {nvdblibrary} i sys.path")
 else:
-    print( "HURRA - vi kan importere nvdbapiv3 " ) 
+    print( "HURRA - vi kan importere nvdbapiv3 " )
+    #my_logger.logger.info("HURRA - vi kan importere nvdbapiv3")
 
 
 from nvdbapiv3 import nvdbFagdata, nvdbVegnett
@@ -97,7 +107,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
-        
+
+        #self.my_logger = Logger()
+        #self.my_logger.write_log("console")
+       # self.my_logger.disable_logging()
+
         #setting default road object limit info to 1
         self.limit_roadObject_info_inTable.setValue(1)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
@@ -142,7 +156,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.comboEnvironment.setCurrentText('Akseptansetest')
 #        setting an environment for default
         AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
-        
+
 #        setting up  combobox default values
         self.operatorCombo.addItems({'ikke verdi', '>', '<', '>=', '<=', '=', '!='})
         self.operatorCombo.setCurrentIndex(-1)
@@ -174,6 +188,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             if os.environ['logged']:
                 print('there is a session !, removing it ...')
+                #self.my_logger.logger.info("There is a session!, removing it ...")
                 os.environ['svv_username'] = ''
                 os.environ['svv_pass'] = ''
                 os.environ['logged'] = ''
@@ -244,6 +259,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         except Exception:
             print('datakatalog ikke lastett opp!')
+            #self.my_logger.logger.debug("datakatalog ikke lastet opp!")
             
         return listObjectNames
         
@@ -264,6 +280,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         except Exception:
             print('flyke ikke lastett opp!')
+            #self.my_logger.logger.debug("fylke ikke lastet opp!")
+
             
         return listOfCountiesNames
         
@@ -284,7 +302,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         except Exception:
             print('kommuner ikke lastett opp!')
-            
+            #self.my_logger.logger.debug("kommuner ikke lastet opp!")
+
         return listOfCommunities
         
     def checkComunitiesInCounty(self):
@@ -500,6 +519,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             self.current_num_road_objects = len(sliced_data)
         print('size: ', len(sliced_data))
+        #self.my_logger.logger.info(f"Size: {len(sliced_data)}")
+
         objects_for_ui = self.makeMyDataObjects(sliced_data)
         
         #undefined behavior when emiting signal, then prepareObjectsForUI method
@@ -566,9 +587,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         is_nvdbfield_valid = self.verifyNvdbField(self.nvdbIdField.text())
         print('is nvdb field valid: ', is_nvdbfield_valid)
-        
+        #self.my_logger.logger.info(f"is nvdb field valid: {is_nvdbfield_valid}")
+
         if is_nvdbfield_valid:
             print(AreaGeoDataParser.get_env())
+            #self.my_logger.logger.info(AreaGeoDataParser.get_env())
+
             egenskaper = AreaGeoDataParser.egenskaper(self.listOfnvdbObjects[self.nvdbIdField.text()])
         
             for key, value in egenskaper.items():
@@ -586,9 +610,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def onComboMiljoChange(self):
         print('changing to: ', self.comboEnvironment.currentText())
+        #self.my_logger.logger.info(f"Changing to: {self.comboEnvironment.currentText()}")
+
         # if len(self.listOfnvdbObjects) > 0:
         AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
         print(AreaGeoDataParser.get_env())
+        #self.my_logger.logger.info(AreaGeoDataParser.get_env())
         
     def verifyNvdbField(self, vegobjekt_type):
         for key, value in self.listOfnvdbObjects.items():
@@ -663,6 +690,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             except Exception: #try ends here ...
                 print('exception!')
+                #self.my_logger.logger.debug("exception")
                 
          # making it zero again
         self.times_to_run = 0
