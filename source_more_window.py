@@ -1,16 +1,13 @@
-# from PyQt5 import QtCore
 from qgis.PyQt import uic
 from qgis.utils import iface
 
 import os
 
-# import inspect
-
-# from .more_window import Ui_MoreDialog
+#user defined modules
+from .nvdbLesWrapper import AreaGeoDataParser
 
 FORM_CLASS, BASE_CLASS = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'more_window.ui'))
-
 
 class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     def __init__(self):
@@ -51,17 +48,21 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
 
     def make_relationship_vegobjekter(self):
         # sammenkobling code here ...
-
-        # getting iface instance, to acces QGIS internals
-        layer = iface.activeLayer()
-
-        # looping through all selected features on QGIS kart
-        for features in layer.selectedFeatures():
-            for field in layer.fields():
-                if field.name() == 'nvdbid':
-                    nvdb_id = features[field.name()]
-                    print(nvdb_id)
-
+        pass
+    
+    def feed_data(self, component_type: str = str(), data: dict = {}):
+        if component_type == 'relation':
+           #relation code here ...
+            AreaGeoDataParser.set_env('test') #setting environment before use
+            
+            possible_relation = AreaGeoDataParser.get_possible_parents(int(data['objekttype']))
+            
+            print(possible_relation)
+            
+        if component_type == 'location':
+            #location code here ...
+            pass
+        
     # internal own class methods for inside uses
     def setup_default_tab_index_flags(self):
         if self.more_main_tab.currentIndex() == 0:  # 0 stedfesting tab

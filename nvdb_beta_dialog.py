@@ -909,6 +909,20 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.source_more_window.show()
         
     def onAnyFeatureSelected(self):
+        layer = iface.activeLayer() #to get current active layer
+        self.lastRoadObjectSelectedFromLayer: dict = {} #to temp storage current feature selected
+        
+        #going through features in current active layer
+        for feature in layer.selectedFeatures():
+            for field in feature.fields():
+                if field.name() == 'nvdbid':
+                    for road_object in self.data:
+                        if road_object['nvdbId'] == feature[field.name()]:
+                            self.lastRoadObjectSelectedFromLayer = road_object
+                            
+                            if self.source_more_window:
+                                self.source_more_window.feed_data('relation', self.lastRoadObjectSelectedFromLayer)
+                                
         self.openSkrivWindowBtn.setEnabled(True)
 
         

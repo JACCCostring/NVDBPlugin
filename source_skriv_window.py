@@ -18,9 +18,8 @@ from qgis.core import *
 import requests, io, json
 import threading
 
-import os
 from .helper import Logger
-
+import os
 
 from qgis.PyQt import uic
 

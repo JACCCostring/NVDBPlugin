@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="location_tab">
     <attribute name="title">
@@ -41,12 +41,12 @@
     <rect>
      <x>20</x>
      <y>630</y>
-     <width>101</width>
+     <width>141</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
-    <string>Koble Vegobjekt</string>
+    <string>not implemented yet</string>
    </property>
   </widget>
  </widget>

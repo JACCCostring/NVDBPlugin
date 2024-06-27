@@ -191,8 +191,11 @@ class AreaGeoDataParser:
                         return value
     
     @classmethod
-    def get_dataCataloge_roadObjectType_parents(self, type: int = 0):
+    def get_possible_parents(self, type: int = 0) -> dict:
+        appended_parents = list = []
+
         endpoint = self.get_env() + '/' + 'vegobjekttyper' + '/' + str(type)
+
         header = {
         'ContentType': 'application/json',
         'X-Client': 'ny klient Les'
@@ -211,10 +214,14 @@ class AreaGeoDataParser:
                         for object_type in foreldre:
                             for items, value_items in object_type.items():
                                 if items == 'innhold':
-                                    for itm in object_type[items]['type']:
-                                        print(itm, object_type[items]['type'][itm])
+                                    type_field = object_type[items]['type']
+
+                                    if 'objektliste_dato' in type_field:
+                                        del type_field['objektliste_dato']
+                                        
+                                    appended_parents.append(type_field)
 
                     except:
                         pass
-                    
-        return {}
+
+        return appended_parents
