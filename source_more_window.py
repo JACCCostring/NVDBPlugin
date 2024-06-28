@@ -1,6 +1,8 @@
 from qgis.PyQt import uic
 from qgis.utils import iface
 
+from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtCore import pyqtSignal
 import os
 
 #user defined modules
@@ -10,6 +12,8 @@ FORM_CLASS, BASE_CLASS = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'more_window.ui'))
 
 class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
+    new_relation_event = pyqtSignal(int, str) #signal for sending selected items
+    
     def __init__(self):
         super().__init__()
         
@@ -22,10 +26,15 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         
         #setting default tab index flag according to current index
         self.setup_default_tab_index_flags()
+        
+        #setting default values to table relation show
+        self.setup_default_table_relation()
+        
         #end of setting default index flag
         
         self.more_main_tab.currentChanged.connect(self.activate_current_tab) #when current tab changes
-
+        self.table_relation_show.clicked.connect(self.item_clicked) #when any item is clicked in table
+        
     def activate_current_tab(self, index):
         if self.more_main_tab.currentIndex() == 0:
             self.location_tab_active = True
@@ -55,13 +64,35 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
            #relation code here ...
             AreaGeoDataParser.set_env('test') #setting environment before use
             
+            #getting possible parents
             possible_relation = AreaGeoDataParser.get_possible_parents(int(data['objekttype']))
             
-            print(possible_relation)
+            #populating relation component with possible parents
+            self.populate_relation_component(possible_relation)
             
         if component_type == 'location':
             #location code here ...
             pass
+    
+    def populate_relation_component(self, data: dict = {}):
+        row: int = 0
+        
+        self.table_relation_show.setRowCount(len(data))
+        
+        for item in data:
+            id_item = QTableWidgetItem(str(item['id'])) #QStandardItem accepts strings, so we converted with str() function
+            name_item = QTableWidgetItem(item['navn'])
+            
+            self.table_relation_show.setItem(row, 0, id_item)
+            self.table_relation_show.setItem(row, 1, name_item)
+            
+            row += 1
+    
+    def item_clicked(self, item):
+        id = int(self.table_relation_show.item(item.row(), 0).text())
+        name = self.table_relation_show.item(item.row(), 1).text()
+        
+        self.new_relation_event.emit(id, name)
         
     # internal own class methods for inside uses
     def setup_default_tab_index_flags(self):
@@ -76,3 +107,9 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         else:
             self.relation_tab_active = True
             self.location_tab_active = False
+            
+    def setup_default_table_relation(self):
+        label_headers = ['Objekttype', 'Navn']
+        self.table_relation_show.setColumnCount(2)
+        self.table_relation_show.setHorizontalHeaderLabels(label_headers)
+        

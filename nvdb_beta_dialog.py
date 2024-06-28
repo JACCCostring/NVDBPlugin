@@ -104,6 +104,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.skrivWindowOpened = False #making windows opened false
 
         self.isSourceMoreWindowOpen = False #making more window flag false
+        self.after_possible_parent_selected = False #to controll that parent is or not selected 
+        self.possible_parent_type = 0 #to storage possible parent relation from source_more_window
+        self.possible_parent_name = str() # to store name of possible parent relation
 
 #        development starts here
 #        setting up all data need it for starting up
@@ -331,7 +334,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.tableViewResultModel.clear()
 
 #        removing layres just in case there are some actives, before a new search
-        self.removeActiveLayers()
+        # self.removeActiveLayers()
 
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
@@ -908,27 +911,55 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # self.more_window.show()
         self.source_more_window.show()
         
+        #connecting signals from more_window instance
+        self.source_more_window.new_relation_event.connect(self.handle_relation)
+        
     def onAnyFeatureSelected(self):
         layer = iface.activeLayer() #to get current active layer
-        self.lastRoadObjectSelectedFromLayer: dict = {} #to temp storage current feature selected
+        lastRoadObjectSelectedFromLayer: dict = {} #to temp storage current feature selected
         
         #going through features in current active layer
-        for feature in layer.selectedFeatures():
-            for field in feature.fields():
-                if field.name() == 'nvdbid':
-                    for road_object in self.data:
-                        if road_object['nvdbId'] == feature[field.name()]:
-                            self.lastRoadObjectSelectedFromLayer = road_object
-                            
-                            if self.source_more_window:
-                                self.source_more_window.feed_data('relation', self.lastRoadObjectSelectedFromLayer)
+        #and this only happens if possible parent is not selected yet
+        #from source_more_window instance
+        if not self.after_possible_parent_selected:
+            for feature in layer.selectedFeatures():
+                for field in feature.fields():
+                    if field.name() == 'nvdbid':
+                        for road_object in self.data:
+                            if road_object['nvdbId'] == feature[field.name()]:
+                                lastRoadObjectSelectedFromLayer = road_object
+                                self.current_selected_type = road_object['objekttype']
                                 
+                                try:
+                                    
+                                    if self.source_more_window:
+                                        self.source_more_window.feed_data('relation', lastRoadObjectSelectedFromLayer)
+                                        
+                                except AttributeError:
+                                    pass
+        
+        #do something else with possible parents type and name
+        #gotten from source_more_window
+        if self.after_possible_parent_selected:
+            #from here and on, we have to thnk how to get the effects
+            #for next road object we will connect
+            print(self.current_selected_type, '==', self.possible_parent_type)
+            
+            if self.possible_parent_type == self.current_selected_type:
+                print('same type was selected')
+        
         self.openSkrivWindowBtn.setEnabled(True)
 
         
         if self.isSourceMoreWindowOpen:
             self.source_more_window.action_()
-
+    
+    def handle_relation(self, type: int = int(), name: str = str()):
+        self.after_possible_parent_selected = True
+        
+        self.possible_parent_type = type
+        self.possible_parent_name = name
+    
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
     

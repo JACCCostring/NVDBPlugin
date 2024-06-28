@@ -34,6 +34,22 @@
     <attribute name="title">
      <string>Kobling</string>
     </attribute>
+    <widget class="QTableWidget" name="table_relation_show">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>451</width>
+       <height>281</height>
+      </rect>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QPushButton" name="click_btn">
