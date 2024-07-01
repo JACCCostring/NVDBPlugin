@@ -913,10 +913,44 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #connecting signals from more_window instance
         self.source_more_window.new_relation_event.connect(self.handle_relation)
+    
+    
+    def get_related_parent(self, nvdbid: int = int()) -> dict:
+        #to get the current relationship on the current fetched data
+        #from the last search
+        
+        relation_collection_parent = {}
+        relation_id = None
+        
+        for refdata in self.data:
+            for key, value in refdata.items():
+                if key == 'nvdbId':
+                    if str(refdata[key]) == str(nvdbid):
+                        for field_name, field_values in refdata.items():
+                            if field_name == 'relasjoner':
+                                parent = field_values['foreldre']
+                                
+                                #parents is a list
+                                for item in parent:
+                                    for item_name, item_value in item.items():
+                                        if item_name == 'type':
+                                            type = item_value
+                                            
+                                            type_id = type['id']
+                                            type_name = type['navn']
+                                            
+                                            relation_collection_parent[type_id] = type_name
+                                
+        return relation_collection_parent
         
     def onAnyFeatureSelected(self):
+        #start of relation code
+        
         layer = iface.activeLayer() #to get current active layer
-        lastRoadObjectSelectedFromLayer: dict = {} #to temp storage current feature selected
+        # roadObjectSelectedFromLayer: dict = {} #to temp storage current feature selected
+        
+        parent_object_nvdbid: int = int()
+        child_object_nvdbid: int = int()
         
         #going through features in current active layer
         #and this only happens if possible parent is not selected yet
@@ -927,27 +961,45 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     if field.name() == 'nvdbid':
                         for road_object in self.data:
                             if road_object['nvdbId'] == feature[field.name()]:
-                                lastRoadObjectSelectedFromLayer = road_object
-                                self.current_selected_type = road_object['objekttype']
+                                roadObjectSelectedFromLayer = road_object
+                                child_object_nvdbid = road_object['nvdbId']
                                 
                                 try:
                                     
                                     if self.source_more_window:
-                                        self.source_more_window.feed_data('relation', lastRoadObjectSelectedFromLayer)
+                                        relations = self.get_related_parent(child_object_nvdbid)
+                                        print(relations)
+                                        
+                                        self.source_more_window.feed_data('relation', roadObjectSelectedFromLayer)
                                         
                                 except AttributeError:
                                     pass
         
         #do something else with possible parents type and name
-        #gotten from source_more_window
+        #gotten from source_more_window, when parent road object
+        #is already selected
         if self.after_possible_parent_selected:
             #from here and on, we have to thnk how to get the effects
             #for next road object we will connect
-            print(self.current_selected_type, '==', self.possible_parent_type)
-            
-            if self.possible_parent_type == self.current_selected_type:
-                print('same type was selected')
+            for feature in layer.selectedFeatures():
+                for field in feature.fields():
+                    if field.name() == 'nvdbid':
+                        for road_object in self.data:
+                            if road_object['nvdbId'] == feature[field.name()]:
+                                if road_object['objekttype'] == self.possible_parent_type:
+                                    parent_object_nvdbid = road_object['nvdbId']
         
+        #end of relation code
+        
+        
+        #may be start of location code
+        
+        
+        
+        #may be end of relation code
+        
+        #enabeling open skriv window button, to make the effect: ONLY
+        #when any feaure from QGIS cart/map is selected
         self.openSkrivWindowBtn.setEnabled(True)
 
         
