@@ -35,6 +35,7 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.more_main_tab.currentChanged.connect(self.activate_current_tab) #when current tab changes
         self.table_relation_show.clicked.connect(self.item_clicked) #when any item is clicked in table
         
+        
     def activate_current_tab(self, index):
         if self.more_main_tab.currentIndex() == 0:
             self.location_tab_active = True
@@ -59,7 +60,7 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         # sammenkobling code here ...
         pass
     
-    def feed_data(self, component_type: str = str(), data: dict = {}):
+    def feed_data(self, component_type: str = str(), data: dict = {}, active_parent: str = str()):
         if component_type == 'relation':
            #relation code here ...
             AreaGeoDataParser.set_env('test') #setting environment before use
@@ -67,8 +68,16 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
             #getting possible parents
             possible_relation = AreaGeoDataParser.get_possible_parents(int(data['objekttype']))
             
+            #before population, check if object is linked to aparent
+            #if it's then do not allow selection
+            # if active_parent:
+            #     self.table_relation_show.setEnabled(False)
+            
             #populating relation component with possible parents
             self.populate_relation_component(possible_relation)
+            
+            for parent_name, parent_id in active_parent.items():
+                self.current_linked_parent_lbl.setText(parent_name)
             
         if component_type == 'location':
             #location code here ...

@@ -939,7 +939,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                             type_id = type['id']
                                             type_name = type['navn']
                                             
-                                            relation_collection_parent[type_id] = type_name
+                                            relation_collection_parent[type_name] = type_id
                                 
         return relation_collection_parent
         
@@ -961,16 +961,18 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     if field.name() == 'nvdbid':
                         for road_object in self.data:
                             if road_object['nvdbId'] == feature[field.name()]:
-                                roadObjectSelectedFromLayer = road_object
+                                roadObjectSelectedFromLayer = road_object #storaging road object just in case
+                                
                                 child_object_nvdbid = road_object['nvdbId']
                                 
                                 try:
                                     
                                     if self.source_more_window:
                                         relations = self.get_related_parent(child_object_nvdbid)
-                                        print(relations)
                                         
-                                        self.source_more_window.feed_data('relation', roadObjectSelectedFromLayer)
+                                        active_parent = relations
+                                        
+                                        self.source_more_window.feed_data('relation', roadObjectSelectedFromLayer, active_parent)
                                         
                                 except AttributeError:
                                     pass
