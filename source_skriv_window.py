@@ -363,7 +363,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 selectedObjects.append(object)
                 
-#         looping throug selectedObjects from Layer       
+#         looping through selectedObjects from Layer
         for object in selectedObjects:
             
             if 'nvdbid' in object:

@@ -126,7 +126,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.filterByLineEdit.setEnabled(False)
         self.openSkrivWindowBtn.setEnabled(False) #setting not enabled before search is done!
         self.changeObjectsSize.setEnabled(False)
-        
+
+        # Use event to stop thread
+        self.exit_event = threading.Event()
+
 #        dictionary with andpoints necessary for environment
         self.environment = {
             'Produksjon': 'https://nvdbapiles-v3.atlas.vegvesen.no',
@@ -343,11 +346,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.kommuneField.setCompleter(autoCompleter)
         
     def searchObj(self):
+        self.exit_event.clear()
+
 #        here search is prepared depending on which filters user has stablished
         
         #clearing tableview results everytime user search new road object
-        if self.tableViewResultModel.rowCount() > 0:
-            self.tableViewResultModel.clear()
+        #if self.tableViewResultModel.rowCount() > 0:
+        self.tableViewResultModel.clear()
 
 #        removing layres just in case there are some actives, before a new search
         self.removeActiveLayers()
@@ -410,13 +415,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             egenskAndVerdi = f"egenskap({egensk}){operator}{verdi}"
             
             self.v.filter( {'egenskap': egenskAndVerdi })
-        
-        #threading
+
+        # threading
         target = self.handle_threaded_search_objeckt
-        
-        self.thread_search_objekt = threading.Thread(target = target)
-        
-        #warn of search has started
+        self.thread_search_objekt = threading.Thread(target=target)
+        self.thread_search_objekt.start()
+        #self.thread_search_objekt.join()
+
+
+    #warn of search has started
         self.search_status_label.setText('Samling vegobjekter ...')
         
         #warning of search status has collected road objects
@@ -424,39 +431,56 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #making sure QProgressbar is set to zero before setting new values
         #on a new object search
-        if self.search_object_progress_bar.value() > 0:
+        if self.search_object_progress_bar.value() >= 0:
             self.search_object_progress_bar.setValue(0)
-        
+
         #enabling QSlider for road object limiter
-        #it's disabled at the begining of the program
+        #it's disabled at the beginning of the program
         self.limit_roadObject_info_inTable.setEnabled(True)
         
         #connecting signal when objects ready for UI
         self.ready_for_setting_searched_objekt.connect(self.prepareObjectsForUI)
-        
-        self.thread_search_objekt.start()
-        # self.thread_search_objekt.join()
-        
-#        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
-        
+
+        if self.searchObjectBtn.text() == "Søk Objekt":
+            self.searchObjectBtn.setText("Avbryt Søk")
+            self.searchObjectBtn.setStyleSheet("background-color : red")
+
+        else:
+            self.searchObjectBtn.setText("Søk Objekt")
+            self.searchObjectBtn.setStyleSheet("background-color : white; color : green")
+            self.visKartCheck.setEnabled(False)
+            self.limit_roadObject_info_inTable.setEnabled(False)
+
+            # Thread for setting exit_event to true so search_objects_thread is stopped
+            self.t2 = threading.Thread(self.interrupt_thread())
+            self.t2.start()
+
+
+        #        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
         if self.skrivWindowOpened:
             self.skrivWindowInstance.hide()
             self.skrivWindowInstance = None
             self.skrivWindowOpened = False
             
-            #this btn needs to be dissable if skriv windows was opened before the search
+
+            #this btn needs to be disabled if skriv windows was opened before the search
             self.openSkrivWindowBtn.setEnabled(False)
-    
+
+    # method to set thread event
+    def interrupt_thread(self):
+        print("INTERRUPT!")
+        self.exit_event.set()
+
     def handle_threaded_search_objeckt(self):
         #retrieve data with applied filters
         steps = 1
         sliced_data = []
         self.data = None
-        self.times_to_run: int = 0 
-        
-        self.data = self.v.to_records()
-        
-        #collecting size of the current onject search, it can be different for 
+        self.times_to_run: int = 0
+        self.data = self.v.to_records(self.exit_event)
+
+
+        #collecting size of the current onject search, it can be different for
         #all of the road objects in NVDB
         data_size = len(self.data)
         
@@ -465,31 +489,17 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #emiting signal when total road objects are collected
         self.amount_of_vegobjekter_collected.emit(data_size)
-
-        # checking the amount of vegobjects found
-        # to configure limit of info display in table view
-        if data_size > 0 and data_size < 1000:
-            data_size_for_info_inTable = data_size
-
-        else:
-            data_size_for_info_inTable = 1000
-
-
-#        #checking if data_size > then 1, 10, 100 or 1000
+        
+        #checking the data_size
         #to configure limit of info display in table view
- #       if data_size > 0 and data_size < 10:
-#            data_size_for_info_inTable = data_size
+        if data_size >= 0 and data_size <= 1000:
+            data_size_for_info_inTable = data_size
         
- #       elif data_size > 10 and data_size < 100:
-  #          data_size_for_info_inTable = data_size
-        
-  #      elif data_size > 100 and data_size < 1000:
-   #         data_size_for_info_inTable = data_size
-        
-   #     elif data_size > 1000:
+        else:
             # data_size_for_info_inTable = self.limit_roadObject_info_inTable.value()
-   #         data_size_for_info_inTable = 1000
-        
+            data_size_for_info_inTable = 1000
+            print(f"Data_size is {data_size}")
+
         # self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
         self.limit_roadObject_info_inTable.setValue(data_size_for_info_inTable)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
@@ -526,6 +536,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.ready_for_setting_searched_objekt.emit(objects_for_ui)
 
+
     def makeMyDataObjects(self, data):
         listObjects = []
         
@@ -537,7 +548,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 listObjects.append(obj)
           
         return listObjects
-        
+
+
     def onVisIKart(self, checked):
         if checked:
         #     #threading
@@ -562,7 +574,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.removeActiveLayers()
 #            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
             self.openSkrivWindowBtn.setEnabled(False)
-    
+
     def showing_object_in_map(self):
         pass
         # self.v.refresh()
@@ -618,6 +630,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         return False
         
     def prepareObjectsForUI(self, objects):
+        if not self.exit_event.is_set():
+            self.searchObjectBtn.setText("Søk Objekt")
+            self.searchObjectBtn.setStyleSheet("background-color : white; color : green")
+
         if self.times_to_run == 1:
             columns = self.parseHeaders(objects)
             index = self.indexHaders(columns)

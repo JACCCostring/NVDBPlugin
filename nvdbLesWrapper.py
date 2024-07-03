@@ -1,4 +1,7 @@
-import requests, json, io
+import io
+import json
+import requests
+
 
 class AreaGeoDataParser:
     def __init__(self):
@@ -120,30 +123,33 @@ class AreaGeoDataParser:
         self.env = env
 
     @classmethod
-    def getDatakatalogVersion(self, currentMiljo):
-        header = {'X-Client': 'ny klient Les'}
-        json_data = None
+    def get_dataCataloge_roadObjectType_parents(self, type: int = 0) -> dict:
+        road_objects_possible_parents: list = []
 
-        if 'Produksjon' in currentMiljo:
-            url = 'https://nvdbapiles-v3.atlas.vegvesen.no'
-
-        if 'Akseptansetest' in currentMiljo:
-            url = 'https://nvdbapiles-v3.test.atlas.vegvesen.no'
-
-        if 'Utvikling' in currentMiljo:
-            url = 'https://nvdbapiles-v3.utv.atlas.vegvesen.no'
-
-        endpoint = url + '/vegobjekttyper/versjon'
-
-        response = requests.get(endpoint, headers=header)
-
+        endpoint = self.get_env() + '/' + 'vegobjekttyper' + '/' + str(type)
+        header = {
+            'ContentType': 'application/json',
+            'X-Client': 'ny klient Les'
+        }
+        params = {'inkluder': 'relasjonstyper'}
+        response = requests.get(endpoint, headers=header, params=params)
+        relationtype = None
         if response.ok:
-            raw_data = response.text
-            json_data = json.loads(raw_data)
-
-            return json_data['versjon']
-
-        return 'datakatalog version not found'
+            for in_content in response.json():
+                if in_content == 'relasjonstyper':
+                    relationtype = response.json()[in_content]
+        try:
+            if relationtype:
+                foreldre = relationtype['foreldre']
+                for object_type in foreldre:
+                    for items, value_items in object_type.items():
+                        if items == 'innhold':
+                            type_field = object_type[items]['type']['navn']
+                            # clear any element different then id or name elements
+                            road_objects_possible_parents.append(type_field)
+        except:
+            pass
+        return road_objects_possible_parents
 
     @classmethod
     def get_env(self, version: str = 'v3') -> str:
@@ -169,6 +175,32 @@ class AreaGeoDataParser:
             lesUrl = master_endpoint + 'utv.atlas.vegvesen.no'
 
         return lesUrl
+
+    @classmethod
+    def getDatakatalogVersion(self, currentMiljo):
+        header = {'X-Client': 'QGIS NVDB Skriv'}
+        json_data = None
+
+        if 'Produksjon' in currentMiljo:
+            url = 'https://nvdbapiles-v3.atlas.vegvesen.no'
+
+        if 'Akseptansetest' in currentMiljo:
+            url = 'https://nvdbapiles-v3.test.atlas.vegvesen.no'
+
+        if 'Utvikling' in currentMiljo:
+            url = 'https://nvdbapiles-v3.utv.atlas.vegvesen.no'
+
+        endpoint = url + '/vegobjekttyper/versjon'
+
+        response = requests.get(endpoint, headers=header)
+
+        if response.status_code:
+            raw_data = response.text
+            json_data = json.loads(raw_data)
+
+            return json_data['versjon']
+
+        return 'datakatalog version not found'
 
     @classmethod
     def getSistModifisert(self, type, nvdbid, versjon):
