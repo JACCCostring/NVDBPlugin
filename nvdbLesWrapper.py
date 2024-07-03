@@ -123,7 +123,7 @@ class AreaGeoDataParser:
         self.env = env
 
     @classmethod
-    def get_dataCataloge_roadObjectType_parents(self, type: int = 0) -> dict:
+    def get_possible_parents(self, type: int = 0) -> dict:
         road_objects_possible_parents: list = []
 
         endpoint = self.get_env() + '/' + 'vegobjekttyper' + '/' + str(type)
