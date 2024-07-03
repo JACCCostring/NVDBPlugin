@@ -177,6 +177,32 @@ class AreaGeoDataParser:
         return lesUrl
 
     @classmethod
+    def getDatakatalogVersion(self, currentMiljo):
+        header = {'X-Client': 'QGIS NVDB Skriv'}
+        json_data = None
+
+        if 'Produksjon' in currentMiljo:
+            url = 'https://nvdbapiles-v3.atlas.vegvesen.no'
+
+        if 'Akseptansetest' in currentMiljo:
+            url = 'https://nvdbapiles-v3.test.atlas.vegvesen.no'
+
+        if 'Utvikling' in currentMiljo:
+            url = 'https://nvdbapiles-v3.utv.atlas.vegvesen.no'
+
+        endpoint = url + '/vegobjekttyper/versjon'
+
+        response = requests.get(endpoint, headers=header)
+
+        if response.status_code:
+            raw_data = response.text
+            json_data = json.loads(raw_data)
+
+            return json_data['versjon']
+
+        return 'datakatalog version not found'
+
+    @classmethod
     def getSistModifisert(self, type, nvdbid, versjon):
         endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(type) + '/' + str(
             nvdbid) + '/' + str(versjon)
