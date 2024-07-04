@@ -950,7 +950,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # roadObjectSelectedFromLayer: dict = {} #to temp storage current feature selected
         
         parent_object_nvdbid: int = int()
-        child_object_nvdbid: int = int()
+        # child_object_nvdbid: int = int() #not need it, bc every iteration of this method, will re-declared it
         
         #going through features in current active layer
         #and this only happens if possible parent is not selected yet
@@ -963,12 +963,14 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                             if road_object['nvdbId'] == feature[field.name()]:
                                 roadObjectSelectedFromLayer = road_object #storaging road object just in case
                                 
-                                child_object_nvdbid = road_object['nvdbId']
+                                self.child_object_nvdbid = road_object['nvdbId'] #can only be declared once
+                                
+                                # self.child_road_object_type = road_object['objekttype']
                                 
                                 try:
                                     
                                     if self.source_more_window:
-                                        relations = self.get_related_parent(child_object_nvdbid)
+                                        relations = self.get_related_parent(self.child_object_nvdbid)
                                         
                                         active_parent = relations
                                         
@@ -978,7 +980,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     pass
         
         #do something else with possible parents type and name
-        #gotten from source_more_window, when parent road object
+        #gotten from source_more_window, when possible parent road object
         #is already selected
         if self.after_possible_parent_selected:
             #from here and on, we have to thnk how to get the effects
@@ -990,6 +992,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                             if road_object['nvdbId'] == feature[field.name()]:
                                 if road_object['objekttype'] == self.possible_parent_type:
                                     parent_object_nvdbid = road_object['nvdbId']
+                                    road_object_to_connect = road_object['objekttype']
+                                    
+                                    print(parent_object_nvdbid, ':', self.child_object_nvdbid)
+                                    print(self.possible_parent_type, ':', road_object_to_connect)
         
         #end of relation code
         
