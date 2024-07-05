@@ -974,6 +974,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         
                                         active_parent = relations
                                         
+                                        #comunicating with source_more_window instance, to feed more data, in this case related to (Sammekobling)
                                         self.source_more_window.feed_data('relation', roadObjectSelectedFromLayer, active_parent)
                                         
                                 except AttributeError:
@@ -992,10 +993,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                             if road_object['nvdbId'] == feature[field.name()]:
                                 if road_object['objekttype'] == self.possible_parent_type:
                                     parent_object_nvdbid = road_object['nvdbId']
-                                    road_object_to_connect = road_object['objekttype']
+                                    roadObjectTypeChild_toConnect = road_object['objekttype']
                                     
-                                    print(parent_object_nvdbid, ':', self.child_object_nvdbid)
-                                    print(self.possible_parent_type, ':', road_object_to_connect)
+                                    #if possible parent type is equal to object child type
+                                    #user want to connect to, then is it a valid parent child relationship connection
+                                    if self.possible_parent_type == roadObjectTypeChild_toConnect:
+                                        print(parent_object_nvdbid, ':', self.child_object_nvdbid)
         
         #end of relation code
         
