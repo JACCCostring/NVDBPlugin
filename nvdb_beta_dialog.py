@@ -962,7 +962,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                         for road_object in self.data:
                             if road_object['nvdbId'] == feature[field.name()]:
                                 roadObjectSelectedFromLayer = road_object #storaging road object just in case
-                                
+
                                 child_object_nvdbid = road_object['nvdbId']
                                 
                                 try:
@@ -990,20 +990,22 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                             if road_object['nvdbId'] == feature[field.name()]:
                                 if road_object['objekttype'] == self.possible_parent_type:
                                     parent_object_nvdbid = road_object['nvdbId']
-        
+            
+                                    #if road object type of first selected child object
+                                    #and road object type of selected parent are equals
+
         #end of relation code
         
         
-        #may be start of location code
+        #may be start of location (stedfestning) code
         
         
         
-        #may be end of relation code
+        #may be end of location (stedfestning) code
         
         #enabeling open skriv window button, to make the effect: ONLY
         #when any feaure from QGIS cart/map is selected
         self.openSkrivWindowBtn.setEnabled(True)
-
         
         if self.isSourceMoreWindowOpen:
             self.source_more_window.action_()
@@ -1013,7 +1015,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.possible_parent_type = type
         self.possible_parent_name = name
-    
+            
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
     
