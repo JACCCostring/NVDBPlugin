@@ -55,6 +55,7 @@ from .source_skriv_window import SourceSkrivDialog
 from .source_more_window import SourceMoreWindow
 
 from .nvdbLesWrapper import AreaGeoDataParser
+from .custom_qstandard_item_model import CustomStandardItemModel
 #========================================
 #includes need it for development
 # import os
@@ -143,11 +144,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #        creating a QStandardItemModel for being able to connect itemChange() signal
 #        rows, columns and headres will be assign later on self.setObjectsToUI() method
         self.tableViewResultModel = QStandardItemModel()
-        
+        self.model = CustomStandardItemModel()
+
 #        proxy model, to filter table view data on any column
         self.proxyModel = QSortFilterProxyModel()
         
-        self.proxyModel.setSourceModel(self.tableViewResultModel)
+        #self.proxyModel.setSourceModel(self.tableViewResultModel)
+        self.proxyModel.setSourceModel(self.model)
         self.proxyModel.setFilterKeyColumn(-1) #-1 means all columns
         self.proxyModel.setFilterCaseSensitivity(0) #0 means insensitive
         
@@ -216,7 +219,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #        self.tableResult.itemClicked.connect(self.onItemClicked)
         
         self.tableResult.clicked.connect(self.onItemClicked)
-        
+        self.tableResult.verticalScrollBar().valueChanged.connect(self.onScroll)
 #        when egenskap box change current item then 
         self.egenskapBox.currentIndexChanged.connect(self.onEgenskapChanged)
         
@@ -349,6 +352,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def searchObj(self):
         self.exit_event.clear()
+        self.model.clear_fetch()
 
 #        here search is prepared depending on which filters user has stablished
         
@@ -480,11 +484,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.times_to_run: int = 0
         self.data = self.v.to_records(self.exit_event)
 
+        self.model.feed_data(self.data)
 
         #collecting size of the current onject search, it can be different for
         #all of the road objects in NVDB
         data_size = len(self.data)
-        
+
         #setting meximum value to limit_roadObject_info_inTable
         self.limit_roadObject_info_inTable.setMaximum(data_size + 1)
         
@@ -534,9 +539,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #undefined behavior when emiting signal, then prepareObjectsForUI method
         #is calling itself multiple times, so self.times_to_run is to controll this behavior
         self.times_to_run += 1 
-        
+
         self.ready_for_setting_searched_objekt.emit(objects_for_ui)
 
+    def onScroll(self):
+        if self.tableResult.verticalScrollBar().value() < len(self.data) and self.tableResult.verticalScrollBar().value() == self.tableResult.verticalScrollBar().maximum():
+            print("Fetching more...")
+            self.model.fetch_more()
 
     def makeMyDataObjects(self, data):
         listObjects = []
@@ -657,7 +666,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             items = []
             row = 0
-            
+
+
             try:
             #try starts here ...
             #parsing columns for adding to UI
@@ -688,9 +698,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 newItem = QStandardItem(str(object[obj[1]]))
                                 
                                 self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
-                                
+
                                 self.tableResult.setModel(self.proxyModel)
-                            
+
                                 if obj[1] == 'geometri':
                                     row = row + 1
                                 
@@ -810,7 +820,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         layer = iface.activeLayer()
         
         if self.visKartCheck.isChecked():
-            
             try:
                 for feature in layer.getFeatures():
                     for field in layer.fields():
@@ -835,18 +844,17 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             #starts here ...
             for column in range(0, self.tableViewResultModel.columnCount()):
                 itemColumHeader = self.tableViewResultModel.horizontalHeaderItem(column)
-                
                 if itemColumHeader.text() == 'nvdbId':
                     resultNvdbId = self.tableViewResultModel.item(row, column)
                     nvdbId = resultNvdbId.text()
-                    
+
                 elif itemColumHeader.text() == 'vref':
                     resultVref = self.tableViewResultModel.item(row, column)
                     vref = resultVref.text()
-                
+
         except Exception:
             pass
-            
+
         return {'nvdbId': nvdbId, 'vref': vref}
         
     def onEgenskapChanged(self):
