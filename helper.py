@@ -30,7 +30,7 @@ class Logger:
 
     def disable_logging(self):
         # disables all logging in the program
-        #logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
 
         if self.console_handler is not None:
             self.logger.removeHandler(self.console_handler)
