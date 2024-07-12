@@ -118,6 +118,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.skrivWindowOpened = False #making windows opened false
 
         self.isSourceMoreWindowOpen = False #making more window flag false
+        self.after_possible_parent_selected = False #to controll that parent is or not selected 
+        self.possible_parent_type = 0 #to storage possible parent relation from source_more_window
+        self.valid_roadObject_types = False
+        self.possible_parent_name = str() # to store name of possible parent relation
 
 #        development starts here
 #        setting up all data need it for starting up
@@ -355,7 +359,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tableViewResultModel.clear()
 
 #        removing layres just in case there are some actives, before a new search
-        self.removeActiveLayers()
+        # self.removeActiveLayers()
 
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
@@ -952,13 +956,164 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # self.more_window.show()
         self.source_more_window.show()
         
+        #connecting signals from more_window instance
+        self.source_more_window.new_relation_event.connect(self.handle_relation)
+    
+    
+    def get_related_parent(self, nvdbid: int = int()) -> dict:
+        #to get the current relationship on the current fetched data
+        #from the last search
+        
+        relation_collection_parent = {}
+        relation_id = None
+        
+        for refdata in self.data:
+            for key, value in refdata.items():
+                if key == 'nvdbId':
+                    if str(refdata[key]) == str(nvdbid):
+                        for field_name, field_values in refdata.items():
+                            if field_name == 'relasjoner':
+                                parent = field_values['foreldre']
+                                
+                                #parents is a list
+                                for item in parent:
+                                    for item_name, item_value in item.items():
+                                        if item_name == 'type':
+                                            type = item_value
+                                            
+                                            type_id = type['id']
+                                            type_name = type['navn']
+                                            
+                                            relation_collection_parent[type_name] = type_id
+                                
+        return relation_collection_parent
+        
     def onAnyFeatureSelected(self):
+        #start of relation code
+        
+        layer = iface.activeLayer() #to get current active layer
+        # roadObjectSelectedFromLayer: dict = {} #to temp storage current feature selected
+        
+        parent_object_nvdbid: int = int()
+        # child_object_nvdbid: int = int() #not need it, bc every iteration of this method, will re-declared it
+        
+        #going through features in current active layer
+        #and this only happens if possible parent is not selected yet
+        #from source_more_window instance
+        if not self.after_possible_parent_selected:
+            for feature in layer.selectedFeatures():
+                for field in feature.fields():
+                    if field.name() == 'nvdbid':
+                        for road_object in self.data:
+                            if road_object['nvdbId'] == feature[field.name()]:
+                                roadObjectSelectedFromLayer = road_object #storaging road object just in case
+                                
+                                self.child_object_nvdbid = road_object['nvdbId'] #can only be declared once
+                                
+                                # self.child_road_object_type = road_object['objekttype']
+                                
+                                try:
+                                    
+                                    if self.source_more_window:
+                                        relations = self.get_related_parent(self.child_object_nvdbid)
+                                        
+                                        active_parent = relations
+                                        
+                                        #comunicating with source_more_window instance, to feed more data, in this case related to (Sammekobling)
+                                        self.source_more_window.feed_data('relation', roadObjectSelectedFromLayer, active_parent)
+                                        
+                                except AttributeError:
+                                    pass
+        
+        #do something else with possible parents type and name
+        #gotten from source_more_window, when possible parent road object
+        #is already selected
+        if self.after_possible_parent_selected:
+            #from here and on, we have to thnk how to get the effects
+            #for next road object we will connect
+            for feature in layer.selectedFeatures():
+                for field in feature.fields():
+                    if field.name() == 'nvdbid':
+                        for road_object in self.data:
+                            if road_object['nvdbId'] == feature[field.name()]:
+                                if road_object['objekttype'] == self.possible_parent_type:
+                                    parent_object_nvdbid = road_object['nvdbId']
+                                    roadObjectTypeChild_toConnect = road_object['objekttype']
+                                    
+                                    #if possible parent type is equal to object child type
+                                    #user want to connect to, then is it a valid parent child relationship connection
+                                    if self.possible_parent_type == roadObjectTypeChild_toConnect:
+                                        #print(parent_object_nvdbid, ':', self.child_object_nvdbid)
+                                        
+                                        #for now road object types are both same type,
+                                        self.valid_roadObject_types = True
+                                        
+                                        #testing
+                                        self.remove_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
+        
+        #end of relation code
+        
+        
+        #may be start of location code
+        
+        
+        
+        #may be end of relation code
+        
+        #enabeling open skriv window button, to make the effect: ONLY
+        #when any feaure from QGIS cart/map is selected
         self.openSkrivWindowBtn.setEnabled(True)
 
         
         if self.isSourceMoreWindowOpen:
             self.source_more_window.action_()
+    
+    def handle_relation(self, type: int = int(), name: str = str()):
+        self.after_possible_parent_selected = True
+        
+        self.possible_parent_type = type
+        self.possible_parent_name = name
+    
+    def remove_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> bool:
+        #to get the current relationship on the current fetched data
+        #from the last search
+        
+        relation_collection_parent = {}
+        relation_id = None
+        
+        for refdata in self.data:
+            for key, value in refdata.items():
+                if key == 'nvdbId':
+                    if str(refdata[key]) == str(p_nvdbid):
+                        for field_name, field_values in refdata.items():
+                            if field_name == 'relasjoner':
+                                children = field_values['barn']
+                                
+                                #children is a list
+                                for child in children:
+                                    if c_nvdbid in child['vegobjekter']:
+                                        child['operation'] = 'remove' #mark 100001 for removing relation object
+                                        
+                                        print(child)
+                                        
+                                    # for item_name, item_values in child.items():
+                                        # print(item_name, ':', item_values) #logg test
 
+                                        # if item_name == 'vegobjekter':
+                                        #     for child_nvdbid in item_values:
+                                        #         if child_nvdbid == c_nvdbid:
+                                                    # print(f'found: {child_nvdbid} passed as arg: {c_nvdbid}')
+                                                    
+                                                    # print('id found: ', child_nvdbid)
+                                                        
+                                                    # print('items before removed: ', item_values)
+                                                        
+                                                    # item_values.remove(child_nvdbid)
+                                                        
+                                                    # print('items after removed: ', item_values)
+                                        
+        return False
+        
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
     

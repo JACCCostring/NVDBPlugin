@@ -207,5 +207,3 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
             print('current selected item: ', self.current_item['status_after_sent'])
             #self.my_logger.logger.info(f"Current selected item: {self.current_item['status_after_sent']}")
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])
-    
-#     windowProgress.show()
