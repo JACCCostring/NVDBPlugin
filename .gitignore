@@ -1,3 +1,7 @@
-._pycache_
-.idea
+__pycache__
+test
 .venv
+.idea
+.test
+.__pycache__
+.test.py
