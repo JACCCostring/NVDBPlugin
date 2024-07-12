@@ -576,12 +576,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     if key == 'sist_modifisert':
                         return value
     
-    def getVegObjektRelasjoner(self, nvdbid):
+    def getVegObjektRelasjoner(self, nvdbid)->dict:
         #this method only  parsed road object's relationship 
         #allready laying  on the fetched data in self.data, not generic ones
         
-        relation_collection = {}
+        relation_collection: dict = {}
         relation_id = None
+        opert: str = str()
         
         for refdata in self.data:
             for key, value in refdata.items():
@@ -591,13 +592,27 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                             if key == 'relasjoner':
                                 for rel_name, rel_value in value.items():
                                     if rel_name == 'barn':
+                                            
                                         for relation in rel_value:
-                                            for key, value in relation.items():
-                                                if key == 'id':
-                                                    relation_id = value
+                                            
+                                            try:
+                                                opert = relation['operation']
                                                 
-                                                if key == 'vegobjekter':
-                                                    relation_collection[relation_id] = value
+                                            except KeyError:
+                                                opert = 'update'
+                                                
+                                            operation = opert
+                                            
+                                            relation_collection[relation['id']] = {'vegobjekter': relation['vegobjekter'], 'operation': operation}
+                                            
+                                            # for key, value in relation.items():
+                                            #     if key == 'id':
+                                            #         relation_id = value
+                                                
+                                            #     if key == 'vegobjekter':
+                                            #         relation_collection[relation_id] = value
+        
+        print('full colelction: ', relation_collection)
         
         return relation_collection
         

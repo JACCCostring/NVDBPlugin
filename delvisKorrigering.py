@@ -220,12 +220,26 @@ class DelvisKorrigering(AbstractPoster, QObject):
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
             
             for egenskap_id, objekter in relations.items(): #Note: en assosiasjon for hver datterobjekttype
+                print(egenskap_id, ':', objekter)
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
-                relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'oppdater'}
+                #first check if relation is programmed for being removed operations
+                # if egenskap_id == 100001:
+                    # relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'slett'}
                 
-                for objekt_id in objekter:
-                    value_relation = ET.SubElement(relation, 'nvdbId')
-                    value_relation.text = str(objekt_id)
+                #otherwise add relation as an update operation
+                # if egenskap_id != 100001:
+                
+                if objekter['operation'] == 'remove':
+                    #when is a slett operation, not nvdb id need to be added, to endringsett
+                    relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'slett'}
+                
+                if objekter['operation'] == 'update':
+                    relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'oppdater'}
+                    
+                    #and if it's an update, then add road objects
+                    for objekt_id in objekter['vegobjekter']:
+                        value_relation = ET.SubElement(relation, 'nvdbId')
+                        value_relation.text = str(objekt_id)
         
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 

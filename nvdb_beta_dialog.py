@@ -106,6 +106,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.isSourceMoreWindowOpen = False #making more window flag false
         self.after_possible_parent_selected = False #to controll that parent is or not selected 
         self.possible_parent_type = 0 #to storage possible parent relation from source_more_window
+        self.valid_roadObject_types = False
         self.possible_parent_name = str() # to store name of possible parent relation
 
 #        development starts here
@@ -998,7 +999,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     #if possible parent type is equal to object child type
                                     #user want to connect to, then is it a valid parent child relationship connection
                                     if self.possible_parent_type == roadObjectTypeChild_toConnect:
-                                        print(parent_object_nvdbid, ':', self.child_object_nvdbid)
+                                        #print(parent_object_nvdbid, ':', self.child_object_nvdbid)
+                                        
+                                        #for now road object types are both same type,
+                                        self.valid_roadObject_types = True
+                                        
+                                        #testing
+                                        self.remove_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
         
         #end of relation code
         
@@ -1023,6 +1030,46 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.possible_parent_type = type
         self.possible_parent_name = name
     
+    def remove_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> bool:
+        #to get the current relationship on the current fetched data
+        #from the last search
+        
+        relation_collection_parent = {}
+        relation_id = None
+        
+        for refdata in self.data:
+            for key, value in refdata.items():
+                if key == 'nvdbId':
+                    if str(refdata[key]) == str(p_nvdbid):
+                        for field_name, field_values in refdata.items():
+                            if field_name == 'relasjoner':
+                                children = field_values['barn']
+                                
+                                #children is a list
+                                for child in children:
+                                    if c_nvdbid in child['vegobjekter']:
+                                        child['operation'] = 'remove' #mark 100001 for removing relation object
+                                        
+                                        print(child)
+                                        
+                                    # for item_name, item_values in child.items():
+                                        # print(item_name, ':', item_values) #logg test
+
+                                        # if item_name == 'vegobjekter':
+                                        #     for child_nvdbid in item_values:
+                                        #         if child_nvdbid == c_nvdbid:
+                                                    # print(f'found: {child_nvdbid} passed as arg: {c_nvdbid}')
+                                                    
+                                                    # print('id found: ', child_nvdbid)
+                                                        
+                                                    # print('items before removed: ', item_values)
+                                                        
+                                                    # item_values.remove(child_nvdbid)
+                                                        
+                                                    # print('items after removed: ', item_values)
+                                        
+        return False
+        
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
     
