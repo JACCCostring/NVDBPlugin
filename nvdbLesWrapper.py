@@ -221,39 +221,5 @@ class AreaGeoDataParser:
                 for key, value in json_data[data].items():
                     if key == 'sist_modifisert':
                         return value
-    
-    @classmethod
-    def get_possible_parents(self, type: int = 0) -> dict:
-        appended_parents = list = []
-
-        endpoint = self.get_env() + '/' + 'vegobjekttyper' + '/' + str(type)
-
-        header = {
-        'ContentType': 'application/json',
-        'X-Client': 'ny klient Les'
-        }
-        
-        params = {'inkluder': 'relasjonstyper'}
-        
-        response = requests.get(endpoint, headers = header, params = params)
-        
-        if response.ok:
-            for in_content in response.json():
-                if in_content == 'relasjonstyper':
-                    relationtype = response.json()[in_content]
-                    try:
-                        foreldre = relationtype['foreldre']
-                        for object_type in foreldre:
-                            for items, value_items in object_type.items():
-                                if items == 'innhold':
-                                    type_field = object_type[items]['type']
-
-                                    if 'objektliste_dato' in type_field:
-                                        del type_field['objektliste_dato']
-                                        
-                                    appended_parents.append(type_field)
-
-                    except:
-                        pass
 
         return appended_parents
