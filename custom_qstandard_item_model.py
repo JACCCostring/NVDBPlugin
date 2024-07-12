@@ -49,6 +49,7 @@ class CustomStandardItemModel(QStandardItemModel):
         # Check if there is data available to be fetched
         return self.fetched_rows < len(self.data)
 
+
     def clear_fetch(self):
         self.clear()
         self.fetched_rows = 0
