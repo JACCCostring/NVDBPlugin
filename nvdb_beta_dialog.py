@@ -1028,7 +1028,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     
                                     if self.source_more_window:
                                         relations = self.get_related_parent(self.child_object_nvdbid)
-                                        
+
                                         active_parent = relations
                                         
                                         #comunicating with source_more_window instance, to feed more data, in this case related to (Sammekobling)
@@ -1106,7 +1106,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     if c_nvdbid in child['vegobjekter']:
                                         child['operation'] = 'remove' #mark 100001 for removing relation object
                                         
-                                        print(child)
+                                        # print(child)
                                         
                                     # for item_name, item_values in child.items():
                                         # print(item_name, ':', item_values) #logg test
