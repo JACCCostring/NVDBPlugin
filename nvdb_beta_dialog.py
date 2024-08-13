@@ -985,18 +985,22 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     if str(refdata[key]) == str(nvdbid):
                         for field_name, field_values in refdata.items():
                             if field_name == 'relasjoner':
-                                parent = field_values['foreldre']
+                                try:
+                                    parent = field_values['foreldre']
+                                    
+                                    #parents is a list
+                                    for item in parent:
+                                        for item_name, item_value in item.items():
+                                            if item_name == 'type':
+                                                type = item_value
+                                                
+                                                type_id = type['id']
+                                                type_name = type['navn']
+                                                
+                                                relation_collection_parent[type_name] = type_id
                                 
-                                #parents is a list
-                                for item in parent:
-                                    for item_name, item_value in item.items():
-                                        if item_name == 'type':
-                                            type = item_value
-                                            
-                                            type_id = type['id']
-                                            type_name = type['navn']
-                                            
-                                            relation_collection_parent[type_name] = type_id
+                                except KeyError:
+                                    print('vegobjekt do not have any parent!')
                                 
         return relation_collection_parent
         
@@ -1104,7 +1108,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 #children is a list
                                 for child in children:
                                     if c_nvdbid in child['vegobjekter']:
-                                        child['operation'] = 'remove' #mark 100001 for removing relation object
+                                        child['operation'] = 'remove' #mark remove for removing relation object
                                         
                                         print(child)
                                         
