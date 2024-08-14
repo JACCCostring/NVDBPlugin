@@ -220,23 +220,26 @@ class DelvisKorrigering(AbstractPoster, QObject):
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
             
             for egenskap_id, objekter in relations.items(): #Note: en assosiasjon for hver datterobjekttype
-                print(egenskap_id, ':', objekter)
+                # print(egenskap_id, ':', objekter)
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
-                #first check if relation is programmed for being removed operations
-                # if egenskap_id == 100001:
-                    # relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'slett'}
                 
-                #otherwise add relation as an update operation
-                # if egenskap_id != 100001:
-                
+                #remove child object
                 if objekter['operation'] == 'remove':
                     #when is a slett operation, not nvdb id need to be added, to endringsett
-                    relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'slett'}
-                
-                if objekter['operation'] == 'update':
                     relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'oppdater'}
                     
-                    #and if it's an update, then add road objects
+                    # for objekt_id in objekter['vegobjekter']:
+                    sub_relation = ET.SubElement(relation, 'nvdbId') #tempId
+                    sub_relation.attrib = { 'operasjon':  "slett" } #commet this line to test again
+                    sub_relation.text = str('893835588')
+                    
+            ####################################################
+            
+            #update child object
+                if objekter['operation'] == 'update':
+                    relation = ET.SubElement = {'typeId': str(egenskap_id), 'operasjon': 'oppdater'}
+
+                    #and if it's an update, then add road objects as child
                     for objekt_id in objekter['vegobjekter']:
                         value_relation = ET.SubElement(relation, 'nvdbId')
                         value_relation.text = str(objekt_id)

@@ -1104,25 +1104,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 #children is a list
                                 for child in children:
                                     if c_nvdbid in child['vegobjekter']:
-                                        child['operation'] = 'remove' #mark 100001 for removing relation object
-                                        
-                                        # print(child)
-                                        
-                                    # for item_name, item_values in child.items():
-                                        # print(item_name, ':', item_values) #logg test
-
-                                        # if item_name == 'vegobjekter':
-                                        #     for child_nvdbid in item_values:
-                                        #         if child_nvdbid == c_nvdbid:
-                                                    # print(f'found: {child_nvdbid} passed as arg: {c_nvdbid}')
-                                                    
-                                                    # print('id found: ', child_nvdbid)
-                                                        
-                                                    # print('items before removed: ', item_values)
-                                                        
-                                                    # item_values.remove(child_nvdbid)
-                                                        
-                                                    # print('items after removed: ', item_values)
+                                        child['operation'] = 'remove' #tagged with remove for removing relation object later
                                         
         return False
         

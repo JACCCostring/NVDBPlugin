@@ -601,7 +601,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                                 opert = relation['operation']
                                                 
                                             except KeyError:
-                                                opert = 'update'
+                                                opert = 'update' #tagging for updating later insted of removing
                                                 
                                             operation = opert
                                             
@@ -614,7 +614,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                             #     if key == 'vegobjekter':
                                             #         relation_collection[relation_id] = value
         
-        print('full colelction: ', relation_collection)
+        print('relation to be sent: ', relation_collection)
         
         return relation_collection
         
