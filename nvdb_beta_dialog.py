@@ -1,7 +1,7 @@
 import sys
 import os
 import inspect
-#from .helper import Logger
+from .helper import Logger
 
 nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 nvdblibrary = nvdblibrary.replace('\\', '/')
@@ -114,6 +114,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #self.my_logger.write_log("console")
        # self.my_logger.disable_logging()
 
+        self.logger1 = Logger()
+
         #setting default road object limit info to 1
         self.limit_roadObject_info_inTable.setValue(1)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
@@ -123,7 +125,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.skrivWindowOpened = False #making windows opened false
 
         self.isSourceMoreWindowOpen = False #making more window flag false
-        self.after_possible_parent_selected = False #to controll that parent is or not selected 
+        self.after_possible_parent_selected = False #to control that parent is or not selected
         self.possible_parent_type = 0 #to storage possible parent relation from source_more_window
         self.valid_roadObject_types = False
         self.possible_parent_name = str() # to store name of possible parent relation
@@ -148,19 +150,19 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         }
         
 #        creating a QStandardItemModel for being able to connect itemChange() signal
-#        rows, columns and headres will be assign later on self.setObjectsToUI() method
+#        rows, columns and headers will be assigned later on self.setObjectsToUI() method
         self.tableViewResultModel = QStandardItemModel()
         self.model = CustomStandardItemModel()
 
 #        proxy model, to filter table view data on any column
         self.proxyModel = QSortFilterProxyModel()
-        
-        #self.proxyModel.setSourceModel(self.tableViewResultModel)
+
         self.proxyModel.setSourceModel(self.model)
+        #self.proxyModel.setSourceModel(self.tableViewResultModel)
         self.proxyModel.setFilterKeyColumn(-1) #-1 means all columns
         self.proxyModel.setFilterCaseSensitivity(0) #0 means insensitive
         
-#        set combo box data to choose environmen if production/test/development
+#        set combo box data to choose environment if production/test/development
         self.comboEnvironment.addItems({'Produksjon', 'Utvikling', 'Akseptansetest'})
         
 #        selecting a default environment
@@ -168,11 +170,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #        setting an environment for default
         AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
 
-#        setting up  combobox default values
+
+#        setting up combobox default values
         self.operatorCombo.addItems({'ikke verdi', '>', '<', '>=', '<=', '=', '!='})
         self.operatorCombo.setCurrentIndex(-1)
         
-#        deativating  combobox when starting
+#        deactivating combobox when starting
 #        self.egenskapBox.setEnabled(False)
         self.operatorCombo.setEnabled(False)
         self.verdiField.setEnabled(False)
@@ -209,10 +212,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
 #        connecting signals and slots
 
-#        very important to fecth kommuner when field fylke change
+#        very important to fetch kommuner when field fylke change
         self.fylkeField.editingFinished.connect(self.checkComunitiesInCounty)
         
-#        when seacrh button pressed
+#        when search button pressed
         self.searchObjectBtn.clicked.connect(self.searchObj)
 
 #        when vis i kart checkbox active then
@@ -252,7 +255,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.more_btn.clicked.connect(self.open_more_window)
 
-    
+        self.layers_list = []
+
 #        rest of methods===============================
     def fixNVDBObjects(self):
 #        all nvdb object types no all objects, to simulate datakatalog id
@@ -269,7 +273,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.listOfnvdbObjects[key] = value
         
         except Exception:
-            print('datakatalog ikke lastett opp!')
+            print('datakatalog ikke lastet opp!')
             #self.my_logger.logger.debug("datakatalog ikke lastet opp!")
             
         return listObjectNames
@@ -364,10 +368,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #clearing tableview results everytime user search new road object
         #if self.tableViewResultModel.rowCount() > 0:
-        self.tableViewResultModel.clear()
+        #self.tableViewResultModel.clear()
 
-#        removing layres just in case there are some actives, before a new search
-        # self.removeActiveLayers()
+#        removing layers just in case there are some actives, before a new search
+        #self.removeActiveLayers()
 
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
@@ -480,6 +484,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     # method to set thread event
     def interrupt_thread(self):
+        self.logger1.disable_logging()
+        self.logger1.log("INTERRUPT", "file")
         print("INTERRUPT!")
         self.exit_event.set()
 
@@ -489,9 +495,19 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         sliced_data = []
         self.data = None
         self.times_to_run: int = 0
+
+        # Display information about amount of objects to be searched
+        ant_obj = self.v.statistikk()
+        self.antall = ant_obj['antall']
+
+        if self.antall and self.antall > 10000:
+            self.search_status_label.setText(f"Eksport av,{self.antall}, objekter vil ta tid...")
+        # Maybe use pyqtsignal to send the value of 'count' variable from nvdbfagdata,(nvdbapiv3.py), class
+
         self.data = self.v.to_records(self.exit_event)
 
-        self.model.feed_data(self.data)
+        if len(self.data) > 0:
+            self.model.feed_data(self.data)
 
         #collecting size of the current onject search, it can be different for
         #all of the road objects in NVDB
@@ -586,11 +602,50 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
 #        setting size slider widget for objects size enabled, after features are in layer
             self.changeObjectsSize.setEnabled(True)
-        
+            self.all_layers = QgsProject.instance().mapLayers().values()
+            self.set_layer_size()
         else:
             self.removeActiveLayers()
+            self.layers_list = []
 #            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
             self.openSkrivWindowBtn.setEnabled(False)
+
+    def set_layer_size(self):
+        # TODO:Clear the layers once child and parent and child object are koblet (Just an idea for better user experience)
+        #if len(self.layers_list) > 5 or len(self.all_layers) > 5:
+          #  self.removeActiveLayers()
+            #self.layers_list = []
+
+        obj_size = 9
+
+        # making a copy list for checking matching values in loop
+        temp_list = self.layers_list.copy()
+
+         # iterate through the list to check if a layer is already on the map, if so remove that layer else append that layer to the layers_list
+        for layer in self.all_layers:
+            if layer in temp_list:
+                print("Removing layer...")
+                self.layers_list.remove(layer)
+                obj_size = 5
+            else:
+                self.layers_list.append(layer)
+
+        print(f"The length of the list is: {len(self.layers_list)}\n", self.layers_list)
+
+        # Change the size beforehand to a suitable one, first the size of the child layers and then the size of parent layers
+        #for lay in layers_list[0:2]:
+         #   if len(layers_list) <= 3:
+         #       iface.setActiveLayer(lay)
+         #       self.on_objectSizeOnLayerChange(8)
+          #      layers_list.pop(lay)
+         #   else:
+           #     iface.setActiveLayer(lay)
+           #     self.on_objectSizeOnLayerChange(4)
+
+        for lay in self.layers_list[0:2]:
+            if len(self.layers_list) <= 3 and obj_size >= 0:
+                iface.setActiveLayer(lay)
+                self.on_objectSizeOnLayerChange(obj_size)
 
     def showing_object_in_map(self):
         pass
@@ -650,6 +705,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.exit_event.is_set():
             self.searchObjectBtn.setText("Søk Objekt")
             self.searchObjectBtn.setStyleSheet("background-color : white; color : green")
+
 
         if self.times_to_run == 1:
             columns = self.parseHeaders(objects)
@@ -970,36 +1026,49 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #connecting signals from more_window instance
         self.source_more_window.new_relation_event.connect(self.handle_relation)
-    
-    
+
+
     def get_related_parent(self, nvdbid: int = int()) -> dict:
         #to get the current relationship on the current fetched data
         #from the last search
-        
+
         relation_collection_parent = {}
         relation_id = None
-        
+
         for refdata in self.data:
             for key, value in refdata.items():
                 if key == 'nvdbId':
                     if str(refdata[key]) == str(nvdbid):
                         for field_name, field_values in refdata.items():
                             if field_name == 'relasjoner':
-                                parent = field_values['foreldre']
-                                
-                                #parents is a list
-                                for item in parent:
-                                    for item_name, item_value in item.items():
-                                        if item_name == 'type':
-                                            type = item_value
-                                            
-                                            type_id = type['id']
-                                            type_name = type['navn']
-                                            
-                                            relation_collection_parent[type_name] = type_id
-                                
+                                #parent = field_values['foreldre']
+                                #if 'foreldre' in field_values.keys():
+                                  #  print("Foreldre exists")
+                                 #   parent = field_values['foreldre']
+                                # parents is a list
+                                #for item in parent:
+                                  #  parent_name = item['type']['navn']
+                                  #  parent_id = item['vegobjekter']
+                                  #  relation_collection_parent['navn'] = parent_name
+                                   # relation_collection_parent['nvdbid'] = parent_id
+
+                                # parents is a list
+                                    # for item in parent:
+                                    #    for item_name, item_value in item.items():
+                                   #         if item_name == 'type':
+                                     #           type = item_value
+
+                                     #           type_id = type['id']
+                                     #           type_name = type['navn']
+
+                                      #          relation_collection_parent[type_name] = type_id
+                                #else:
+                                 #   print("Foreldre does not exist")
+                                  #  relation_collection_parent['navn'] = "Parent"
+                                  #  relation_collection_parent['nvdbid'] = "Not Exist"
+
         return relation_collection_parent
-        
+
     def onAnyFeatureSelected(self):
         #start of relation code
         
@@ -1021,9 +1090,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 roadObjectSelectedFromLayer = road_object #storaging road object just in case
                                 
                                 self.child_object_nvdbid = road_object['nvdbId'] #can only be declared once
-                                
+                                print("Child objects nvdbid: " , self.child_object_nvdbid)
+                                self.source_more_window.set_child_id(self.child_object_nvdbid)
                                 # self.child_road_object_type = road_object['objekttype']
-                                
+
                                 try:
                                     
                                     if self.source_more_window:
@@ -1079,7 +1149,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         if self.isSourceMoreWindowOpen:
             self.source_more_window.action_()
-    
+
+
     def handle_relation(self, type: int = int(), name: str = str()):
         self.after_possible_parent_selected = True
         
@@ -1128,13 +1199,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
-    
         renderer = layer.renderer()
-    
+
         symbol = None #for symbol
         symbolColor = None #for symbol color
         
-#        getting properties from the features already in layer
+#       getting properties from the features already in layer
         properties = renderer.symbol().symbolLayers()[0].properties()
         
 #        looping to find color key and substracting color, for later use

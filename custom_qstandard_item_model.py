@@ -9,14 +9,8 @@ class CustomStandardItemModel(QStandardItemModel):
 
 
     def feed_data(self, object_data):
-        self.clear()
         # Getting the data and then fetching first set of data
         self.data = object_data
-        #print(len(self.data[0].keys()), "\n")
-        #print(len(self.data[35].keys()), "\n")
-        #print(len(self.data[34].keys()), "\n")
-        #print(len(self.data[37].keys()), "\n")
-        #print(len(self.data[45].keys()), "\n")
         # Setting the headers
         if len(self.data) > 0:
             self.setHorizontalHeaderLabels(self.data[0])

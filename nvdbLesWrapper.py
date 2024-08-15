@@ -144,9 +144,13 @@ class AreaGeoDataParser:
                 for object_type in foreldre:
                     for items, value_items in object_type.items():
                         if items == 'innhold':
-                            type_field = object_type[items]['type']['navn']
+                            #type_field = object_type[items]['type']['navn']
                             # clear any element different then id or name elements
-                            road_objects_possible_parents.append(type_field)
+                            #road_objects_possible_parents.append(type_field)
+                            parent_id = object_type[items]['type']['id']
+                            parent_name = object_type[items]['type']['navn']
+                            road_objects_possible_parents.append(parent_id)
+                            road_objects_possible_parents.append(parent_name)
         except:
             pass
         return road_objects_possible_parents
