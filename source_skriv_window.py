@@ -11,7 +11,6 @@ from .nvdb_endringsset_status_window import Ui_windowProgress #dialog class
 from .nvdbLesWrapper import AreaGeoDataParser
 from .delvisKorrigering import DelvisKorrigering
 from .tokenManager import TokenManager
-
 from qgis.utils import iface
 from qgis.core import *
 
@@ -20,6 +19,7 @@ import threading
 
 from .helper import Logger
 import os
+import json
 
 from qgis.PyQt import uic
 
@@ -41,7 +41,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.progressWindowOpened = False #to check if windows is already opened
         self.info_after_sent_objects = [] #all endringer sent to NVDB
         self.session_expired = False
-        
+
         #setting up all UI
         self.setupUi(self)
         
@@ -49,12 +49,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fixMiljo() #setting miljo data
         self.nvdbStatus() #calling nvdb status
 
-        self.my_logger = Logger()
+        #self.my_logger = Logger()
 
         # log to console/file
-        self.my_logger.write_log("console")
+        #self.my_logger.write_log("console")
+        #self.my_logger.disable_logging()
 
-        self.my_logger.disable_logging()
+        self.logger1 = Logger()
 
         #set login tab at the start of the plug-in
         self.mainTab.setCurrentIndex(1)
@@ -72,7 +73,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tableSelectedObjects.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         self.response_endringsset.setText("")
-
 
         #saving time when application starts to compare later on
         
@@ -174,7 +174,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             if not os.environ['logged']:
                 if not os.environ['logged']:
 
-                    self.my_logger.logger.info('not existing !, setting logged ...')
+                    #self.my_logger.logger.info('not existing !, setting logged ...')
                     os.environ['svv_user_name'] = self.usernameLine.text()
                     os.environ['svv_pass'] = self.passwordLine.text()
                     
@@ -202,8 +202,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
         tokenObj = tkManager.getToken()
 
-        # print(tokenObj) debug
-        self.my_logger.logger.debug(f"tokenObj: {tokenObj}")
+        #DEBUG
+        print(tokenObj)
+       # self.my_logger.logger.debug(f"tokenObj: {tokenObj}")
 
         idToken = tokenObj['idToken']
         refreshToken = tokenObj['refreshToken']
@@ -211,9 +212,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 
         if idToken and refreshToken and accessToken != ' ':
             self.successLogin = True
-
+            self.logger1.log("logged in", "console")
             #print('logged in')
-            self.my_logger.logger.info("logged in")
+            #self.my_logger.logger.info("logged in")
 
             self.tokens = {
                 'idToken': idToken, 
@@ -308,7 +309,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 'APISkrivRunning': self.apiSkriv
             }
             
-    #        print(self.apiLes, self.apiSkriv)
+            print(self.apiLes, self.apiSkriv)
             #self.my_logger.logger.info(f"{self.apiLes}, {self.apiSkriv}")
 
             self.defaultUISettings() #callinf default UI settings  after check status
@@ -379,7 +380,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
 #        draw/set objects to UI
         self.setSelectedObjectsToUI(fullInfoObjects)
-        
+
+        print(f"Full info objects: {fullInfoObjects}")
+
     def setSelectedObjectsToUI(self, objects):
         rows = 0 #rows for how many items will be laying
 
@@ -411,7 +414,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         someSelected = False
 #        TODO: make sure only selected items are remove from layer and tableview
 
-#        Posible Solution: loop throug selectedItems in tableview
+#        Possible Solution: loop through selectedItems in tableview
 #        if item selected then added to the self.idsOfSelectedItems
 #        only if item nvdbid doesn't exist in the list
 
@@ -500,8 +503,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 if 'nvdbid' in field.name():
                     if str(nvdbid) in str(feature[field.name()]):
                         for feat_field in feature.fields():
-                            # print(feat_field.name(), ': ', feature[feat_field.name()])
-                            self.my_logger.logger.info(f"{feat_field.name()} : {feature[feat_field.name()]}")
+                            print(feat_field.name(), ': ', feature[feat_field.name()])
+                            #self.my_logger.logger.info(f"{feat_field.name()} : {feature[feat_field.name()]}")
                             if 'Geometri' in feat_field.name():
                                 self.geometry_found = feature.geometry().asWkt()
                                 
@@ -526,7 +529,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 nvdbid_list.append(nvdbid)
         
         nvdbid_list = list(set(nvdbid_list)) #remove duplicates
-        
         return nvdbid_list
         
     def getFieldEgenskaperByNVDBid(self, nvdbid):
@@ -535,14 +537,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         selected_object_fields = {}
         
         self.current_nvdbid = nvdbid
-        
         for feature in layer.selectedFeatures():
             for field in feature.fields():
                 if 'nvdbid' in field.name():
                     if str(nvdbid) in str(feature[field.name()]):
                         for feat_field in feature.fields():
-                            # print(feat_field.name(), ': ', feature[feat_field.name()])
-                            self.my_logger.logger.info(f"{feat_field.name()} : {feature[feat_field.name()]}")
+                            print(feat_field.name(), ': ', feature[feat_field.name()])
+                            #self.my_logger.logger.info(f"{feat_field.name()} : {feature[feat_field.name()]}")
 
                             if 'Geometri' in feat_field.name():
                                 self.geometry_found = feature.geometry().asWkt()
@@ -555,9 +556,19 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                 
                                 if 'PolygonZ' in self.geometry_found:
                                     self.geometry_found = self.geometry_found.replace('PolygonZ', 'Polygon Z')
-                                
+
                             selected_object_fields[feat_field.name()] = feature[feat_field.name()]
-                
+
+        #print("selected_object_fields: ", selected_object_fields)
+        #lst = json.loads(selected_object_fields["Assosierte Belysningspunkt"])
+        #temp_list = lst["innhold"]
+        #new_list = [item for item in temp_list if item['verdi'] == 537698071]
+
+        #lst["innhold"] = new_list
+        #selected_object_fields["Assosierte Belysningspunkt"] = json.dumps(lst)
+
+        #print("selected_object_fields: (after_change)", selected_object_fields)
+
         return selected_object_fields
         
     def getSistModifisert(self, type, nvdbid, versjon):
@@ -579,7 +590,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                         return value
     
     def getVegObjektRelasjoner(self, nvdbid)->dict:
-        #this method only  parsed road object's relationship 
+        #this method only  parsed road object's relationship
         #allready laying  on the fetched data in self.data, not generic ones
         
         relation_collection: dict = {}
@@ -608,11 +619,11 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                             relation_collection[relation['id']] = {'vegobjekter': relation['vegobjekter'], 'operation': operation, 'remove_nvdbid': relation['remove_nvdbid']}
         
         print('relation to be sent: ', relation_collection)
-        
+
         return relation_collection
         
     def getEspecificFieldContent(self, data, field):
-        # data argument is a dictionary allready populated with data, after objects is selected
+        # data argument is a dictionary already populated with data, after objects is selected
         vegobjekt_field = None
         
         for key, value in data.items():
@@ -623,7 +634,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def writeToNVDB(self):
         #verifying if login time still valid
-        #if login time is greater then 8 hours
+        #if login time is greater than 8 hours
         #then is not valid anymore, so we update login
         if self.login_time_expired():
             self.login() # update login
@@ -651,7 +662,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
         #get all nvdb id of selected features
         for nvdbid in self.list_of_nvdbids():
-            
+            print(f"nvdb: {nvdbid}")
         #get egenskaper data from each of the nvdbids
             egenskaperfields = self.getFieldEgenskaperByNVDBid(nvdbid)
             
@@ -659,7 +670,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             if self.successLogin == False: #if user is not logged in, then ask to log in again
                 self.mainTab.setCurrentIndex(1)
             
-            if egenskaperfields and self.successLogin: #if user is logged in and data no is populated then continue
+            if egenskaperfields and self.successLogin: #if user is logged in and data no is populated, then continue
                 
                 object_type = self.data[0]['objekttype'] #ex: Anttenna: 470, Veganlegg: 30
                 
@@ -673,7 +684,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 
                 sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'])
                 relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parents
-                
                 extra = {
                     'nvdb_object_type': object_type, 
                     'username': username, 
@@ -699,9 +709,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 # when some events UB happens on DelvisKorrigering class side
                 #self.delvis.response_error.connect(lambda: print('something went wrong! '))
 
+                print("self.listOfEgenskaper", self.listOfEgenskaper)
+
                 # calling formXMLRequest method to form delviskorrigering xml template
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
-
 
     def getMiljoSkrivEndpoint(self):
         currentMiljo = self.miljoCombo.currentText()
@@ -758,8 +769,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         #if login time is greater then 8 hours
         #then is not valid anymore, so we update login
         if self.login_time_expired():
-            #print('login expired!')
-            self.my_logger.logger.info("Login expired! ")
+            print('login expired!')
+            #self.my_logger.logger.info("Login expired! ")
 
             self.login() # update login
             
@@ -784,7 +795,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             # self.progressWindowInstance = QtWidgets.QDialog()
             self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
 
-            self.my_logger.logger.info(self.info_after_sent_objects)
+            #self.my_logger.logger.info(self.info_after_sent_objects)
 
             #re-assigning new generated token if session has been expired
             #at this point if session has been expired, then will loop through hole
@@ -855,12 +866,12 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         current_day = current_date.day()
         
         #debug
-        #print('current day ', current_day, ' - expected day ', self.expected_day)
-        #print('current time ', current_time, ' - expected time ', self.expected_time)
+        print('current day ', current_day, ' - expected day ', self.expected_day)
+        print('current time ', current_time, ' - expected time ', self.expected_time)
 
-        self.my_logger.logger.debug(f"current day {current_day} - expected day {self.expected_day}")
-        self.my_logger.disable_logging()
-        self.my_logger.logger.debug(f"current time {current_time} - expected time {self.expected_time}")
+       # self.my_logger.logger.debug(f"current day {current_day} - expected day {self.expected_day}")
+       # self.my_logger.disable_logging()
+        #self.my_logger.logger.debug(f"current time {current_time} - expected time {self.expected_time}")
 
 
         #comparing current and expected day, if this case happens

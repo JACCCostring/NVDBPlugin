@@ -50,7 +50,7 @@
       <enum>QAbstractItemView::SelectRows</enum>
      </property>
     </widget>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -71,6 +71,38 @@
        <widget class="QPushButton" name="unlink_from_parent_btn">
         <property name="text">
          <string>koble fra til</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QWidget" name="verticalLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>370</y>
+       <width>301</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Valgt Objekt:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="object_id_lbl">
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>

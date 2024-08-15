@@ -154,6 +154,7 @@ class AreaGeoDataParser:
                             
                             # clear any element different then id or name elements
                             road_objects_possible_parents.append(form_dict_type)
+
         except:
             pass
             

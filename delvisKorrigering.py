@@ -138,7 +138,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
         geometri_egenskap_found = False
         
         new_modified_data = {}
-        
+        print("Egenskaper_list: ", egenskaper_list)
 #        fix egenskaper and values when not valid egenskaper is found
         for k1, v1 in self.modified_data.items():
             for k2, v2 in egenskaper_list.items():
@@ -179,7 +179,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
                                         
                                     print(operation) #debug
                                     print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
-                                            
+
                                     new_egenskap = ET.SubElement(egenskaper, 'egenskap')
                                     new_egenskap.attrib = {'typeId': str(value), 'operasjon': operation}
                                             
@@ -215,19 +215,20 @@ class DelvisKorrigering(AbstractPoster, QObject):
         relations = self.extra['relation']
         
 #        relasjoner will only be added if vegobjekt has a relation with another vegobjekt
-        if relations: 
-            
+        if relations:
+
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
-            
+
             for enum_catalog_type_nvdb, item in relations.items(): #Note: en assosiasjon for hver datterobjekttype
                 # print(egenskap_id, ':', objekter)
+
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
                 
                 #remove child object
                 if item['operation'] == 'remove':
                     #when is a slett operation, not nvdb id need to be added, to endringsett
                     relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
-                    
+
                     sub_relation = ET.SubElement(relation, 'nvdbId') #tempId
                     sub_relation.attrib = { 'operasjon':  "slett" }
                     
@@ -263,11 +264,11 @@ class DelvisKorrigering(AbstractPoster, QObject):
                         value_relation = ET.SubElement(relation, 'nvdbId')
                         value_relation.text = str(nvdbid)
         
-        self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
+        self.xml_string = ET.tostring(root, encoding='utf-8') #be careful with the unicode
 
         print('=======endringssett========', self.xml_string) #debugin
         
-        # emiting signal
+        # emitting signal
         self.endringsett_form_done.emit()
         
     def startPosting(self):
