@@ -123,7 +123,7 @@ class AreaGeoDataParser:
         self.env = env
 
     @classmethod
-    def get_possible_parents(self, type: int = 0) -> dict:
+    def get_possible_parents(self, type: int = 0) -> list:
         road_objects_possible_parents: list = []
 
         endpoint = self.get_env() + '/' + 'vegobjekttyper' + '/' + str(type)
@@ -141,14 +141,22 @@ class AreaGeoDataParser:
         try:
             if relationtype:
                 foreldre = relationtype['foreldre']
+                
                 for object_type in foreldre:
                     for items, value_items in object_type.items():
                         if items == 'innhold':
-                            type_field = object_type[items]['type']['navn']
+                            # type_field = object_type[items]['type']['navn']
+                            
+                            type_object_id = object_type[items]['type']['id']
+                            type_object_name = object_type[items]['type']['navn']
+                            
+                            form_dict_type = {'id': type_object_id, 'name': type_object_name}
+                            
                             # clear any element different then id or name elements
-                            road_objects_possible_parents.append(type_field)
+                            road_objects_possible_parents.append(form_dict_type)
         except:
             pass
+            
         return road_objects_possible_parents
 
     @classmethod
@@ -222,4 +230,4 @@ class AreaGeoDataParser:
                     if key == 'sist_modifisert':
                         return value
 
-        return appended_parents
+        # return appended_parents

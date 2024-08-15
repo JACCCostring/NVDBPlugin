@@ -219,27 +219,49 @@ class DelvisKorrigering(AbstractPoster, QObject):
             
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
             
-            for egenskap_id, objekter in relations.items(): #Note: en assosiasjon for hver datterobjekttype
-                print(egenskap_id, ':', objekter)
+            for enum_catalog_type_nvdb, item in relations.items(): #Note: en assosiasjon for hver datterobjekttype
+                # print(egenskap_id, ':', objekter)
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
-                #first check if relation is programmed for being removed operations
-                # if egenskap_id == 100001:
-                    # relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'slett'}
                 
-                #otherwise add relation as an update operation
-                # if egenskap_id != 100001:
-                
-                if objekter['operation'] == 'remove':
+                #remove child object
+                if item['operation'] == 'remove':
                     #when is a slett operation, not nvdb id need to be added, to endringsett
-                    relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'slett'}
-                
-                if objekter['operation'] == 'update':
-                    relation.attrib = {'typeId': str(egenskap_id), 'operasjon': 'oppdater'}
+                    relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                     
-                    #and if it's an update, then add road objects
-                    for objekt_id in objekter['vegobjekter']:
+                    sub_relation = ET.SubElement(relation, 'nvdbId') #tempId
+                    sub_relation.attrib = { 'operasjon':  "slett" }
+                    
+                    '''find child road object marked for removing, road object tagged name is
+                    remove_nvdbid and it's existing already there from nvdb_beta_dialog.py module
+                    from here we need to make sure that:
+                    
+                    if child road object is already there, then 
+                    -only updated and removing relation is not need it
+                    
+                    if child road object is not there yet, then 
+                    -just added as a new child relation
+                    
+                    Documentation to fallow NVDB API convention: https://nvdb.atlas.vegvesen.no/docs/produkter/nvdbapis/endringssett/Oppbygging/#om-assosiasjoner
+                    '''
+                    for enum_catalog_type_nvdb_sub, item_sub in relations.items():
+                        pass
+                        ''' 
+                        for now this loop do not make any effect on the changes, but a bad form xml will be generated
+                        and is ok for now, to avoid this uncomment sub_relation.text = str(item['remove_nvdbid'])
+                        '''
+                        # print('enum_catalog_type_nvdb: ', enum_catalog_type_nvdb_sub, 'road objects: ', item_sub['remove_nvdbid'])
+                        # sub_relation.text = str(item['remove_nvdbid']) #commented for now, but need it later for removing child relationship
+                    
+            ####################################################
+            
+            #update child object
+                if item['operation'] == 'update':
+                    relation = ET.SubElement = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
+
+                    #and if it's an update, then add road objects as child
+                    for nvdbid in item['vegobjekter']:
                         value_relation = ET.SubElement(relation, 'nvdbId')
-                        value_relation.text = str(objekt_id)
+                        value_relation.text = str(nvdbid)
         
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 

@@ -596,25 +596,18 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                     if rel_name == 'barn':
                                             
                                         for relation in rel_value:
-                                            
+                                            # print(relation)
                                             try:
                                                 opert = relation['operation']
                                                 
                                             except KeyError:
-                                                opert = 'update'
+                                                opert = 'update' #tagging for updating later insted of removing
                                                 
                                             operation = opert
                                             
-                                            relation_collection[relation['id']] = {'vegobjekter': relation['vegobjekter'], 'operation': operation}
-                                            
-                                            # for key, value in relation.items():
-                                            #     if key == 'id':
-                                            #         relation_id = value
-                                                
-                                            #     if key == 'vegobjekter':
-                                            #         relation_collection[relation_id] = value
+                                            relation_collection[relation['id']] = {'vegobjekter': relation['vegobjekter'], 'operation': operation, 'remove_nvdbid': relation['remove_nvdbid']}
         
-        print('full colelction: ', relation_collection)
+        print('relation to be sent: ', relation_collection)
         
         return relation_collection
         

@@ -89,8 +89,8 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.table_relation_show.setRowCount(len(data))
         
         for item in data:
-            id_item = QTableWidgetItem(str(item['id'])) #QStandardItem accepts strings, so we converted with str() function
-            name_item = QTableWidgetItem(item['navn'])
+            name_item = QTableWidgetItem(item['name'])
+            id_item = QTableWidgetItem( str(item['id']) )
             
             self.table_relation_show.setItem(row, 0, id_item)
             self.table_relation_show.setItem(row, 1, name_item)
