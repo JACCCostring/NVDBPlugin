@@ -230,4 +230,4 @@ class AreaGeoDataParser:
                     if key == 'sist_modifisert':
                         return value
 
-        return appended_parents
+        # return appended_parents

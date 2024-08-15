@@ -985,10 +985,18 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     if str(refdata[key]) == str(nvdbid):
                         for field_name, field_values in refdata.items():
                             if field_name == 'relasjoner':
-                                parent = field_values['foreldre']
+                                print(field_values)
                                 
-                                #parents is a list
-                                for item in parent:
+                                relation_type = None
+                                
+                                try:
+                                    relation_type = field_values['foreldre'] #parent
+                                    
+                                except KeyError:
+                                    return {}
+                                    
+                                #parents it's a list
+                                for item in relation_type:
                                     for item_name, item_value in item.items():
                                         if item_name == 'type':
                                             type = item_value
@@ -1004,10 +1012,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #start of relation code
         
         layer = iface.activeLayer() #to get current active layer
-        # roadObjectSelectedFromLayer: dict = {} #to temp storage current feature selected
         
         parent_object_nvdbid: int = int()
-        # child_object_nvdbid: int = int() #not need it, bc every iteration of this method, will re-declared it
         
         #going through features in current active layer
         #and this only happens if possible parent is not selected yet
@@ -1022,14 +1028,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 
                                 self.child_object_nvdbid = road_object['nvdbId'] #can only be declared once
                                 
-                                # self.child_road_object_type = road_object['objekttype']
-                                
                                 try:
                                     
                                     if self.source_more_window:
                                         relations = self.get_related_parent(self.child_object_nvdbid)
 
                                         active_parent = relations
+                                        # print(active_parent)
                                         
                                         #comunicating with source_more_window instance, to feed more data, in this case related to (Sammekobling)
                                         self.source_more_window.feed_data('relation', roadObjectSelectedFromLayer, active_parent)
@@ -1060,7 +1065,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         #for now road object types are both same type,
                                         self.valid_roadObject_types = True
                                         
-                                        #testing
+                                        #testing removing child road object relation
                                         self.remove_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
         
         #end of relation code
@@ -1068,9 +1073,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #may be start of location code
         
-        
-        
-        #may be end of relation code
+        #end of relation code
         
         #enabeling open skriv window button, to make the effect: ONLY
         #when any feaure from QGIS cart/map is selected
@@ -1087,8 +1090,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.possible_parent_name = name
     
     def remove_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> bool:
-        #to get the current relationship on the current fetched data
-        #from the last search
+        '''to get and modify the relation from the selected object on the current fetched data
+        from the last search'''
         
         relation_collection_parent = {}
         relation_id = None
@@ -1105,6 +1108,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 for child in children:
                                     if c_nvdbid in child['vegobjekter']:
                                         child['operation'] = 'remove' #tagged with remove for removing relation object later
+                                        child['remove_nvdbid'] = c_nvdbid #nvdbid of child road object to remove
                                         
         return False
         
