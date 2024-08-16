@@ -18,7 +18,7 @@ from qgis.core import *
 import requests, io, json
 import threading
 
-from .helper import Logger
+from .helper import Logger #for logging, watch out
 import os
 
 from qgis.PyQt import uic
@@ -520,6 +520,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def list_of_nvdbids(self):
         nvdbid_list = []
+        
         for item in self.tableSelectedObjects.selectedItems():
             if item.isSelected():
                 nvdbid = self.getTextFieldFromColumnIndex(item, 'nvdbid')
@@ -583,8 +584,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         #allready laying  on the fetched data in self.data, not generic ones
         
         relation_collection: dict = {}
-        relation_id = None
+        # relation_id = None
         opert: str = str()
+        nvdbids_action: str = str()
         
         for refdata in self.data:
             for key, value in refdata.items():
@@ -594,10 +596,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                             if key == 'relasjoner':
                                 for rel_name, rel_value in value.items():
                                     if rel_name == 'barn':
-                                            
+                
                                         for relation in rel_value:
-                                            # print(relation)
                                             try:
+                                                nvdbids_action = relation['child_nvdbid']
                                                 opert = relation['operation']
                                                 
                                             except KeyError:
@@ -605,7 +607,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                                 
                                             operation = opert
                                             
-                                            relation_collection[relation['id']] = {'vegobjekter': relation['vegobjekter'], 'operation': operation, 'remove_nvdbid': relation['remove_nvdbid']}
+                                            relation_collection[relation['id']] = {'vegobjekter': relation['vegobjekter'], 'operation': operation, 'nvdbid': nvdbids_action}
         
         print('relation to be sent: ', relation_collection)
         
@@ -672,6 +674,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 miljoSkrivEndepunkter = self.getMiljoSkrivEndpoint()
                 
                 sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'])
+                
                 relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parents
                 
                 extra = {
@@ -688,7 +691,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
                 # creating DelvisKorrigering object
                 self.delvis = DelvisKorrigering(token, egenskaperfields, extra)
-
 
                 # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)

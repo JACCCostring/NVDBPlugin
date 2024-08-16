@@ -206,57 +206,72 @@ class DelvisKorrigering(AbstractPoster, QObject):
                                     wtk_child_geometri_egenskap.text = str(self.extra['geometry_found'])
                                 
                                             
-#        adding validering element to xml form, request to nvdb must have it
+        #adding Validering to XML endringsett
         validering_objekt = ET.SubElement(vegobjekt, 'validering')
         lest_fra_nvdb = ET.SubElement(validering_objekt, 'lestFraNvdb')
         lest_fra_nvdb.text = self.extra['sistmodifisert']
 
-#        adding relasjoner to vegobjekter ------- Note: if vegobjekt has a relation then must add child to request not the other way around
-        relations = self.extra['relation']
+        '''
+        adding relations to the parent road object
         
-#        relasjoner will only be added if vegobjekt has a relation with another vegobjekt
+        Note: when adding relation to a road object, convention is that
+        parent object must add child as a relation to it and not the other way around.
+        '''
+        relations = self.extra['relation']
+
         if relations: 
             
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
             
-            for enum_catalog_type_nvdb, item in relations.items(): #Note: en assosiasjon for hver datterobjekttype
-                # print(egenskap_id, ':', objekter)
+            for enum_catalog_type_nvdb, item in relations.items():
+                #Note: for each relation or assosiasjon a sub or new assosiasjon must be added individual if need it.
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
+                relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
-                #remove child object
-                if item['operation'] == 'remove':
-                    #when is a slett operation, not nvdb id need to be added, to endringsett
-                    relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
-                    
-                    sub_relation = ET.SubElement(relation, 'nvdbId') #tempId
-                    sub_relation.attrib = { 'operasjon':  "slett" }
-                    
-                    '''find child road object marked for removing, road object tagged name is
+                '''
+                    find child road object marked for removing, road object tagged name is
                     remove_nvdbid and it's existing already there from nvdb_beta_dialog.py module
                     from here we need to make sure that:
                     
-                    if child road object is already there, then 
-                    -only updated and removing relation is not need it
+                    if operation is Remove then:
+                    -remove case happens (remove child object relation)
                     
-                    if child road object is not there yet, then 
-                    -just added as a new child relation
+                    if operation is default (update) then:
+                    -update case happens (update child object relation)
+                    
+                    if operation is new then:
+                    -new case happens (add new child object relation)
                     
                     Documentation to fallow NVDB API convention: https://nvdb.atlas.vegvesen.no/docs/produkter/nvdbapis/endringssett/Oppbygging/#om-assosiasjoner
-                    '''
+                '''
+                
+                #Remove Case
+                if item['operation'] == 'remove':
+                    
+                    sub_remove_relation = ET.SubElement(relation, 'nvdbId')
+                    sub_remove_relation.attrib = { 'operasjon':  "slett" }
+
                     for enum_catalog_type_nvdb_sub, item_sub in relations.items():
-                        pass
                         ''' 
                         for now this loop do not make any effect on the changes, but a bad form xml will be generated
                         and is ok for now, to avoid this uncomment sub_relation.text = str(item['remove_nvdbid'])
                         '''
-                        # print('enum_catalog_type_nvdb: ', enum_catalog_type_nvdb_sub, 'road objects: ', item_sub['remove_nvdbid'])
-                        # sub_relation.text = str(item['remove_nvdbid']) #commented for now, but need it later for removing child relationship
+                        print('enum_catalog_type_nvdb: ', enum_catalog_type_nvdb_sub, 'road objects: ', item_sub['nvdbid'])
+                        # sub_remove_relation.text = str(item_sub['nvdbid']) #commented for now, but need it later for removing child relationship
+                                
+                #Add New Case
+                if item['operation'] == 'add':
                     
-            ####################################################
-            
-            #update child object
+                    sub_add_relation = ET.SubElement(relation, 'nvdbId')
+                    sub_add_relation.attrib = { 'operasjon': 'ny' }
+                    
+                    for enum_catalog_type_nvdb_sub_rm, item_sub_rm in relations.items():
+                        print('enum catalog: ', enum_catalog_nvdb_sub_rm, 'items: ', item_sub_rm['nvdbid'])
+                
+                #Update Case and Default Case
                 if item['operation'] == 'update':
-                    relation = ET.SubElement = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
+                    # relation = ET.SubElement = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
+                    relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
 
                     #and if it's an update, then add road objects as child
                     for nvdbid in item['vegobjekter']:
@@ -265,7 +280,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
         
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 
-        print('=======endringssett========', self.xml_string) #debugin
+        print('=======endringssett========', self.xml_string) #debuging info of hole formed XML endingsett
         
         # emiting signal
         self.endringsett_form_done.emit()
