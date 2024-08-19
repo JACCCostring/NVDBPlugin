@@ -13,6 +13,7 @@ FORM_CLASS, BASE_CLASS = uic.loadUiType(os.path.join(
 
 class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     new_relation_event = pyqtSignal(int, str) #signal for sending selected items
+    unlink_btn_clicked = pyqtSignal() #signal for when unlink btn clicked
     
     def __init__(self):
         super().__init__()
@@ -34,7 +35,7 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         
         self.more_main_tab.currentChanged.connect(self.activate_current_tab) #when current tab changes
         self.table_relation_show.clicked.connect(self.item_clicked) #when any item is clicked in table
-        
+        self.unlink_from_parent_btn.clicked.connect(self.onUnlink_btn_clicked) #when unlink btn is clicked
         
     def activate_current_tab(self, index):
         if self.more_main_tab.currentIndex() == 0:
@@ -113,6 +114,9 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         
         self.new_relation_event.emit(id, name)
 
+    def onUnlink_btn_clicked(self):
+        self.unlink_btn_clicked.emit()
+        
     # internal own class methods for inside uses
     def setup_default_tab_index_flags(self):
         if self.more_main_tab.currentIndex() == 0:  # 0 stedfesting tab
