@@ -132,8 +132,11 @@ class AreaGeoDataParser:
             'X-Client': 'ny klient Les'
         }
         params = {'inkluder': 'relasjonstyper'}
+        
         response = requests.get(endpoint, headers=header, params=params)
+        
         relationtype = None
+        
         if response.ok:
             for in_content in response.json():
                 if in_content == 'relasjonstyper':
@@ -158,7 +161,28 @@ class AreaGeoDataParser:
             pass
             
         return road_objects_possible_parents
-
+        
+    @classmethod
+    def get_children_relation_from_parent(self, p_type: int = int(), p_nvdbid: int = int(), ):
+        
+        endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(p_type) + '/' + str(p_nvdbid)
+        
+        header = {
+            'ContentType': 'application/json',
+            'X-Client': 'ny klient Les'
+        }
+        
+        params = {'inkluder': 'metadata'}
+        
+        response = requests.get(endpoint, headers=header, params=params)
+        
+        if response.ok:
+            pass
+    
+    @classmethod
+    def get_last_version(self, p_nvdbid: int = int()):
+        pass
+        
     @classmethod
     def get_env(self, version: str = 'v3') -> str:
         currentMiljo = self.env.lower()  # this variable value must be already set, before use with, object.set_env() method

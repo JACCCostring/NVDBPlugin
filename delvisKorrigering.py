@@ -1,9 +1,10 @@
-import requests, json, io
-from .abstractPoster import AbstractPoster #this must be in the same directory as delvisKorriger.py
-
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot #its need it for signals, slots and QObjects
 
+from .abstractPoster import AbstractPoster #this must be in the same directory as delvisKorriger.py
+
 import xml.etree.ElementTree as ET #this is already included in .abstractPoster but just in case
+
+import requests, json, io
 
 class DelvisKorrigering(AbstractPoster, QObject):
     new_endringsset_sent = pyqtSignal(list)
@@ -139,7 +140,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
         
         new_modified_data = {}
         
-#        fix egenskaper and values when not valid egenskaper is found
+        #fix egenskaper and values when not valid egenskaper is found
         for k1, v1 in self.modified_data.items():
             for k2, v2 in egenskaper_list.items():
                 if k1 == k2:
@@ -151,7 +152,6 @@ class DelvisKorrigering(AbstractPoster, QObject):
                 
                 for egenskap_navn, value in new_modified_data.items():
                     # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
-                    # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
                         
                     if 'Assosierte' not in egenskap_navn: #avoiding adding objekt relasjoner here
                                                     
@@ -160,25 +160,31 @@ class DelvisKorrigering(AbstractPoster, QObject):
                         
                         if 'NULL' not in val: #if not 'null' value then a valid value
                         
-                            #here we having a logic issue about '.', because if for example val = decimal point number ex: 11.00000
-                            #then val will get lose because we are comparing if val is '.', but if we wanna make sure wether val is a value number or not
-                            #we need to try a int conversion and if raise an exception so we know now val is a '.' and not a number
+                            '''
+                            here we having a logic issue about '.', because if for example val = decimal point number ex: 11.00000
+                            then val will get lose because we are comparing if val is '.', but if we wanna make sure wether val is a value number or not
+                            we need to try a int conversion and if raise an exception so we know now val is a '.' and not a number
+                            '''
                             
                             if val != '.': #if not '.' value then its a valid value
                                 
                                 if egenskap_navn == 'Geometri, punkt' or egenskap_navn == 'Geometri, linje' or egenskap_navn == 'Geometri, flate':
                                     geometri_egenskap_found = True
                                     
-                                #those are the rest of the egenskaper
-                                #will only add egenskaper that is not Geometri and assosiasjoner
+                                '''
+                                those are the rest of the egenskaper
+                                will only add egenskaper that is not Geometri and assosiasjoner
+                                '''
                                 if geometri_egenskap_found == False:
-                                    # operation will depend on if value is 'N/A' or not
-                                    # if 'N/A' then we delete egenskap and if not then update egenskap
+                                    '''
+                                    operation will depend on if value is 'N/A' or not
+                                    if 'N/A' then we delete egenskap and if not then update egenskap
+                                    '''
                                     operation = 'slett' if self.modified_data[egenskap_navn] == 'N/A' else 'oppdater'
                                     # operation = 'slett' if new_modified_data[egenskap_navn] == 'N/A' else 'oppdater'
                                         
-                                    print(operation) #debug
-                                    print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
+                                    # print(operation) #debug
+                                    # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
                                             
                                     new_egenskap = ET.SubElement(egenskaper, 'egenskap')
                                     new_egenskap.attrib = {'typeId': str(value), 'operasjon': operation}
@@ -206,57 +212,75 @@ class DelvisKorrigering(AbstractPoster, QObject):
                                     wtk_child_geometri_egenskap.text = str(self.extra['geometry_found'])
                                 
                                             
-#        adding validering element to xml form, request to nvdb must have it
+        #adding Validering to XML endringsett
         validering_objekt = ET.SubElement(vegobjekt, 'validering')
         lest_fra_nvdb = ET.SubElement(validering_objekt, 'lestFraNvdb')
         lest_fra_nvdb.text = self.extra['sistmodifisert']
 
-#        adding relasjoner to vegobjekter ------- Note: if vegobjekt has a relation then must add child to request not the other way around
-        relations = self.extra['relation']
+        '''
+        adding relations to the parent road object
         
-#        relasjoner will only be added if vegobjekt has a relation with another vegobjekt
+        Note: when adding relation to a road object, convention is that
+        parent object must add child as a relation to it and not the other way around.
+        '''
+        relations = self.extra['relation']
+
         if relations: 
             
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
             
-            for enum_catalog_type_nvdb, item in relations.items(): #Note: en assosiasjon for hver datterobjekttype
-                # print(egenskap_id, ':', objekter)
+            for enum_catalog_type_nvdb, item in relations.items():
+                #Note: for each relation or assosiasjon a sub or new assosiasjon must be added individual if need it.
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
+                relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
-                #remove child object
-                if item['operation'] == 'remove':
-                    #when is a slett operation, not nvdb id need to be added, to endringsett
-                    relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
-                    
-                    sub_relation = ET.SubElement(relation, 'nvdbId') #tempId
-                    sub_relation.attrib = { 'operasjon':  "slett" }
-                    
-                    '''find child road object marked for removing, road object tagged name is
+                '''
+                    find child road object marked for removing, road object tagged name is
                     remove_nvdbid and it's existing already there from nvdb_beta_dialog.py module
                     from here we need to make sure that:
                     
-                    if child road object is already there, then 
-                    -only updated and removing relation is not need it
+                    if operation is Remove then:
+                    -remove case happens (remove child object relation)
                     
-                    if child road object is not there yet, then 
-                    -just added as a new child relation
+                    if operation is default (update) then:
+                    -update case happens (update child object relation)
+                    
+                    if operation is new then:
+                    -new case happens (add new child object relation)
                     
                     Documentation to fallow NVDB API convention: https://nvdb.atlas.vegvesen.no/docs/produkter/nvdbapis/endringssett/Oppbygging/#om-assosiasjoner
-                    '''
-                    for enum_catalog_type_nvdb_sub, item_sub in relations.items():
-                        pass
-                        ''' 
-                        for now this loop do not make any effect on the changes, but a bad form xml will be generated
-                        and is ok for now, to avoid this uncomment sub_relation.text = str(item['remove_nvdbid'])
-                        '''
-                        # print('enum_catalog_type_nvdb: ', enum_catalog_type_nvdb_sub, 'road objects: ', item_sub['remove_nvdbid'])
-                        # sub_relation.text = str(item['remove_nvdbid']) #commented for now, but need it later for removing child relationship
+                '''
+                
+                '''
+                #Remove Case
+                if item['operation'] == 'remove':
                     
-            ####################################################
+                    sub_remove_relation = ET.SubElement(relation, 'nvdbId')
+                    sub_remove_relation.attrib = { 'operasjon':  "slett" }
+
+                    for enum_catalog_type_nvdb_sub, item_sub in relations.items():
+                        #for now this loop do not make any effect on the changes, but a bad form xml will be generated
+                        #and is ok for now, to avoid this uncomment sub_relation.text = str(item['remove_nvdbid'])
+    
+                        print('enum_catalog_type_nvdb: ', enum_catalog_type_nvdb_sub, 'road objects: ', item_sub['nvdbid'])
+                        # sub_remove_relation.text = str(item_sub['nvdbid']) #commented for now, but need it later for removing child relationship
+                
+                '''
+                
+                #Add New Case
+                if item['operation'] == 'add':
+                    
+                    sub_add_relation = ET.SubElement(relation, 'nvdbId')
+                    sub_add_relation.attrib = { 'operasjon': 'ny' }
+                    
+                    for enum_catalog_type_nvdb_sub_rm, item_sub_rm in relations.items():
+                        print('enum catalog: ', enum_catalog_nvdb_sub_rm, 'items: ', item_sub_rm['nvdbid'])
+                
             
-            #update child object
+                #Update Case and Default Case
                 if item['operation'] == 'update':
-                    relation = ET.SubElement = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
+                    # relation = ET.SubElement = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
+                    relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
 
                     #and if it's an update, then add road objects as child
                     for nvdbid in item['vegobjekter']:
@@ -265,7 +289,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
         
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 
-        print('=======endringssett========', self.xml_string) #debugin
+        print(self.xml_string) #debuging info of hole formed XML endingsett
         
         # emiting signal
         self.endringsett_form_done.emit()
