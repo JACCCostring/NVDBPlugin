@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets
 # from .nvdbskriv_beta import Ui_SkrivDialog
 ########
 from PyQt5.QtWidgets import QTableWidgetItem, QAbstractItemView, QCheckBox
+from PyQt5.QtCore import pyqtSignal
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QDate, QTime
 
@@ -28,6 +29,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     
 #########
 class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
+    userLogged = pyqtSignal(str)
+    
     def __init__(self, data, listOfEgenskaper):
         super().__init__()
         
@@ -220,7 +223,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 'accessToken': accessToken, 
                 'refreshToken': refreshToken
         }
-        
+            
+            #emiting signal from here to nvdb_beta_dialog.py module
+            self.userLogged.emit(self.usernameLine.text())
+            
         #if logging not succeded then, clear enviroment variables
         #pass, username and logged flag
         if not self.successLogin:

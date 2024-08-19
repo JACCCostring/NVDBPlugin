@@ -128,8 +128,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.valid_roadObject_types = False
         self.possible_parent_name = str() # to store name of possible parent relation
         self.hasChildParentRoadObject = False #to controll wether child road object has or not a parent
-        self.parent_roadObject_linked_to: str = str()
-
+        self.parent_roadObject_linked_nvdbid: str = str() #for store nvdbid for related parent when sammenkobling
+        self.parent_roadObject_linked_type: int = int() # || type for related parent when sammenkobling
+        self.username_session: str = str() #username session only when atempting removing relation
+        
 #        development starts here
 #        setting up all data need it for starting up
         
@@ -953,6 +955,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             self.skrivWindowOpened = True
             
+            self.skrivWindowInstance.userLogged.connect(self.onUserLoggedIn)
+            
 #        only shows windows again if this is allready opened
         if self.skrivWindowOpened and self.skrivWindowInstance:
             self.skrivWindowInstance.show()
@@ -1001,7 +1005,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     self.hasChildParentRoadObject = True
                                     
                                     #child objects has only one parent in all cases, never more then one
-                                    self.parent_roadObject_linked_to = relation_type[0]['vegobjekter']
+                                    self.parent_roadObject_linked_nvdbid = relation_type[0]['vegobjekter']
+                                    self.parent_roadObject_linked_type = relation_type[0]['type']['id']
 
                                 except KeyError:
                                     ''' 
@@ -1114,11 +1119,25 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def remove_relation_fromSourceData(self) -> None:
         '''
-        to get and modify the relation from the selected object on the current fetched data
-        from the last search in module nvdb_beta_dialog.py
+        removing relationship between parent road object and child object
+        will be through a call to a new module, this module will be in a separate file
+        and will contain a class with a static member method, signals a slots
         '''
+        
+        '''
+        data that need to be ready for beeing before send:
+        
+        - parent road object type id            -> self.parent_roadObject_linked_type
+        - version of parent road object ...... -> AreaGeoDataParser.get_last_version(self.parent_roadObject_linked_nvdbid,)
+        - nvdbid of road object parent         -> self.parent_roadObject_linked_nvdbid
+        - username of current logged user .... -> self.username_session
+        - last time nvdb was read, for validation in endringsett -> AreaGeoDataParser.getSistModifisert(self.parent_roadObject_linked_type, self.parent_roadObject_linked_nvdbid, parent_version)
+        - relationship of child objects of parent -> AreaGeoDataParser.get_children_relation_from_parent(self.parent_roadObject_linked_type, self.parent_roadObject_linked_nvdbid)
+        '''
+        
         #only happens if child road object selected from QGIS kart has a parent
         if self.after_possible_parent_selected or self.hasChildParentRoadObject:
+            '''
             for refdata in self.data:
                 for key, value in refdata.items():
                     if key == 'nvdbId':
@@ -1131,6 +1150,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     for child in children:                                            
                                         child['operation'] = 'remove' #tagged with remove for removing relation object later
                                         child['child_nvdbid'] = self.parent_roadObject_linked_to #nvdbid of child road object to remove
+            '''
+            
+            #testing
+            AreaGeoDataParser.get_children_relation_from_parent(self.parent_roadObject_linked_type, self.parent_roadObject_linked_nvdbid[0])
                                         
         
     def add_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> bool:
@@ -1158,7 +1181,26 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                             return True
                                         
         return False
+    
+    
+    def get_env_write_endpoint(self):
+        currentMiljo = self.comboEnvironment.currentText()
+        url = None
+
+        if 'Produksjon' in currentMiljo:
+            url = 'https://nvdbapiskriv.atlas.vegvesen.no/rest/v3/endringssett'
         
+        if 'Akseptansetest' in currentMiljo:
+            url = 'https://nvdbapiskriv.test.atlas.vegvesen.no/rest/v3/endringssett'
+        
+        if 'Utvikling' in currentMiljo:
+            url = 'https://nvdbapiskriv.utv.atlas.vegvesen.no/rest/v3/endringssett'
+        
+        return url
+    
+    def onUserLoggedIn(self, username):
+        self.username_session = username
+    
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
     

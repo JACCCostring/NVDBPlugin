@@ -1,9 +1,10 @@
-import requests, json, io
-from .abstractPoster import AbstractPoster #this must be in the same directory as delvisKorriger.py
-
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot #its need it for signals, slots and QObjects
 
+from .abstractPoster import AbstractPoster #this must be in the same directory as delvisKorriger.py
+
 import xml.etree.ElementTree as ET #this is already included in .abstractPoster but just in case
+
+import requests, json, io
 
 class DelvisKorrigering(AbstractPoster, QObject):
     new_endringsset_sent = pyqtSignal(list)
@@ -139,7 +140,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
         
         new_modified_data = {}
         
-#        fix egenskaper and values when not valid egenskaper is found
+        #fix egenskaper and values when not valid egenskaper is found
         for k1, v1 in self.modified_data.items():
             for k2, v2 in egenskaper_list.items():
                 if k1 == k2:
@@ -151,7 +152,6 @@ class DelvisKorrigering(AbstractPoster, QObject):
                 
                 for egenskap_navn, value in new_modified_data.items():
                     # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
-                    # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
                         
                     if 'Assosierte' not in egenskap_navn: #avoiding adding objekt relasjoner here
                                                     
@@ -160,25 +160,31 @@ class DelvisKorrigering(AbstractPoster, QObject):
                         
                         if 'NULL' not in val: #if not 'null' value then a valid value
                         
-                            #here we having a logic issue about '.', because if for example val = decimal point number ex: 11.00000
-                            #then val will get lose because we are comparing if val is '.', but if we wanna make sure wether val is a value number or not
-                            #we need to try a int conversion and if raise an exception so we know now val is a '.' and not a number
+                            '''
+                            here we having a logic issue about '.', because if for example val = decimal point number ex: 11.00000
+                            then val will get lose because we are comparing if val is '.', but if we wanna make sure wether val is a value number or not
+                            we need to try a int conversion and if raise an exception so we know now val is a '.' and not a number
+                            '''
                             
                             if val != '.': #if not '.' value then its a valid value
                                 
                                 if egenskap_navn == 'Geometri, punkt' or egenskap_navn == 'Geometri, linje' or egenskap_navn == 'Geometri, flate':
                                     geometri_egenskap_found = True
                                     
-                                #those are the rest of the egenskaper
-                                #will only add egenskaper that is not Geometri and assosiasjoner
+                                '''
+                                those are the rest of the egenskaper
+                                will only add egenskaper that is not Geometri and assosiasjoner
+                                '''
                                 if geometri_egenskap_found == False:
-                                    # operation will depend on if value is 'N/A' or not
-                                    # if 'N/A' then we delete egenskap and if not then update egenskap
+                                    '''
+                                    operation will depend on if value is 'N/A' or not
+                                    if 'N/A' then we delete egenskap and if not then update egenskap
+                                    '''
                                     operation = 'slett' if self.modified_data[egenskap_navn] == 'N/A' else 'oppdater'
                                     # operation = 'slett' if new_modified_data[egenskap_navn] == 'N/A' else 'oppdater'
                                         
-                                    print(operation) #debug
-                                    print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
+                                    # print(operation) #debug
+                                    # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
                                             
                                     new_egenskap = ET.SubElement(egenskaper, 'egenskap')
                                     new_egenskap.attrib = {'typeId': str(value), 'operasjon': operation}
@@ -245,6 +251,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
                     Documentation to fallow NVDB API convention: https://nvdb.atlas.vegvesen.no/docs/produkter/nvdbapis/endringssett/Oppbygging/#om-assosiasjoner
                 '''
                 
+                '''
                 #Remove Case
                 if item['operation'] == 'remove':
                     
@@ -252,13 +259,14 @@ class DelvisKorrigering(AbstractPoster, QObject):
                     sub_remove_relation.attrib = { 'operasjon':  "slett" }
 
                     for enum_catalog_type_nvdb_sub, item_sub in relations.items():
-                        ''' 
-                        for now this loop do not make any effect on the changes, but a bad form xml will be generated
-                        and is ok for now, to avoid this uncomment sub_relation.text = str(item['remove_nvdbid'])
-                        '''
+                        #for now this loop do not make any effect on the changes, but a bad form xml will be generated
+                        #and is ok for now, to avoid this uncomment sub_relation.text = str(item['remove_nvdbid'])
+    
                         print('enum_catalog_type_nvdb: ', enum_catalog_type_nvdb_sub, 'road objects: ', item_sub['nvdbid'])
                         # sub_remove_relation.text = str(item_sub['nvdbid']) #commented for now, but need it later for removing child relationship
-                                
+                
+                '''
+                
                 #Add New Case
                 if item['operation'] == 'add':
                     
@@ -268,6 +276,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
                     for enum_catalog_type_nvdb_sub_rm, item_sub_rm in relations.items():
                         print('enum catalog: ', enum_catalog_nvdb_sub_rm, 'items: ', item_sub_rm['nvdbid'])
                 
+            
                 #Update Case and Default Case
                 if item['operation'] == 'update':
                     # relation = ET.SubElement = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
@@ -280,7 +289,7 @@ class DelvisKorrigering(AbstractPoster, QObject):
         
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 
-        print('=======endringssett========', self.xml_string) #debuging info of hole formed XML endingsett
+        print(self.xml_string) #debuging info of hole formed XML endingsett
         
         # emiting signal
         self.endringsett_form_done.emit()
