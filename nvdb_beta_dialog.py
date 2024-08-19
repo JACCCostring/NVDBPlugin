@@ -131,6 +131,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.parent_roadObject_linked_nvdbid: str = str() #for store nvdbid for related parent when sammenkobling
         self.parent_roadObject_linked_type: int = int() # || type for related parent when sammenkobling
         self.username_session: str = str() #username session only when atempting removing relation
+        self.current_session_token: dict = {} #current session tokens for current logged user
         
 #        development starts here
 #        setting up all data need it for starting up
@@ -1130,7 +1131,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         - parent road object type id            -> self.parent_roadObject_linked_type
         - version of parent road object ...... -> AreaGeoDataParser.get_last_version(self.parent_roadObject_linked_nvdbid,)
         - nvdbid of road object parent         -> self.parent_roadObject_linked_nvdbid
-        - username of current logged user .... -> self.username_session
+        - username and logging token of current logged user .... -> self.username_session and self.current_session_token
         - last time nvdb was read, for validation in endringsett -> AreaGeoDataParser.getSistModifisert(self.parent_roadObject_linked_type, self.parent_roadObject_linked_nvdbid, parent_version)
         - relationship of child objects of parent -> AreaGeoDataParser.get_children_relation_from_parent(self.parent_roadObject_linked_type, self.parent_roadObject_linked_nvdbid)
         '''
@@ -1153,8 +1154,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             '''
             
             #testing
-            AreaGeoDataParser.get_children_relation_from_parent(self.parent_roadObject_linked_type, self.parent_roadObject_linked_nvdbid[0])
-                                        
+            version = AreaGeoDataParser.get_last_version(self.parent_roadObject_linked_nvdbid[0], self.parent_roadObject_linked_type, )
+            print(version)
         
     def add_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> bool:
         '''
@@ -1198,8 +1199,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         return url
     
-    def onUserLoggedIn(self, username):
+    def onUserLoggedIn(self, username, token):
         self.username_session = username
+        self.current_session_token = token
     
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()

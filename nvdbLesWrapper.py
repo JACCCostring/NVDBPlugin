@@ -180,8 +180,26 @@ class AreaGeoDataParser:
             pass
     
     @classmethod
-    def get_last_version(self, p_nvdbid: int = int()):
-        pass
+    def get_last_version(self, p_nvdbid: int = int(), p_type_id: int = int()):
+        endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(p_type_id) + '/' + str(p_nvdbid)
+        
+        header = {
+            'ContentType': 'application/json',
+            'X-Client': 'ny klient Les'
+        }
+        
+        params = {'inkluder': 'metadata'}
+        
+        response = requests.get(endpoint, headers=header, params=params)
+        version: int = int()
+        
+        if response.ok:
+            data = json.loads(response.text)
+            
+            metadata = data['metadata']
+            version = metadata['versjon']
+            
+            return version
         
     @classmethod
     def get_env(self, version: str = 'v3') -> str:

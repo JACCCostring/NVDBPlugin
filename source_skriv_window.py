@@ -29,7 +29,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     
 #########
 class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
-    userLogged = pyqtSignal(str)
+    userLogged = pyqtSignal(str, dict)
     
     def __init__(self, data, listOfEgenskaper):
         super().__init__()
@@ -225,7 +225,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         }
             
             #emiting signal from here to nvdb_beta_dialog.py module
-            self.userLogged.emit(self.usernameLine.text())
+            self.userLogged.emit(self.usernameLine.text(), self.tokens)
             
         #if logging not succeded then, clear enviroment variables
         #pass, username and logged flag
