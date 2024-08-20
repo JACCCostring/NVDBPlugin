@@ -227,7 +227,7 @@ class AreaGeoDataParser:
         return lesUrl
 
     @classmethod
-    def getDatakatalogVersion(self, currentMiljo):
+    def get_datacatalog_version(self, currentMiljo):
         header = {'X-Client': 'QGIS NVDB Skriv'}
         json_data = None
 

@@ -3,9 +3,9 @@ from PyQt5 import QtWidgets
 # from .nvdbskriv_beta import Ui_SkrivDialog
 ########
 from PyQt5.QtWidgets import QTableWidgetItem, QAbstractItemView, QCheckBox
-from PyQt5.QtCore import pyqtSignal
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QDate, QTime
+from PyQt5.QtCore import pyqtSignal
 
 from .nvdb_endringsset_status_window import Ui_windowProgress #dialog class
 
@@ -20,9 +20,10 @@ import requests, io, json
 import threading
 
 from .helper import Logger #for logging, watch out
-import os
 
 from qgis.PyQt import uic
+
+import os
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'nvdbskriv_beta.ui'))
@@ -536,7 +537,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         
         return nvdbid_list
         
-    def getFieldEgenskaperByNVDBid(self, nvdbid):
+    def get_field_egenskaper_by_nvdbid(self, nvdbid):
         layer = iface.activeLayer()
 
         selected_object_fields = {}
@@ -585,12 +586,12 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     if key == 'sist_modifisert':
                         return value
     
-    def getVegObjektRelasjoner(self, nvdbid)->dict:
-        #this method only  parsed road object's relationship 
-        #allready laying  on the fetched data in self.data, not generic ones
-        
+    def get_road_object_relationship(self, nvdbid)->dict:
+        '''
+        this method only  parsed road object's relationship 
+        allready laying  on the fetched data in self.data, not generic ones
+        '''
         relation_collection: dict = {}
-        # relation_id = None
         opert: str = str()
         nvdbids_action: str = str()
         
@@ -630,9 +631,11 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         return vegobjekt_field
         
     def writeToNVDB(self):
-        #verifying if login time still valid
-        #if login time is greater then 8 hours
-        #then is not valid anymore, so we update login
+        '''
+        verifying if login time still valid
+        if login time is greater then 8 hours
+        then is not valid anymore, so we update login
+        '''
         if self.login_time_expired():
             self.login() # update login
             
@@ -661,57 +664,64 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         for nvdbid in self.list_of_nvdbids():
             
         #get egenskaper data from each of the nvdbids
-            egenskaperfields = self.getFieldEgenskaperByNVDBid(nvdbid)
+            layer_modified_egenskaper = self.get_field_egenskaper_by_nvdbid(nvdbid)
             
         #continue with same precedure as before
             if self.successLogin == False: #if user is not logged in, then ask to log in again
                 self.mainTab.setCurrentIndex(1)
             
-            if egenskaperfields and self.successLogin: #if user is logged in and data no is populated then continue
+            if layer_modified_egenskaper and self.successLogin: #if user is logged in and data no is populated then continue
                 
-                object_type = self.data[0]['objekttype'] #ex: Anttenna: 470, Veganlegg: 30
+                road_object_type = self.data[0]['objekttype'] #ex: Anttenna: 470, Veganlegg: 30
                 
-                vegobjektnavn = self.getEspecificFieldContent(egenskaperfields, 'Navn')
+                road_object_name = self.getEspecificFieldContent(layer_modified_egenskaper, 'Navn')
                 
                 username = self.usernameLine.text()
                 
-                datakatalog_versjon = AreaGeoDataParser.getDatakatalogVersion(self.miljoCombo.currentText())
+                datacatalog_version = AreaGeoDataParser.get_datacatalog_version(self.miljoCombo.currentText())
                 
-                miljoSkrivEndepunkter = self.getMiljoSkrivEndpoint()
+                env_write_endpoint = self.get_env_write_endpoint()
                 
-                sistmodifisert = AreaGeoDataParser.getSistModifisert(object_type, egenskaperfields['nvdbid'], egenskaperfields['versjon'])
+                sistmodifisert = AreaGeoDataParser.getSistModifisert(road_object_type, layer_modified_egenskaper['nvdbid'], layer_modified_egenskaper['versjon'])
                 
-                relations = self.getVegObjektRelasjoner( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parents
+                relations = self.get_road_object_relationship( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parents
                 
-                extra = {
-                    'nvdb_object_type': object_type, 
+                extra_data = {
+                    'nvdb_object_type': road_object_type, 
                     'username': username, 
-                    'datakatalog_version': datakatalog_versjon,
-                    'endpoint': miljoSkrivEndepunkter,
+                    'datakatalog_version': datacatalog_version,
+                    'endpoint': env_write_endpoint,
                     'sistmodifisert': sistmodifisert,
                     'current_nvdbid': self.current_nvdbid,
                     'relation': relations, #dict
                     'geometry_found': self.geometry_found,
-                    'objekt_navn': vegobjektnavn
+                    'objekt_navn': road_object_name
                 }
-            
-                # creating DelvisKorrigering object
-                self.delvis = DelvisKorrigering(token, egenskaperfields, extra)
+                
+                '''
+                creating DelvisKorrigering object, this class flow execution, first
+                call object.formXMLRequest() method, then this method will emit a signal
+                and that signal well react and call object.prepare_post() method.
+                
+                and a the end of preparePost() method, then will make a call to startPosting() method
+                and then this method will emit a signal and that signal well react to a slot call on_new_endringsset().
+                
+                This last method will queued all sent endringssett to NVDB, for passing as argument the status/progress windows,
+                on it's creating/instantiation in openProgressWindow() method.
+                
+                Note: Signals and Slots must be connected in same order as coded here, because
+                of how Qt works when queueing signals
+                '''
+                self.delvis = DelvisKorrigering(token, layer_modified_egenskaper, extra_data)
 
-                # when new_endringsset_sent signal emited then call self.on_new_endringsset slot/method
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
 
-                # when xml form finished,  and endringsett_form_done signal is triggered then prepare post
                 self.delvis.endringsett_form_done.connect(self.preparePost)
 
-                # when some events UB happens on DelvisKorrigering class side
-                #self.delvis.response_error.connect(lambda: print('something went wrong! '))
-
-                # calling formXMLRequest method to form delviskorrigering xml template
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
 
 
-    def getMiljoSkrivEndpoint(self):
+    def get_env_write_endpoint(self):
         currentMiljo = self.miljoCombo.currentText()
         url = None
 
@@ -794,9 +804,11 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
             self.my_logger.logger.info(self.info_after_sent_objects)
 
-            #re-assigning new generated token if session has been expired
-            #at this point if session has been expired, then will loop through hole
-            #list looking for any token and replacing it with new generated
+            '''
+            re-assigning new generated token if session has been expired
+            at this point if session has been expired, then will loop through hole
+            list looking for any token and replacing it with new generated
+            '''
             if self.session_expired:
                 for item in self.info_after_sent_objects:
                     for endring in item:
@@ -811,7 +823,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
             # self.progressWindowOpened = True
             
-#        only shows windows again if this is already opened
+        #only shows windows again if this is already opened
         # if self.progressWindowOpened and self.progressWindowInstance:
         #    self.progressWindowInstance.show()
     
@@ -820,10 +832,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         # opening progress window after andringset is added to list
         # self.openProgressWindow()
         
+        print(self.info_after_sent_objects)
+        
     def preparePost(self):
         # when some events UB happens on DelvisKorrigering class side
-
-        #self.delvis.response_error.connect(lambda error: print('Error! ', error))
 
         # Lambda functions pass correct feedback and color to function
         self.delvis.response_error.connect(lambda error: self.update_status(error, "red"))
@@ -837,28 +849,34 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.response_endringsset.setStyleSheet(f"color: {color}; font: 12pt 'MS Shell Dlg 2';")
 
     def login_time_expired(self):
-        #verify if current time and start time hours
-        #is over 8 hours difference, 8 hours is the set hours
-        #given to a token to be expired
+        '''
+        verify if current time and start time hours
+        is over 8 hours difference, 8 hours is the set hours
+        given to a token to be expired
         
-        #method it will return true if current_time time
-        #it's 8 hours greater or equal to expected_time
+        method it will return true if current_time time
+        it's 8 hours greater or equal to expected_time
         
-        #expected time is taken at the begining of the application
-        #and it's assigned 8 hours later, then the time was a that point
+        expected time is taken at the begining of the application
+        and it's assigned 8 hours later, then the time was a that point
+        '''
         
-        #substract current time
-        #minutes of current time must be substracted
-        #since setHMS method modify hole time
-       #so it's need it to have consistency
+        '''
+        substract current time
+        minutes of current time must be substracted
+        since setHMS method modify hole time
+        so it's need it to have consistency
+       '''
         current_time = QTime.currentTime()
         current_minutes = current_time.minute()
         current_time.setHMS(current_time.hour(), current_minutes, 0)
         
-        #but as well we need current day for comparing if day => then expected
-        #in case this function reutn true due to current and expected time might
-        #to be true, then the expected day calculated when the software started, 
-        #can be compared against the current day
+        '''
+        but as well we need current day for comparing if day => then expected
+        in case this function reutn true due to current and expected time might
+        to be true, then the expected day calculated when the software started, 
+        can be compared against the current day
+        '''
         current_date = QDate.currentDate()
         current_day = current_date.day()
         
@@ -870,23 +888,29 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.my_logger.disable_logging()
         self.my_logger.logger.debug(f"current time {current_time} - expected time {self.expected_time}")
 
-
+        '''
         #comparing current and expected day, if this case happens
         #to be true, then means another day has passed and API Token
         #has expired even if current and expected hour case happens to be true
+        '''
         
-        #for Ex: current hour = 08:00 and expected hour = 15:00
-        #but program was started yestarday 08:00, in this case
-       #the hours case happens to be false, and not true, but API Token
-      #is already expired
-     
-        #a solution to this would be to check if has passed one or more days 
-       #since the software was started
+        '''
+        for Ex: current hour = 08:00 and expected hour = 15:00
+        but program was started yestarday 08:00, in this case
+        the hours case happens to be false, and not true, but API Token
+        is already expired
+        '''
+        
+        '''
+        a solution to this would be to check if has passed one or more days 
+        since the software was started
+        '''
         if current_day >= self.expected_day:
            return True
-           
-        #comparing time if current time is >= then expected time
-        #then return true
+        '''
+        comparing time if current time is >= then expected time
+        then return true
+        '''
         if current_time >= self.expected_time:
             return True
         
