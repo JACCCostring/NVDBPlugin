@@ -651,7 +651,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
     
     def sennding_endrings_thread(self):
-        egenskaperfields = None
+        layer_modified_egenskaper = None
         token: str = str()
         
         try:
@@ -832,7 +832,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         # opening progress window after andringset is added to list
         # self.openProgressWindow()
         
-        print(self.info_after_sent_objects)
+        # for info in self.info_after_sent_objects:
+        #     for inf in info:
+        #         print(inf['status_after_sent'])
         
     def preparePost(self):
         # when some events UB happens on DelvisKorrigering class side

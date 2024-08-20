@@ -302,7 +302,7 @@ class DelvisKorrigering(QObject):
                 'fremdrift': fremdrift
             }
             
-            print('prepare post: ', self.tokensBeforePost['status'])
+            # print('prepare post: ', self.tokensBeforePost['status'])
 
         '''
         now start/send the current data to NVDB
@@ -365,7 +365,7 @@ class DelvisKorrigering(QObject):
             'vegobjekt_navn': self.extra['objekt_navn']
         }
         
-        print('posting: ', list_vegobjekter_info['status_after_sent'])
+        # print('posting: ', list_vegobjekter_info['status_after_sent'])
         
         self.vegobjekter_after_send.append(list_vegobjekter_info)
         

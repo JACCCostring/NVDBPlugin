@@ -116,18 +116,19 @@ class CustomDelvisKorrUniqueCase(DelvisKorrigering):
 def testing():
     token = "eyJ0eXAiOiJKV1QiLCJraWQiOiJQVi93YnkvQ0lqQW9RS0U4TWJTQjE2QmFsbkE9IiwiYWxnIjoiUlMyNTYifQ.eyJhdF9oYXNoIjoib3hTMXZSZUNaS2NyYllJT1F4eVZRUSIsInN1YiI6ImFsZWNhcyIsImF1ZGl0VHJhY2tpbmdJZCI6ImYwMDNmZjdkLWQ2M2EtNDg3NC04OWJlLWU1ZTM4NTBiNGNjZi05MTk3MjIwIiwic3VibmFtZSI6ImFsZWNhcyIsImlzcyI6Imh0dHBzOi8vd3d3LnRlc3QudmVndmVzZW4ubm86NDQzL29wZW5hbS9vYXV0aDIvcmVhbG1zL3Jvb3QvcmVhbG1zL0VtcGxveWVlcyIsInRva2VuTmFtZSI6ImlkX3Rva2VuIiwiZ2l2ZW5fbmFtZSI6Ikp1bGlvIEFsZXhhbmRlciIsImF1ZCI6IjE3YjllOWEzLThjZTMtNGQxMS05NGU2LTEwMDRjNmMzMzQwOSIsInVpZCI6ImFsZWNhcyIsImF6cCI6IjE3YjllOWEzLThjZTMtNGQxMS05NGU2LTEwMDRjNmMzMzQwOSIsInN2dnJvbGVzIjpbIm52YT0wX2JydWtlcl9mYWdkYXRhIiwic2J0aWxnLWludGVybj11c2VyIiwicHdkcmVzZXQtaW50ZXJuPXVzZXIiLCJzeW5lcmdpPXN0YW5kYXJkIiwidmVna2FtZXJhPWJpbGRlciIsIm52YT03X3V0dmFsZ19hZG1pbiIsIm9rb2lodWI9a3VuZGVyZWdpc3RyZXJpbmciLCJ0cmFmaWtrbmE9dXNlciIsImdpc2xpbmVpbm5zeW5tYXRyYmFzaXM9dXNlciIsInZyPXJhcHBvcnR3ZWJfbGVzIiwibnZhPTBfYnJ1a2VyX3JhcHBvcnRlciIsImZha3RoaXN0YWRtaW49dXNlciIsImRjdG1maWw9dXNlciIsInRla3N0YXBwPWxlcyIsImJpPW9rX21lZGFyYmVpZGVyIiwiYWt0ZHY9aW5uc3luIiwicDM2MD1hbnNhdHQiLCJudmE9MV9pbm5zeW5fYWRtaW4iLCJlcmtsaW5nPXVzZXIiLCJ2cj1zdnZfaW50ZXJuZSIsInJlc3VsdGF0YmFua2VuPXVzZXIiLCJlcGlpbnRyYT11c2VyIiwiZml4dmdkYXQ9YnJ1a2VyIiwiZ2lzbGluZXdlYm1hdHJpa2tlbD11c2VyIiwiYXBleD11c2VyIiwibWltZWhpc3Rvcmlzaz1hbnNhdHQiLCJudmE9MF9icnVrZXJfaW5uc3luIl0sImF1dGhfdGltZSI6MTcyNDE1NDIzNiwibmFtZSI6Ikp1bGlvIEFsZXhhbmRlciBDYXNhZG8gQ2FzdGlsbG8iLCJyZWFsbSI6Ii9FbXBsb3llZXMiLCJleHAiOjE3MjQxODMwMzYsInRva2VuVHlwZSI6IkpXVFRva2VuIiwiaWF0IjoxNzI0MTU0MjM2LCJmYW1pbHlfbmFtZSI6IkNhc2FkbyBDYXN0aWxsbyIsImVtYWlsIjoiYWxleGFuZGVyLmNhc2Fkb0B2ZWd2ZXNlbi5ubyJ9.B-zAZovNdEai9YBsDxys2fm8BGbxsJUOz-RxJIcyLlkZKIdU7dnWXY9U0igr7lkPUoEIRwav0oRvyAAuJ0aVyoLmHki7TwVTaURvdy0zeU1pK3HlsTLNpDZ3XIt0TfX8eAcfYDIk79dat65ZWy-osKd1FmnBY5TNgrIz1IZAOj5oWfkc_0oXcr4JkXFmThRhBWgMBg0zytns34APTvccAl-QA0_CrYe0tNtBmDsNnQ7HWd-U1aGH4YYGFSrM0Vy43YbORLgq1KCvk5mFvLxzL3eS7PxMLNCrJGoyGYiQeC1jacUS3YSS0L1sjNGJ4Odq_VxbH_Gt95kyiTX4aNMadVRqGvILp7joq4w91xQi2av5O3UmoPjnqhdPYfwskPHKL_Yy--RinjelhkqBbGCzjtuYuxWC8aTCQfLbrAM-Hi1peu65ymDsCe07sFlTFrbw6eD1n66GTSIgWi9z0Wo0aFuUi7x1kktC5erBAKG2o-ONptYl2UOqUaW5b0BHRAkA9CjuGasUctQbiBL9PHZySdITKMHfCqmw6IbzJN7ac6bm1ClyJSEfJaEWWPkrsA5uFwogQjQmeQdZ6gnosfZM4rcdgFF6I-kLCkzJaq33EMfH3Q13tlg-KlmIcd-WNF1KpIQG1TB54gX009HAQDett-MN1DFPeE580egVk9oQ21I"
     
-    relation = {200028: {'vegobjekter': [893884925, 1009978228], 'operation': 'update', 'nvdbid': ''}, 200027: {'vegobjekter': [893884926], 'operation': 'update', 'nvdbid': ''}}
-    
+    relation = {
+    200028: {'vegobjekter': [893884925, 1009978228], 'operation': 'update', 'nvdbid': ''}, 200027: {'vegobjekter': [893884926], 'operation': 'update', 'nvdbid': ''}}
+
     extra = {   
                     'nvdb_object_type': '86', 
                     'username': 'username', 
                     'datakatalog_version': '4',
                     'endpoint': 'https://nvdbapiskriv.test.atlas.vegvesen.no/rest/v3/endringssett',
                     'sistmodifisert': '12-05-2003',
-                    'current_nvdbid': '11092244',
+                    #'current_nvdbid': '11092244',
                     'relation': relation, #dict
-                    'geometry_found': 'geometry',
-                    'objekt_navn': 'belysningpunkt'
+                    #'geometry_found': 'geometry',
+                    #'objekt_navn': 'belysningpunkt'
                 }
     '''
     egen = {   

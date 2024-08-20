@@ -49,7 +49,7 @@ from .source_skriv_window import SourceSkrivDialog
 from .source_more_window import SourceMoreWindow
 from .nvdbLesWrapper import AreaGeoDataParser
 from .custom_qstandard_item_model import CustomStandardItemModel
-
+from customDelvisKorrUniqueCase import CustomDelvisKorrUniqueCase
 
 #PyQt5 libs
 from qgis.PyQt import QtWidgets
@@ -1154,9 +1154,33 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             '''
             
             #testing
-            version = AreaGeoDataParser.get_last_version(self.parent_roadObject_linked_nvdbid[0], self.parent_roadObject_linked_type, )
-            print(version)
-        
+            username = self.username_session
+            version = AreaGeoDataParser.get_last_version(self.parent_roadObject_linked_nvdbid[0], self.parent_roadObject_linked_type)
+            object_type_id = self.parent_roadObject_linked_type
+            parent_nvdbid = self.parent_roadObject_linked_nvdbid
+            
+            last_time_road_object_modified = AreaGeoDataParser.getSistModifisert(self.parent_roadObject_linked_type, version, self.parent_roadObject_linked_nvdbid)
+            datacatalog_version = AreaGeoDataParser.get_datacatalog_version()
+            endpoint = self.get_env_write_endpoint()
+            
+            modified_data = {
+            'nvdbid': parent_nvdbid,
+            'versjon': last_time_road_object_modified #last time road object was modified
+            }
+            
+            extra_data = {
+            'current_nvdbid': parent_nvdbid,
+            'nvdb_object_type': object_type_id,
+            'datakatalog_version': datacatalog_version, #datacatalog current version
+            'sistmodifisert': last_time_road_object_modified,
+            'username': username,
+            'endpoint': endpoint,
+            'objekt_navn': 'object_name' #test name
+            #'relation': relation
+            }
+            
+            self.delvis_remove_relation_instance = CustomDelvisKorrUniqueCase(self.current_session_token, modified_data, extra_data)
+            
     def add_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> bool:
         '''
         to get and modify the relation from the selected object on the current fetched data

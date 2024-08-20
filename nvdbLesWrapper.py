@@ -163,7 +163,7 @@ class AreaGeoDataParser:
         return road_objects_possible_parents
         
     @classmethod
-    def get_children_relation_from_parent(self, p_type: int = int(), p_nvdbid: int = int(), ):
+    def get_children_relation_from_parent(self, p_type: int = int(), p_nvdbid: int = int()):
         
         endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(p_type) + '/' + str(p_nvdbid)
         
