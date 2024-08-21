@@ -164,9 +164,38 @@ class AreaGeoDataParser:
         return road_objects_possible_parents
         
     @classmethod
-    def get_children_relation_from_parent(self, p_type: int = int(), p_nvdbid: int = int(), ):
-        
+    def get_children_relation_from_parent(self, p_type: int = int(), p_nvdbid: int = int()):
         endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(p_type) + '/' + str(p_nvdbid)
+        
+        header = {
+            'ContentType': 'application/json',
+            'X-Client': 'ny klient Les'
+        }
+        
+        params = {'inkluder': 'relasjoner'}
+        
+        response = requests.get(endpoint, headers=header, params=params)
+        
+        if response.ok:
+        
+            response_plugin = json.loads(response.text)
+
+            # create a list containing the child objects
+            list_of_roadobjects = []
+            list_of_roadobjects = response_plugin["relasjoner"]["barn"][0]["vegobjekter"]
+
+            # getting the object_id of the child objects
+            list_id = response_plugin["relasjoner"]["barn"][0]["id"]
+
+            # create a dict with the data put together
+            plugin_dict = {list_id: {"vegobjekter": list_of_roadobjects}}
+            
+            return plugin_dict
+        
+
+    @classmethod
+    def get_last_version(self, p_nvdbid: int = int(), p_type_id: int = int()):
+        endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(p_type_id) + '/' + str(p_nvdbid)
         
         header = {
             'ContentType': 'application/json',
@@ -176,13 +205,15 @@ class AreaGeoDataParser:
         params = {'inkluder': 'metadata'}
         
         response = requests.get(endpoint, headers=header, params=params)
+        version: int = int()
         
         if response.ok:
-            pass
-    
-    @classmethod
-    def get_last_version(self, p_nvdbid: int = int()):
-        pass
+            data = json.loads(response.text)
+            
+            metadata = data['metadata']
+            version = metadata['versjon']
+            
+            return version
         
     @classmethod
     def get_env(self, version: str = 'v3') -> str:
@@ -210,7 +241,7 @@ class AreaGeoDataParser:
         return lesUrl
 
     @classmethod
-    def getDatakatalogVersion(self, currentMiljo):
+    def get_datacatalog_version(self, currentMiljo):
         header = {'X-Client': 'QGIS NVDB Skriv'}
         json_data = None
 
@@ -236,7 +267,7 @@ class AreaGeoDataParser:
         return 'datakatalog version not found'
 
     @classmethod
-    def getSistModifisert(self, type, nvdbid, versjon):
+    def get_last_time_modified(self, type, nvdbid, versjon):
         endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(type) + '/' + str(
             nvdbid) + '/' + str(versjon)
 
