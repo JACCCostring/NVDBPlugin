@@ -682,7 +682,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 
                 env_write_endpoint = self.get_env_write_endpoint()
                 
-                sistmodifisert = AreaGeoDataParser.getSistModifisert(road_object_type, layer_modified_egenskaper['nvdbid'], layer_modified_egenskaper['versjon'])
+                sistmodifisert = AreaGeoDataParser.get_last_time_modified(road_object_type, layer_modified_egenskaper['nvdbid'], layer_modified_egenskaper['versjon'])
                 
                 relations = self.get_road_object_relationship( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parents
                 

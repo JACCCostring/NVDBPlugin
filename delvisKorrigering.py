@@ -1,7 +1,5 @@
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot #its need it for signals, slots and QObjects
 
-# from .abstractPoster import AbstractPoster #this must be in the same directory as delvisKorriger.py
-
 import xml.etree.ElementTree as ET
 
 import requests, json, io
@@ -40,7 +38,7 @@ class DelvisKorrigering(QObject):
 
         # Finding the message element and getting its text
         msg = root.find('.//fault:message', ns)
-
+        
         if msg is not None:
             # Sending message using a signal to display to user
             self.response_error.emit(msg.text)
@@ -177,40 +175,7 @@ class DelvisKorrigering(QObject):
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
                 relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
-                '''
-                    find child road object marked for removing, road object tagged name is
-                    remove_nvdbid and it's existing already there from nvdb_beta_dialog.py module
-                    from here we need to make sure that:
-                    
-                    if operation is Remove then:
-                    -remove case happens (remove child object relation)
-                    
-                    if operation is default (update) then:
-                    -update case happens (update child object relation)
-                    
-                    if operation is new then:
-                    -new case happens (add new child object relation)
-                    
-                    Documentation to fallow NVDB API convention: https://nvdb.atlas.vegvesen.no/docs/produkter/nvdbapis/endringssett/Oppbygging/#om-assosiasjoner
-                '''
-                
-                '''
-                #Remove Case
-                if item['operation'] == 'remove':
-                    
-                    sub_remove_relation = ET.SubElement(relation, 'nvdbId')
-                    sub_remove_relation.attrib = { 'operasjon':  "slett" }
-
-                    for enum_catalog_type_nvdb_sub, item_sub in relations.items():
-                        #for now this loop do not make any effect on the changes, but a bad form xml will be generated
-                        #and is ok for now, to avoid this uncomment sub_relation.text = str(item['remove_nvdbid'])
-    
-                        print('enum_catalog_type_nvdb: ', enum_catalog_type_nvdb_sub, 'road objects: ', item_sub['nvdbid'])
-                        # sub_remove_relation.text = str(item_sub['nvdbid']) #commented for now, but need it later for removing child relationship
-                
-                '''
-                
-                #Add New Case
+                #Add new relation Case
                 if item['operation'] == 'add':
                     
                     sub_add_relation = ET.SubElement(relation, 'nvdbId')
@@ -219,8 +184,7 @@ class DelvisKorrigering(QObject):
                     for enum_catalog_type_nvdb_sub_rm, item_sub_rm in relations.items():
                         print('enum catalog: ', enum_catalog_nvdb_sub_rm, 'items: ', item_sub_rm['nvdbid'])
                 
-            
-                #Update Case and Default Case
+                #Default relation Case
                 if item['operation'] == 'update':
                     # relation = ET.SubElement = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                     relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
@@ -259,8 +223,6 @@ class DelvisKorrigering(QObject):
         remember xml_string variable is comming from formXMLRequest method
         '''
         response = requests.post(endpoint, headers = header, data = self.xml_string)
-        
-        print(response.text)
         
         if response.ok != True:
 

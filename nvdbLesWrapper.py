@@ -164,7 +164,6 @@ class AreaGeoDataParser:
         
     @classmethod
     def get_children_relation_from_parent(self, p_type: int = int(), p_nvdbid: int = int()):
-        
         endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(p_type) + '/' + str(p_nvdbid)
         
         header = {
@@ -172,13 +171,27 @@ class AreaGeoDataParser:
             'X-Client': 'ny klient Les'
         }
         
-        params = {'inkluder': 'metadata'}
+        params = {'inkluder': 'relasjoner'}
         
         response = requests.get(endpoint, headers=header, params=params)
         
         if response.ok:
-            pass
-    
+        
+            response_plugin = json.loads(response.text)
+
+            # create a list containing the child objects
+            list_of_roadobjects = []
+            list_of_roadobjects = response_plugin["relasjoner"]["barn"][0]["vegobjekter"]
+
+            # getting the object_id of the child objects
+            list_id = response_plugin["relasjoner"]["barn"][0]["id"]
+
+            # create a dict with the data put together
+            plugin_dict = {list_id: {"vegobjekter": list_of_roadobjects}}
+            
+            return plugin_dict
+        
+
     @classmethod
     def get_last_version(self, p_nvdbid: int = int(), p_type_id: int = int()):
         endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(p_type_id) + '/' + str(p_nvdbid)
@@ -253,7 +266,7 @@ class AreaGeoDataParser:
         return 'datakatalog version not found'
 
     @classmethod
-    def getSistModifisert(self, type, nvdbid, versjon):
+    def get_last_time_modified(self, type, nvdbid, versjon):
         endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(type) + '/' + str(
             nvdbid) + '/' + str(versjon)
 
