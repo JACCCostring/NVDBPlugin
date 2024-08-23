@@ -94,7 +94,7 @@ class DelvisKorrigering(QObject):
                 if 'egenskaper' in item.tag:
                     
                     for egenskap_navn, value in new_modified_data.items():
-                        # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
+                        print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
                             
                         if 'Assosierte' not in egenskap_navn: #avoiding adding objekt relasjoner here
                                                         
@@ -184,7 +184,7 @@ class DelvisKorrigering(QObject):
                     sub_add_relation.attrib = { 'operasjon': 'ny' }
                     
                     for enum_catalog_type_nvdb_sub_rm, item_sub_rm in relations.items():
-                        print('enum catalog: ', enum_catalog_nvdb_sub_rm, 'items: ', item_sub_rm['nvdbid'])
+                        sub_add_relation.text = str(item_sub_rm['nvdbid'])
                 
                 #Default relation Case
                 if item['operation'] == 'update':
