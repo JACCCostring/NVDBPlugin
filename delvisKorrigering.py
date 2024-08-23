@@ -73,6 +73,8 @@ class DelvisKorrigering(QObject):
         instantiating/creating the class
         '''
         if active_egenskap:
+            print('including egenskaper---->')
+            
             egenskaper = ET.SubElement(vegobjekt, 'egenskaper')
             
             new_egenskap = None

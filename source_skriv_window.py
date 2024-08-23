@@ -605,12 +605,14 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                     if rel_name == 'barn':
                 
                                         for relation in rel_value:
+                                            print('showing operation before parsing--->')
+                                            print(relation)
                                             try:
                                                 nvdbids_action = relation['child_nvdbid']
                                                 opert = relation['operation']
                                                 
                                             except KeyError:
-                                                opert = 'update' #tagging for updating later insted of removing
+                                                opert = 'update' #tagging for updating
                                                 
                                             operation = opert
                                             

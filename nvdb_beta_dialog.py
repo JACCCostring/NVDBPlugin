@@ -990,7 +990,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             for key, value in refdata.items():
                 if key == 'nvdbId':
                     if str(refdata[key]) == str(nvdbid):
-                        for field_name, field_values in refdata.items():
+                        for field_name, field_values in refdata.items():                            
                             if field_name == 'relasjoner':
                                 
                                 relation_type = None
@@ -1010,7 +1010,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     self.parent_roadObject_linked_type = relation_type[0]['type']['id']
                                     
                                 except IndexError:
-                                    pass
+                                    return {} #must watch this return
+                                    # pass
                                     
                                 #except when road object do not have a parent
                                 except KeyError:
@@ -1019,10 +1020,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     we know that child has no any parent related to
                                     '''
                                     self.hasChildParentRoadObject = False
-                                    return {}
-
                                     
-                                #parents it's a list
+                                    print('flag self.hasChildParentRoadObject before:', self.hasChildParentRoadObject)
+                                    
+                                    return {}
+                                
                                 for item in relation_type:
                                     for item_name, item_value in item.items():
                                         if item_name == 'type':
@@ -1032,7 +1034,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                             type_name = type['navn']
                                             
                                             relation_collection_parent[type_name] = type_id
-                                
+        
         return relation_collection_parent
         
     def onAnyFeatureSelected(self):
@@ -1099,8 +1101,14 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         #for now road object types are both same type,
                                         self.valid_roadObject_types = True
                                         
-                                        #adding child road object relation
-                                        self.add_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
+                                        print('before adding relation')
+                                        print('parent:', parent_object_nvdbid, 'child:', self.child_object_nvdbid, 'flag: hasChildParentRoadObject = ', self.hasChildParentRoadObject)
+                                        
+                                        #adding child road object relation, only if do not has parent
+                                        if not self.hasChildParentRoadObject:
+                                            print('adding new relationship---->')
+                                            
+                                            self.add_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
         
         #end of relation code
         
@@ -1132,20 +1140,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #only happens if child road object selected from QGIS kart has a parent
         if self.after_possible_parent_selected or self.hasChildParentRoadObject:
-            '''
-            for refdata in self.data:
-                for key, value in refdata.items():
-                    if key == 'nvdbId':
-                        if str(refdata[key]) == str(self.child_object_nvdbid):
-                            for field_name, field_values in refdata.items():
-                                if field_name == 'relasjoner':
-                                    children = field_values['barn']
-                                    
-                                    #children is a list
-                                    for child in children:                                            
-                                        child['operation'] = 'remove' #tagged with remove for removing relation object later
-                                        child['child_nvdbid'] = self.parent_roadObject_linked_to #nvdbid of child road object to remove
-            '''
             
             #setting AreaGeoDataParser env, before using it
             AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
@@ -1200,7 +1194,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             self.delvis_remove_relation_instance.formXMLRequest(active_egenskap = False)
     
-    
     def on_remove_relation_completed(self, changeset):
         print(changeset)
         
@@ -1211,6 +1204,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         '''
         #only happens if child road object selected from QGIS kart has a parent
         if self.after_possible_parent_selected:
+            print('adding reation----->')
             
             for refdata in self.data:
                 for key, value in refdata.items():
