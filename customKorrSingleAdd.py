@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 from .delvisKorrigering import DelvisKorrigering
 
-class CustomDelvisKorrSingleRemove(DelvisKorrigering):
+class CustomDelvisKorrSingleAdd(DelvisKorrigering):
     def __init__(self, token, data, extra):
         super().__init__(token, data, extra)
         pass
