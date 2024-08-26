@@ -1,16 +1,11 @@
 import sys
 import os
 import inspect
-from .helper import Logger
 
-nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
+nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe() )))
 nvdblibrary = nvdblibrary.replace('\\', '/')
 nvdblibrary = nvdblibrary + '/nvdbapi'
-
-#my_logger = Logger()
-#my_logger.write_log("console")
-#my_logger.disable_logging()
-
 
 ## Hvis vi ikke klarer å importere nvdbapiv3 så prøver vi å føye
 ## mappen nvdblibrary til søkestien. 
@@ -50,6 +45,7 @@ from .source_more_window import SourceMoreWindow
 from .nvdbLesWrapper import AreaGeoDataParser
 from .custom_qstandard_item_model import CustomStandardItemModel
 from .customDelvisKorrUniqueCase import CustomDelvisKorrUniqueCase
+from .customKorrSingleAdd import CustomDelvisKorrSingleAdd
 
 #PyQt5 libs
 from qgis.PyQt import QtWidgets
@@ -110,12 +106,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        #self.my_logger = Logger()
-        #self.my_logger.write_log("console")
-       # self.my_logger.disable_logging()
-
-        self.logger1 = Logger()
-
         #setting default road object limit info to 1
         self.limit_roadObject_info_inTable.setValue(1)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
@@ -134,6 +124,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.parent_roadObject_linked_type: int = int() # || type for related parent when sammenkobling
         self.username_session: str = str() #username session only when atempting removing relation
         self.current_session_token: dict = {} #current session tokens for current logged user
+        self.possible_selected_parent_nvdbid: int = int() #possible selected parent nvdbId from QGIS kart layer
         
 #        development starts here
 #        setting up all data need it for starting up
@@ -1047,7 +1038,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             for key, value in refdata.items():
                 if key == 'nvdbId':
                     if str(refdata[key]) == str(nvdbid):
-                        for field_name, field_values in refdata.items():
+                        for field_name, field_values in refdata.items():                            
                             if field_name == 'relasjoner':
                                 
                                 relation_type = None
@@ -1067,7 +1058,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     self.parent_roadObject_linked_type = relation_type[0]['type']['id']
                                     
                                 except IndexError:
-                                    pass
+                                    '''
+                                    turning flag to False anyway, in case of index error
+                                    exception, but for now is working, be carefull anyway
+                                    '''
+                                    
+                                    self.hasChildParentRoadObject = False
+                                    
+                                    return {} #must watch this return
+                                    # pass
                                     
                                 #except when road object do not have a parent
                                 except KeyError:
@@ -1076,10 +1075,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     we know that child has no any parent related to
                                     '''
                                     self.hasChildParentRoadObject = False
+                                
                                     return {}
-
-                                    
-                                #parents it's a list
+                                
                                 for item in relation_type:
                                     for item_name, item_value in item.items():
                                         if item_name == 'type':
@@ -1153,15 +1151,19 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     parent_object_nvdbid = road_object['nvdbId']
                                     roadObjectTypeChild_toConnect = road_object['objekttype']
                                     
+                                    self.possible_selected_parent_nvdbid = parent_object_nvdbid
+                                    
                                     #if possible parent type is equal to object child type
                                     #user want to connect to, then is it a valid parent child relationship connection
                                     if self.possible_parent_type == roadObjectTypeChild_toConnect:
                                         
                                         #for now road object types are both same type,
                                         self.valid_roadObject_types = True
-                                        
-                                        #adding child road object relation
-                                        self.add_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
+                                    
+                                        #adding child road object relation, only if do not has parent
+                                        if not self.hasChildParentRoadObject:                                            
+                                            # self.add_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
+                                            self.single_add_relation_fromSourceData()
         
         #end of relation code
         
@@ -1194,34 +1196,20 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
         #only happens if child road object selected from QGIS kart has a parent
         if self.after_possible_parent_selected or self.hasChildParentRoadObject:
-            '''
-            for refdata in self.data:
-                for key, value in refdata.items():
-                    if key == 'nvdbId':
-                        if str(refdata[key]) == str(self.child_object_nvdbid):
-                            for field_name, field_values in refdata.items():
-                                if field_name == 'relasjoner':
-                                    children = field_values['barn']
-                                    
-                                    #children is a list
-                                    for child in children:                                            
-                                        child['operation'] = 'remove' #tagged with remove for removing relation object later
-                                        child['child_nvdbid'] = self.parent_roadObject_linked_to #nvdbid of child road object to remove
-            '''
             
             #setting AreaGeoDataParser env, before using it
             AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
 
-            username =                                      self.username_session
-            parent_nvdbid =                              self.parent_roadObject_linked_nvdbid[0]
-            version =                                         AreaGeoDataParser.get_last_version(parent_nvdbid, self.parent_roadObject_linked_type)
-            object_type_id =                             self.parent_roadObject_linked_type
+            username =                          self.username_session
+            parent_nvdbid =                     self.parent_roadObject_linked_nvdbid[0]
+            version =                           AreaGeoDataParser.get_last_version(parent_nvdbid, self.parent_roadObject_linked_type)
+            object_type_id =                    self.parent_roadObject_linked_type
             
             last_time_road_object_modified =    AreaGeoDataParser.get_last_time_modified(self.parent_roadObject_linked_type, parent_nvdbid, version)
-            datacatalog_version =                       AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
-            endpoint =                                        self.get_env_write_endpoint()
-            relation =                                         AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
-            id_token =                                        self.current_session_token['idToken']
+            datacatalog_version =               AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
+            endpoint =                          self.get_env_write_endpoint()
+            relation =                          AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
+            id_token =                          self.current_session_token['idToken']
             
             '''
             now we have relation data, then now the child road object that was selected from kart in QGIS
@@ -1262,16 +1250,16 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             self.delvis_remove_relation_instance.formXMLRequest(active_egenskap = False)
     
-    
     def on_remove_relation_completed(self, changeset):
         print(changeset)
         
-    def add_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> bool:
+    def add_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> None:
         '''
         to get and modify the relation from the selected object on the current fetched data
         from the last search in module nvdb_beta_dialog.py
         '''
         #only happens if child road object selected from QGIS kart has a parent
+        
         if self.after_possible_parent_selected:
             
             for refdata in self.data:
@@ -1284,15 +1272,75 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     
                                     #children is a list
                                     for child in children:
-                                        if c_nvdbid in child['vegobjekter']:
+                                        
+                                        #only tag if child id to road object is not there
+                                        if c_nvdbid not in child['vegobjekter']:
+                                            print('tagging ADD')
                                             child['operation'] = 'add' #tagged with remove for removing relation object later
                                             child['child_nvdbid'] = c_nvdbid #nvdbid of child road object to remove
-                                            
-                                            return True
-                                        
-        return False
-    
-    
+        
+
+    def single_add_relation_fromSourceData(self):
+        '''
+        adding relationship between parent road object and child object
+        will be through a call to a new module, this module will be in a separate file.
+        '''
+        
+        #only happens if child road object selected from QGIS kart has a parent
+        if self.after_possible_parent_selected and self.current_session_token['idToken']:
+            
+            #setting AreaGeoDataParser env, before using it
+            AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
+
+            username =                          self.username_session
+            parent_nvdbid =                     self.possible_selected_parent_nvdbid
+            object_type_id =                    self.parent_roadObject_linked_type
+            version =                           AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
+            
+            last_time_road_object_modified =    AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid, version)
+            datacatalog_version =               AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
+            endpoint =                          self.get_env_write_endpoint()
+            relation =                          AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
+            id_token =                          self.current_session_token['idToken']
+            
+            '''
+            now we have relation data, then now the child road object that was selected from kart in QGIS
+            must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
+            '''
+            child_in_parent_nvdbid_found: int = int()
+            
+            for datacatalog_id, items in relation.items():
+                #if child road object id not exist there, then added
+                if self.child_object_nvdbid not in items['vegobjekter']:
+            
+                    #already modified data
+                    modified_data = {
+                    'nvdbid': parent_nvdbid,
+                    'versjon': version #last version to road object
+                    }
+                        
+                    #extra data need it for xml escheme completion
+                    extra_data = {
+                    'current_nvdbid': parent_nvdbid,
+                    'nvdb_object_type': object_type_id,
+                    'datakatalog_version': datacatalog_version, #datacatalog current version
+                    'sistmodifisert': last_time_road_object_modified,
+                    'username': username,
+                    'endpoint': endpoint,
+                    'objekt_navn': 'object_name', #test name
+                    'relation': relation,
+                    'remove_child_nvdbid': self.child_object_nvdbid
+                    }
+                        
+                    #writing to NVDB changes made in road object relationship
+                    self.single_delvis_add_relation_instance = CustomDelvisKorrSingleAdd(id_token, modified_data, extra_data)
+                        
+                    self.single_delvis_add_relation_instance.new_endringsset_sent.connect(lambda: print('sent'))
+
+                    self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.delvis_remove_relation_instance.prepare_post)
+                        
+                    self.single_delvis_add_relation_instance.formXMLRequest(active_egenskap = False)
+            
     def get_env_write_endpoint(self):
         currentMiljo = self.comboEnvironment.currentText()
         url = None
