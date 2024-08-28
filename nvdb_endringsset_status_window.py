@@ -14,8 +14,10 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import xml.etree.ElementTree as ET
 from qgis.PyQt import uic
 import requests, io
-from .helper import Logger
 import os
+
+from .helper import Logger
+
 # import inspect
 
 # from .more_window import Ui_MoreDialog

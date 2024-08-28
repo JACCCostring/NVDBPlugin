@@ -1087,6 +1087,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                             
                             if road_object['nvdbId'] == feature[field.name()]:
                                 if road_object['objekttype'] == self.possible_parent_type:
+                                    print('current objeck type are the same as possible parent type')
                                     
                                     parent_object_nvdbid = road_object['nvdbId']
                                     roadObjectTypeChild_toConnect = road_object['objekttype']
@@ -1096,14 +1097,31 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     #if possible parent type is equal to object child type
                                     #user want to connect to, then is it a valid parent child relationship connection
                                     if self.possible_parent_type == roadObjectTypeChild_toConnect:
+                                        print('parent possible objeck type are the same as child type to connect')
                                         
                                         #for now road object types are both same type,
                                         self.valid_roadObject_types = True
                                     
-                                        #adding child road object relation, only if do not has parent
-                                        if not self.hasChildParentRoadObject:                                            
+                                        '''
+                                        Case When child object has not a parent object relation
+                                        but possible parent is selected to be added as a relation, so here
+                                        we add the new selected parent from QGIS Kart/map as a relation
+                                        '''
+                                        if not self.hasChildParentRoadObject:
+                                            print('has not relation object')
                                             # self.add_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
-                                            self.single_add_relation_fromSourceData()
+                                            # thread_add_single_relation = threading.Thread(self.add_single_relation_fromSourceData())
+                                            # thread_add_single_relation.start()
+                                            self.add_single_relation_fromSourceData()
+                                        
+                                        '''
+                                        Case When child object has a parent object relation
+                                        and possible parent is selected to be added as a relation, then
+                                        here we update the existing parent road object to the new selected one
+                                        '''
+                                        if self.hasChildParentRoadObject:
+                                            print('has relation object')
+                                        #     pass
         
         #end of relation code
         
@@ -1134,7 +1152,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         '''
         
         #only happens if child road object selected from QGIS kart has a parent
-        if self.after_possible_parent_selected or self.hasChildParentRoadObject:
+        '''self.after_possible_parent_selected or''' 
+        if self.hasChildParentRoadObject and self.isUserLogged():
             
             #setting AreaGeoDataParser env, before using it
             AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
@@ -1192,13 +1211,24 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def on_remove_relation_completed(self, changeset):
         print(changeset)
         
+        '''turning off after_possible_parent_selected, since remove relation
+        task is completed'''
+        self.after_possible_parent_selected = False
+    
+    def on_single_add_completed(self, changeset):
+        print(changeset)
+        
+        #Turning off hasChildParentRoadObject since add single relation is completed
+        self.hasChildParentRoadObject = False
+        
     def add_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> None:
+        pass
         '''
         to get and modify the relation from the selected object on the current fetched data
         from the last search in module nvdb_beta_dialog.py
         '''
         #only happens if child road object selected from QGIS kart has a parent
-        
+        '''
         if self.after_possible_parent_selected:
             
             for refdata in self.data:
@@ -1217,23 +1247,23 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                             print('tagging ADD')
                                             child['operation'] = 'add' #tagged with remove for removing relation object later
                                             child['child_nvdbid'] = c_nvdbid #nvdbid of child road object to remove
-        
+        '''
 
-    def single_add_relation_fromSourceData(self):
+    def add_single_relation_fromSourceData(self):
         '''
         adding relationship between parent road object and child object
         will be through a call to a new module, this module will be in a separate file.
         '''
-        
         #only happens if child road object selected from QGIS kart has a parent
-        if self.after_possible_parent_selected and self.current_session_token['idToken']:
+        '''self.after_possible_parent_selected'''
+        if not self.hasChildParentRoadObject and self.isUserLogged():
             
             #setting AreaGeoDataParser env, before using it
             AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
 
             username =                          self.username_session
-            parent_nvdbid =                     self.possible_selected_parent_nvdbid
-            object_type_id =                    self.parent_roadObject_linked_type
+            parent_nvdbid =                     self.possible_selected_parent_nvdbid #self.parent_roadObject_linked_nvdbid[0]
+            object_type_id =                    self.possible_parent_type #self.parent_roadObject_linked_type
             version =                           AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
             
             last_time_road_object_modified =    AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid, version)
@@ -1247,7 +1277,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
             '''
             child_in_parent_nvdbid_found: int = int()
-            
+
             for datacatalog_id, items in relation.items():
                 #if child road object id not exist there, then added
                 if self.child_object_nvdbid not in items['vegobjekter']:
@@ -1274,12 +1304,24 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     #writing to NVDB changes made in road object relationship
                     self.single_delvis_add_relation_instance = CustomDelvisKorrSingleAdd(id_token, modified_data, extra_data)
                         
-                    self.single_delvis_add_relation_instance.new_endringsset_sent.connect(lambda: print('sent'))
+                    self.single_delvis_add_relation_instance.new_endringsset_sent.connect(self.on_single_add_completed)
 
-                    self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.delvis_remove_relation_instance.prepare_post)
+                    self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.single_delvis_add_relation_instance.prepare_post)
                         
                     self.single_delvis_add_relation_instance.formXMLRequest(active_egenskap = False)
+    
+    def isUserLogged(self):
+        #first checking if user is logged in
+        isLogged: bool = False
+        
+        if self.current_session_token['idToken']:
+            isLogged = True
             
+        else:
+            isLogged = False
+        
+        return isLogged
+        
     def get_env_write_endpoint(self):
         currentMiljo = self.comboEnvironment.currentText()
         url = None
@@ -1298,6 +1340,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def onUserLoggedIn(self, username, token):
         self.username_session = username
         self.current_session_token = token
+        
+        # if self.isUserLogged():
+        #     enable
     
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()

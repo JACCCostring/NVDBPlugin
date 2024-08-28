@@ -178,6 +178,7 @@ class DelvisKorrigering(QObject):
                 relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
                 #Add new relation Case
+                '''
                 if item['operation'] == 'add':
                     
                     sub_add_relation = ET.SubElement(relation, 'nvdbId')
@@ -185,6 +186,7 @@ class DelvisKorrigering(QObject):
                     
                     for enum_catalog_type_nvdb_sub_rm, item_sub_rm in relations.items():
                         sub_add_relation.text = str(item_sub_rm['nvdbid'])
+                '''
                 
                 #Default relation Case
                 if item['operation'] == 'update':

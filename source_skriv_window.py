@@ -18,12 +18,11 @@ from qgis.core import *
 
 import requests, io, json
 import threading
+import os
 
 from .helper import Logger #for logging, watch out
 
 from qgis.PyQt import uic
-
-import os
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'nvdbskriv_beta.ui'))
@@ -688,7 +687,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 
                 sistmodifisert = AreaGeoDataParser.get_last_time_modified(road_object_type, layer_modified_egenskaper['nvdbid'], layer_modified_egenskaper['versjon'])
                 
-                relations = self.get_road_object_relationship( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parents
+                relations = self.get_road_object_relationship( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parent
                 
                 extra_data = {
                     'nvdb_object_type': road_object_type, 
@@ -716,6 +715,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 Note: Signals and Slots must be connected in same order as coded here, because
                 of how Qt works when queueing signals
                 '''
+                
                 self.delvis = DelvisKorrigering(token, layer_modified_egenskaper, extra_data)
 
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)

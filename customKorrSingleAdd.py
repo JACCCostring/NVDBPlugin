@@ -50,7 +50,7 @@ class CustomDelvisKorrSingleAdd(DelvisKorrigering):
                 relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
                 sub_remove_relation = ET.SubElement(relation, 'nvdbId')
-                sub_remove_relation.attrib = { 'operasjon':  "slett" }
+                sub_remove_relation.attrib = { 'operasjon':  "ny" }
 
                 sub_remove_relation.text = str( self.extra['remove_child_nvdbid'] )
                 
