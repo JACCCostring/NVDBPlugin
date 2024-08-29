@@ -95,6 +95,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     setting_each_uiItem_inTable = pyqtSignal(int, dict, tuple, dict)
     amount_of_vegobjekter_collected = pyqtSignal(int)
     
+    remove_road_object_signal = pyqtSignal()
+    
     def __init__(self, parent=None):
         """Constructor."""
         super(NvdbBetaProductionDialog, self).__init__(parent)
@@ -248,6 +250,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.limit_roadObject_info_inTable.valueChanged.connect(lambda: self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value())))
         
         self.more_btn.clicked.connect(self.open_more_window)
+        
+        '''
+        if child road object alreary as a relation parent then, and add new relation
+        operation is requiered then remove first and then when removing is done
+        a remove signal is triggerd so new relation parent can be added to child object
+        '''
+        self.remove_road_object_signal.connect(self.add_single_relation_fromSourceData)
 
     
 #        rest of methods===============================
@@ -1121,7 +1130,14 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         '''
                                         if self.hasChildParentRoadObject:
                                             print('has relation object')
-                                        #     pass
+                                            
+                                            self.remove_relation_fromSourceData()
+                                            
+                                            '''
+                                            when remove_road_object_signal is triggered then new relation object
+                                            will be add it.
+                                            '''
+                                            # self.remove_road_object_signal.connect(self.add_single_relation_fromSourceData)
         
         #end of relation code
         
@@ -1154,6 +1170,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #only happens if child road object selected from QGIS kart has a parent
         '''self.after_possible_parent_selected or''' 
         if self.hasChildParentRoadObject and self.isUserLogged():
+            print('starting removing')
             
             #setting AreaGeoDataParser env, before using it
             AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
@@ -1178,6 +1195,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             for datacatalog_id, items in relation.items():
                 for nvdbid_ in items['vegobjekter']:
                     if nvdbid_ == self.child_object_nvdbid:
+                        print('comparing to remove')
                         child_in_parent_nvdbid_found = nvdbid_
             
             #already modified data
@@ -1214,6 +1232,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         '''turning off after_possible_parent_selected, since remove relation
         task is completed'''
         self.after_possible_parent_selected = False
+        
+        '''
+        emiting remove_road_object_signal to comunicate and start another
+        type of transaccion it can be add new road object relation after is done or
+        it can be sending a status msg to UI or user.
+        '''
+        self.hasChildParentRoadObject = False
+        
+        self.remove_road_object_signal.emit()
     
     def on_single_add_completed(self, changeset):
         print(changeset)
@@ -1257,6 +1284,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #only happens if child road object selected from QGIS kart has a parent
         '''self.after_possible_parent_selected'''
         if not self.hasChildParentRoadObject and self.isUserLogged():
+            print('start adding new relation')
             
             #setting AreaGeoDataParser env, before using it
             AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
@@ -1281,6 +1309,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             for datacatalog_id, items in relation.items():
                 #if child road object id not exist there, then added
                 if self.child_object_nvdbid not in items['vegobjekter']:
+                    print('comparing relation to add')
             
                     #already modified data
                     modified_data = {
