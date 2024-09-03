@@ -181,6 +181,9 @@ class AreaGeoDataParser:
 
             # create a list containing the child objects
             list_of_roadobjects = []
+            
+            print(response_plugin)
+            
             list_of_roadobjects = response_plugin["relasjoner"]["barn"][0]["vegobjekter"]
 
             # getting the object_id of the child objects

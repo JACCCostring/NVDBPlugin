@@ -43,8 +43,9 @@ from .source_skriv_window import SourceSkrivDialog
 from .source_more_window import SourceMoreWindow
 from .nvdbLesWrapper import AreaGeoDataParser
 from .custom_qstandard_item_model import CustomStandardItemModel
-from .customDelvisKorrUniqueCase import CustomDelvisKorrUniqueCase
+from .customDelvisKorrRemoveCase import CustomDelvisKorrRemoveCase
 from .customKorrSingleAdd import CustomDelvisKorrSingleAdd
+from .customDelvisKorrReplaceParent import CustomDelvisKorrReplaceParent
 
 #PyQt5 libs
 from qgis.PyQt import QtWidgets
@@ -95,7 +96,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     setting_each_uiItem_inTable = pyqtSignal(int, dict, tuple, dict)
     amount_of_vegobjekter_collected = pyqtSignal(int)
     
-    remove_road_object_signal = pyqtSignal()
+    # remove_road_object_signal = pyqtSignal()
     
     def __init__(self, parent=None):
         """Constructor."""
@@ -256,7 +257,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         operation is requiered then remove first and then when removing is done
         a remove signal is triggerd so new relation parent can be added to child object
         '''
-        self.remove_road_object_signal.connect(self.add_single_relation_fromSourceData)
+        # self.remove_road_object_signal.connect(self.add_single_relation_fromSourceData)
 
     
 #        rest of methods===============================
@@ -1118,9 +1119,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         '''
                                         if not self.hasChildParentRoadObject:
                                             print('has not relation object')
+                                            
                                             # self.add_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
                                             # thread_add_single_relation = threading.Thread(self.add_single_relation_fromSourceData())
                                             # thread_add_single_relation.start()
+                                            
                                             self.add_single_relation_fromSourceData()
                                         
                                         '''
@@ -1130,14 +1133,25 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         '''
                                         if self.hasChildParentRoadObject:
                                             print('has relation object')
-                                            
-                                            self.remove_relation_fromSourceData()
-                                            
+                
                                             '''
                                             when remove_road_object_signal is triggered then new relation object
                                             will be add it.
+                                            
+                                            Note: most probably we need to subclass delvis korrigering to make a new class
+                                            for updating road object when this is already related instead of adding a new one.
+                                            
+                                            
+                                            IF SUBCLASSING DONT WORK THEN:
+                                            
+                                            the use of a timer must be consider, checking status response for every 2 or 3 seconds
+                                            until UTFØR_OG_ETTERBEHANDLET status changes are made, so then we can perform
+                                            the adding new road object relation operation
                                             '''
+                        
                                             # self.remove_road_object_signal.connect(self.add_single_relation_fromSourceData)
+                                            
+                                            self.replace_single_relation_fromSourceData()
         
         #end of relation code
         
@@ -1218,7 +1232,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             }
             
             #writing to NVDB changes made in road object relationship
-            self.delvis_remove_relation_instance = CustomDelvisKorrUniqueCase(id_token, modified_data, extra_data)
+            self.delvis_remove_relation_instance = CustomDelvisKorrRemoveCase(id_token, modified_data, extra_data)
             
             self.delvis_remove_relation_instance.new_endringsset_sent.connect(self.on_remove_relation_completed)
 
@@ -1228,25 +1242,15 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def on_remove_relation_completed(self, changeset):
         print(changeset)
-        
-        '''turning off after_possible_parent_selected, since remove relation
-        task is completed'''
-        self.after_possible_parent_selected = False
-        
-        '''
-        emiting remove_road_object_signal to comunicate and start another
-        type of transaccion it can be add new road object relation after is done or
-        it can be sending a status msg to UI or user.
-        '''
-        self.hasChildParentRoadObject = False
-        
-        self.remove_road_object_signal.emit()
-    
+
     def on_single_add_completed(self, changeset):
         print(changeset)
         
         #Turning off hasChildParentRoadObject since add single relation is completed
-        self.hasChildParentRoadObject = False
+        # self.hasChildParentRoadObject = False
+    
+    def on_single_replace_completed(self, changeset):
+        print(changeset)
         
     def add_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> None:
         pass
@@ -1327,7 +1331,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     'endpoint': endpoint,
                     'objekt_navn': 'object_name', #test name
                     'relation': relation,
-                    'remove_child_nvdbid': self.child_object_nvdbid
+                    'add_child_nvdbid': self.child_object_nvdbid
                     }
                         
                     #writing to NVDB changes made in road object relationship
@@ -1338,7 +1342,70 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.single_delvis_add_relation_instance.prepare_post)
                         
                     self.single_delvis_add_relation_instance.formXMLRequest(active_egenskap = False)
-    
+
+    def replace_single_relation_fromSourceData(self):
+        '''
+        replacing relationship between parent road object and child object
+        will be through a call to a new module, this module will be in a separate file.
+        '''
+        #only happens if child road object selected from QGIS kart has a parent
+        '''self.after_possible_parent_selected'''
+        if self.hasChildParentRoadObject and self.isUserLogged():
+            print('start replacing relation')
+            
+            #setting AreaGeoDataParser env, before using it
+            AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
+
+            username =                          self.username_session
+            parent_nvdbid =                     self.possible_selected_parent_nvdbid #self.parent_roadObject_linked_nvdbid[0]
+            object_type_id =                    self.possible_parent_type #self.parent_roadObject_linked_type
+            version =                           AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
+            
+            last_time_road_object_modified =    AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid, version)
+            datacatalog_version =               AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
+            endpoint =                          self.get_env_write_endpoint()
+            relation =                          AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
+            id_token =                          self.current_session_token['idToken']
+            
+            '''
+            now we have relation data, then now the child road object that was selected from kart in QGIS
+            must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
+            '''
+            child_in_parent_nvdbid_found: int = int()
+
+            for datacatalog_id, items in relation.items():
+                #if child road object id not exist there, then added
+                if self.child_object_nvdbid not in items['vegobjekter']:
+                    print('comparing relation to add')
+            
+                    #already modified data
+                    modified_data = {
+                    'nvdbid': parent_nvdbid,
+                    'versjon': version #last version to road object
+                    }
+                        
+                    #extra data need it for xml escheme completion
+                    extra_data = {
+                    'current_nvdbid': parent_nvdbid,
+                    'nvdb_object_type': object_type_id,
+                    'datakatalog_version': datacatalog_version, #datacatalog current version
+                    'sistmodifisert': last_time_road_object_modified,
+                    'username': username,
+                    'endpoint': endpoint,
+                    'objekt_navn': 'object_name', #test name
+                    'relation': relation,
+                    'replace_child_nvdbid': self.child_object_nvdbid
+                    }
+                        
+                    #writing to NVDB changes made in road object relationship
+                    self.single_delvis_replace_relation_instance = CustomDelvisKorrReplaceParent(id_token, modified_data, extra_data)
+                        
+                    self.single_delvis_replace_relation_instance.new_endringsset_sent.connect(self.on_single_replace_completed)
+
+                    self.single_delvis_replace_relation_instance.endringsett_form_done.connect(self.single_delvis_replace_relation_instance.prepare_post)
+                        
+                    self.single_delvis_replace_relation_instance.formXMLRequest(active_egenskap = False)
+                    
     def isUserLogged(self):
         #first checking if user is logged in
         isLogged: bool = False
