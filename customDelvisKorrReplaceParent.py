@@ -49,13 +49,10 @@ class CustomDelvisKorrReplaceParent(DelvisKorrigering):
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
                 relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
-                for nvdbid in item['vegobjekter']:
-                    value_relation = ET.SubElement(relation, 'nvdbId')
-                    value_relation.text = str(nvdbid)
-        
-                #adding target road object REPLACE at the end
-                replace_road_object = ET.SubElement(value_relation, 'nvdbId')
-                replace_road_object.text = str(self.extra['replace_child_nvdbid'])
+                sub_remove_relation = ET.SubElement(relation, 'nvdbId')
+                sub_remove_relation.attrib = { 'operasjon':  "ny" }
+
+                sub_remove_relation.text = str( self.extra['replace_child_nvdbid'] )
         
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 
