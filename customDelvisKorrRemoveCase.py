@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 from .delvisKorrigeringNormalCase import DelvisKorrigeringNormalCase
 
-class CustomDelvisKorrSingleAdd(DelvisKorrigeringNormalCase):
+class CustomDelvisKorrRemoveCase(DelvisKorrigeringNormalCase):
     def __init__(self, token, data, extra):
         super().__init__(token, data, extra)
         pass
@@ -40,8 +40,8 @@ class CustomDelvisKorrSingleAdd(DelvisKorrigeringNormalCase):
         '''
         relations = self.extra['relation']
 
-        if relations and self.extra['hasAnyRelation']:
-            print('hasAnyRelation == True')
+        if relations: 
+            
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
             
             for enum_catalog_type_nvdb, item in relations.items():
@@ -50,25 +50,14 @@ class CustomDelvisKorrSingleAdd(DelvisKorrigeringNormalCase):
                 relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
                 sub_remove_relation = ET.SubElement(relation, 'nvdbId')
-                sub_remove_relation.attrib = { 'operasjon':  "ny" }
+                sub_remove_relation.attrib = { 'operasjon':  "slett" }
 
-                sub_remove_relation.text = str( self.extra['add_child_nvdbid'] )
-        
-        if not self.extra['hasAnyRelation']:
-            print('hasAnyRelation == False')
-            relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
-            
-            relation = ET.SubElement(relations_egenskap, 'assosiasjon')
-            relation.attrib = {'typeId': str(self.extra['datacatalog_enumId']), 'operasjon': 'oppdater'}
-            
-            sub_remove_relation = ET.SubElement(relation, 'nvdbId')
-            sub_remove_relation.attrib = { 'operasjon':  "ny" }
-
-            sub_remove_relation.text = str( self.extra['add_child_nvdbid'] )
-            
+                sub_remove_relation.text = str( self.extra['remove_child_nvdbid'] )
+                
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 
         print(self.xml_string) #debuging info of hole formed XML endingsett
         
         # emiting signal
         self.endringsett_form_done.emit()
+        

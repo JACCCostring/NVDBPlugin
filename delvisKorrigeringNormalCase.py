@@ -6,7 +6,7 @@ import requests, json, io
 
 
 # class DelvisKorrigering(AbstractPoster, QObject):
-class DelvisKorrigering(QObject):
+class DelvisKorrigeringNormalCase(QObject):
     new_endringsset_sent = pyqtSignal(list)
     endringsett_form_done = pyqtSignal()
     response_error = pyqtSignal(str)
@@ -174,18 +174,9 @@ class DelvisKorrigering(QObject):
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
                 relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
 
-                # Add new relation Case
-                if item['operation'] == 'add':
 
-                    sub_add_relation = ET.SubElement(relation, 'nvdbId')
-                    sub_add_relation.attrib = {'operasjon': 'ny'}
-
-                    for enum_catalog_type_nvdb_sub_rm, item_sub_rm in relations.items():
-                        sub_add_relation.text = str(item_sub_rm['nvdbid'])
-
-                # Default relation Case
+                #Default relation Case
                 if item['operation'] == 'update':
-                    # relation = ET.SubElement = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                     relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
 
                     # and if it's an update, then add road objects as child

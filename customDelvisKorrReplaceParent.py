@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET 
 
-from .delvisKorrigering import DelvisKorrigering
+from .delvisKorrigeringNormalCase import DelvisKorrigeringNormalCase
 
-class CustomDelvisKorrUniqueCase(DelvisKorrigering):
+class CustomDelvisKorrReplaceParent(DelvisKorrigeringNormalCase):
     def __init__(self, token, data, extra):
         super().__init__(token, data, extra)
         pass
@@ -50,14 +50,13 @@ class CustomDelvisKorrUniqueCase(DelvisKorrigering):
                 relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
                 sub_remove_relation = ET.SubElement(relation, 'nvdbId')
-                sub_remove_relation.attrib = { 'operasjon':  "slett" }
+                sub_remove_relation.attrib = { 'operasjon':  "ny" }
 
-                sub_remove_relation.text = str( self.extra['remove_child_nvdbid'] )
-                
+                sub_remove_relation.text = str( self.extra['replace_child_nvdbid'] )
+        
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 
         print(self.xml_string) #debuging info of hole formed XML endingsett
         
         # emiting signal
         self.endringsett_form_done.emit()
-        
