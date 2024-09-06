@@ -42,8 +42,8 @@ class Logger:
 
     def disable_logging(cls):
         #self.logger.disabled = True
-       # del cls._instance
-        pass
+        #cls._instance = None
+        del cls._instance
 
 
 

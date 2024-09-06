@@ -173,11 +173,11 @@ class AreaGeoDataParser:
         }
         
         params = {'inkluder': 'relasjoner'}
-        
+
         response = requests.get(endpoint, headers=header, params=params)
         
         if response.ok:
-        
+
             response_plugin = json.loads(response.text)
 
             # create a list containing the child objects
@@ -189,46 +189,68 @@ class AreaGeoDataParser:
 
             # create a dict with the data put together
             plugin_dict = {list_id: {"vegobjekter": list_of_roadobjects}}
+
+            """# CASE OF SWAGGER OUTPUT
+
+                        print(response.text)
+                        response_swagger = json.loads(response.text)
+
+                        # getting length of the list containing the child objects
+                        length_vegobjekter = len(response_swagger["relasjoner"]["barn"][0]["vegobjekter"])
+
+                        # list to contain child objects
+                        list_of_roadobjects = []
+
+                        for i in range(0, length_vegobjekter):
+                            # adding each child object to the list
+                            list_of_roadobjects.append(response_swagger["relasjoner"]["barn"][0]["vegobjekter"][i]["id"])
+
+                        # getting the object_id of the child objects
+                        list_id = [response_swagger["relasjoner"]["barn"][0]["id"]]
+
+                        # create a dict with the data put together
+                        swagger_dict = {list_id: {"vegobjekter": list_of_roadobjects}}
+                        print(swagger_dict)
+            """
             
             return plugin_dict
-        
 
     @classmethod
     def get_last_version(self, p_nvdbid: int = int(), p_type_id: int = int()):
         endpoint = self.get_env() + '/' + 'vegobjekter' + '/' + str(p_type_id) + '/' + str(p_nvdbid)
-        
+
         header = {
             'ContentType': 'application/json',
             'X-Client': 'ny klient Les'
         }
-        
+
         params = {'inkluder': 'metadata'}
-        
+
         response = requests.get(endpoint, headers=header, params=params)
         version: int = int()
-        
+
         if response.ok:
             data = json.loads(response.text)
-            
+
             metadata = data['metadata']
             version = metadata['versjon']
-            
+
             return version
-        
+
     @classmethod
     def get_env(self, version: str = 'v3') -> str:
         currentMiljo = self.env.lower()  # this variable value must be already set, before use with, object.set_env() method
         master_endpoint: str = str()
-        
+
         lesUrl = None
-        
-        #deciding wich endpoint version
+
+        # deciding wich endpoint version
         if version == 'v3':
             master_endpoint = 'https://nvdbapiles-v3.'
-            
+
         elif version == 'v4':
             master_endpoint = 'https://nvdbapiles.'
-        
+
         if 'prod' or 'Produksjon' in currentMiljo:
             lesUrl = master_endpoint + 'atlas.vegvesen.no'
 

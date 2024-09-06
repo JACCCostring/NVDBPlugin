@@ -32,6 +32,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 #########
 class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     userLogged = pyqtSignal(str, dict)
+    not_logged = pyqtSignal()
 
     def __init__(self, data, listOfEgenskaper):
         super().__init__()
@@ -47,6 +48,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.info_after_sent_objects = []  # all endringer sent to NVDB
         self.session_expired = False
 
+
         # setting up all UI
         self.setupUi(self)
 
@@ -54,12 +56,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fixMiljo()  # setting miljo data
         self.nvdbStatus()  # calling nvdb status
 
-        self.my_logger = Logger()
-
-        # log to console/file
-        self.my_logger.write_log("console")
-
-        self.my_logger.disable_logging()
 
         # set login tab at the start of the plug-in
         self.mainTab.setCurrentIndex(1)
@@ -179,7 +175,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             if not os.environ['logged']:
                 if not os.environ['logged']:
 
-                    self.my_logger.logger.info('not existing !, setting logged ...')
+                    print('not existing !, setting logged ...')
                     os.environ['svv_user_name'] = self.usernameLine.text()
                     os.environ['svv_pass'] = self.passwordLine.text()
 
@@ -207,7 +203,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         tokenObj = tkManager.getToken()
 
         # print(tokenObj) debug
-        self.my_logger.logger.debug(f"tokenObj: {tokenObj}")
 
         idToken = tokenObj['idToken']
         refreshToken = tokenObj['refreshToken']
@@ -217,7 +212,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             self.successLogin = True
 
             # print('logged in')
-            self.my_logger.logger.info("logged in")
 
             self.tokens = {
                 'idToken': idToken,
@@ -227,6 +221,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # emiting signal from here to nvdb_beta_dialog.py module
             self.userLogged.emit(self.usernameLine.text(), self.tokens)
+
 
         # if logging not succeded then, clear enviroment variables
         # pass, username and logged flag
@@ -244,7 +239,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             self.loginMsg.setText('')
 
     def defaultUILogin(self):
-
         self.response_endringsset.setText("")
 
         if self.successLogin:
@@ -254,6 +248,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             self.usernameLine.setEnabled(False)
             # self.passwordLine.setEnabled(False)
             self.passwordLine.setReadOnly(True)
+            #self.source_more_window.set_login_status(status="logged")
+            self.login_status = True
+
         else:
             self.statusLabel.setText('må logg på')
             self.statusLabel.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")
@@ -261,6 +258,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             self.usernameLine.setEnabled(True)
             # self.passwordLine.setEnabled(True)
             self.passwordLine.setReadOnly(False)
+            self.not_logged.emit()
+
+
 
     def updateLogin(self):
         self.login()
@@ -315,7 +315,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             }
 
             #        print(self.apiLes, self.apiSkriv)
-            # self.my_logger.logger.info(f"{self.apiLes}, {self.apiSkriv}")
 
             self.defaultUISettings()  # callinf default UI settings  after check status
 
@@ -508,7 +507,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     if str(nvdbid) in str(feature[field.name()]):
                         for feat_field in feature.fields():
                             # print(feat_field.name(), ': ', feature[feat_field.name()])
-                            self.my_logger.logger.info(f"{feat_field.name()} : {feature[feat_field.name()]}")
                             if 'Geometri' in feat_field.name():
                                 self.geometry_found = feature.geometry().asWkt()
 
@@ -550,7 +548,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     if str(nvdbid) in str(feature[field.name()]):
                         for feat_field in feature.fields():
                             # print(feat_field.name(), ': ', feature[feat_field.name()])
-                            self.my_logger.logger.info(f"{feat_field.name()} : {feature[feat_field.name()]}")
 
                             if 'Geometri' in feat_field.name():
                                 self.geometry_found = feature.geometry().asWkt()
@@ -785,7 +782,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         # then is not valid anymore, so we update login
         if self.login_time_expired():
             # print('login expired!')
-            self.my_logger.logger.info("Login expired! ")
 
             self.login()  # update login
 
@@ -810,7 +806,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             # self.progressWindowInstance = QtWidgets.QDialog()
             self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
 
-            self.my_logger.logger.info(self.info_after_sent_objects)
+            #print(self.info_after_sent_objects)
 
             '''
             re-assigning new generated token if session has been expired
@@ -894,9 +890,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         # print('current day ', current_day, ' - expected day ', self.expected_day)
         # print('current time ', current_time, ' - expected time ', self.expected_time)
 
-        self.my_logger.logger.debug(f"current day {current_day} - expected day {self.expected_day}")
-        self.my_logger.disable_logging()
-        self.my_logger.logger.debug(f"current time {current_time} - expected time {self.expected_time}")
 
         '''
         #comparing current and expected day, if this case happens
