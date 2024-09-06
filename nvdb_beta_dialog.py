@@ -42,6 +42,8 @@ from nvdbapiv3 import nvdbFagdata, nvdbVegnett
 from .source_skriv_window import SourceSkrivDialog
 from .source_more_window import SourceMoreWindow
 from .nvdbLesWrapper import AreaGeoDataParser
+
+#devils korrigering modules
 from .custom_qstandard_item_model import CustomStandardItemModel
 from .customDelvisKorrRemoveCase import CustomDelvisKorrRemoveCase
 from .customKorrSingleAdd import CustomDelvisKorrSingleAdd
@@ -56,7 +58,6 @@ from qgis.core import *
 #python built-in libs
 #========================================
 #includes need it for development
-# import os
 import threading
 import requests
 import json
@@ -1214,44 +1215,65 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             relation =                          AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
             id_token =                          self.current_session_token['idToken']
             
+            child_roadobject_exist: bool = False
+            
+            datacatalog_enumid = AreaGeoDataParser.get_datacatalog_relation_type(self.possible_parent_type, 'Belysningspunkt')
+            
             '''
             now we have relation data, then now the child road object that was selected from kart in QGIS
-            must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
-            '''
-            child_in_parent_nvdbid_found: int = int()
-
-            for datacatalog_id, items in relation.items():
-                #if child road object id not exist there, then added
-                if self.child_object_nvdbid not in items['vegobjekter']:
-                    print('comparing relation to add')
+            must be tag as a remove child and that's the only one road object sent to be remove from parent.
             
-                    #already modified data
-                    modified_data = {
-                    'nvdbid': parent_nvdbid,
-                    'versjon': version #last version to road object
-                    }
+            If road object do not have relation, then, just add the child road object.
+            '''
+            
+            #if relation not None
+            if relation != None:
+                for datacatalog_id, items in relation.items():
+                    print('comparing relation to add')
+                    
+                    #if child road object id not exist in substracted relation, then turn child_roadobject_exist to false
+                    if self.child_object_nvdbid not in items['vegobjekter']:
+                        child_roadobject_exist = False
                         
-                    #extra data need it for xml escheme completion
-                    extra_data = {
-                    'current_nvdbid': parent_nvdbid,
-                    'nvdb_object_type': object_type_id,
-                    'datakatalog_version': datacatalog_version, #datacatalog current version
-                    'sistmodifisert': last_time_road_object_modified,
-                    'username': username,
-                    'endpoint': endpoint,
-                    'objekt_navn': 'object_name', #test name
-                    'relation': relation,
-                    'add_child_nvdbid': self.child_object_nvdbid
-                    }
+                    #otherwise turn it to true
+                    else:
+                        child_roadobject_exist = True
                         
-                    #writing to NVDB changes made in road object relationship
-                    self.single_delvis_add_relation_instance = CustomDelvisKorrSingleAdd(id_token, modified_data, extra_data)
-                        
-                    self.single_delvis_add_relation_instance.new_endringsset_sent.connect(self.on_single_add_completed)
+            #already modified data
+            modified_data = {
+            'nvdbid': parent_nvdbid,
+            'versjon': version #last version to road object
+            }
+                                
+            #extra data need it for xml escheme completion
+            extra_data = {
+            'current_nvdbid': parent_nvdbid,
+            'nvdb_object_type': object_type_id,
+            'datakatalog_version': datacatalog_version, #datacatalog current version
+            'sistmodifisert': last_time_road_object_modified,
+            'username': username,
+            'endpoint': endpoint,
+            'objekt_navn': 'object_name', #test name
+            'relation': relation,
+            'hasAnyRelation': child_roadobject_exist,
+            'datacatalog_enumId': datacatalog_enumid,
+            'add_child_nvdbid': self.child_object_nvdbid #tagging road object to be removed
+            }
+            
+            print(extra_data)
+            
+            print('enum', datacatalog_enumid)
+            print('type', self.possible_parent_type)
+            print('name', self.possible_parent_name)
+                                
+            #writing to NVDB changes made in road object relationship
+            self.single_delvis_add_relation_instance = CustomDelvisKorrSingleAdd(id_token, modified_data, extra_data)
+                                
+            self.single_delvis_add_relation_instance.new_endringsset_sent.connect(self.on_single_add_completed)
 
-                    self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.single_delvis_add_relation_instance.prepare_post)
-                        
-                    self.single_delvis_add_relation_instance.formXMLRequest(active_egenskap = False)
+            self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.single_delvis_add_relation_instance.prepare_post)
+                                
+            self.single_delvis_add_relation_instance.formXMLRequest(active_egenskap = False)
 
     def replace_single_relation_fromSourceData(self):
         '''
@@ -1282,7 +1304,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             now we have relation data, then now the child road object that was selected from kart in QGIS
             must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
             '''
-            child_in_parent_nvdbid_found: int = int()
 
             for datacatalog_id, items in relation.items():
                 #if child road object id not exist there, then added
@@ -1388,11 +1409,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #first checking if user is logged in
         isLogged: bool = False
         
-        if self.current_session_token['idToken']:
-            isLogged = True
+        try:
             
-        else:
-            isLogged = False
+            if self.current_session_token['idToken']:
+                isLogged = True
+            
+        except KeyError:
+            return isLogged
         
         return isLogged
         

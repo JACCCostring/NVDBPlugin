@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import requests, json, io
 
 # class DelvisKorrigering(AbstractPoster, QObject):
-class DelvisKorrigering(QObject):
+class DelvisKorrigeringNormalCase(QObject):
     new_endringsset_sent = pyqtSignal(list)
     endringsett_form_done = pyqtSignal()
     response_error = pyqtSignal(str)

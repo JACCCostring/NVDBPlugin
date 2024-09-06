@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET 
 
-from .delvisKorrigering import DelvisKorrigering
+from .delvisKorrigeringNormalCase import DelvisKorrigeringNormalCase
 
-class CustomDelvisKorrRemoveCase(DelvisKorrigering):
+class CustomDelvisKorrRemoveCase(DelvisKorrigeringNormalCase):
     def __init__(self, token, data, extra):
         super().__init__(token, data, extra)
         pass

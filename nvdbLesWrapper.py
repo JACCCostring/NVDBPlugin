@@ -175,25 +175,51 @@ class AreaGeoDataParser:
         
         response = requests.get(endpoint, headers=header, params=params)
         
+        list_of_roadobjects: list = []
+        plugin_dict: dict = {}
+        list_id: dict = {}
+        
         if response.ok:
         
             response_plugin = json.loads(response.text)
 
-            # create a list containing the child objects
-            list_of_roadobjects = []
-            
-            print(response_plugin)
-            
-            list_of_roadobjects = response_plugin["relasjoner"]["barn"][0]["vegobjekter"]
+            try:
+                
+                list_of_roadobjects = response_plugin["relasjoner"]["barn"][0]["vegobjekter"]
 
-            # getting the object_id of the child objects
-            list_id = response_plugin["relasjoner"]["barn"][0]["id"]
+                # getting the object_id of the child objects
+                list_id = response_plugin["relasjoner"]["barn"][0]["id"]
+                
+            except KeyError:
+                #no child object, then just return
+                return
 
             # create a dict with the data put together
             plugin_dict = {list_id: {"vegobjekter": list_of_roadobjects}}
             
             return plugin_dict
         
+    @classmethod
+    def get_datacatalog_relation_type(self, object_type_id: int = int(), type_name: str = str()) -> int:
+        endpoint = self.get_env(version = 'v4') + '/datakatalog/api/v1/vegobjekttyper/' + str(object_type_id)
+    
+        header = {
+            'ContentType': 'application/json',
+            'X-Client': 'ny klient Les'
+        }
+        
+        params = {'inkluder': 'relasjonstyper'}
+        
+        response = requests.get(endpoint, headers=header, params=params)
+
+        if response.ok:
+            resp_json = json.loads(response.text)
+            
+            for child in resp_json['relasjonstyper']['barn']:
+                if child['innhold']['type']['navn'] == type_name:
+                    return child['innhold']['id']
+        
+        return 0
 
     @classmethod
     def get_last_version(self, p_nvdbid: int = int(), p_type_id: int = int()):

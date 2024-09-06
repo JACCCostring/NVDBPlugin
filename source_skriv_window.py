@@ -10,7 +10,7 @@ from PyQt5.QtCore import pyqtSignal
 from .nvdb_endringsset_status_window import Ui_windowProgress #dialog class
 
 from .nvdbLesWrapper import AreaGeoDataParser
-from .delvisKorrigering import DelvisKorrigering
+from .delvisKorrigeringNormalCase import DelvisKorrigeringNormalCase
 from .tokenManager import TokenManager
 
 from qgis.utils import iface
@@ -716,7 +716,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 of how Qt works when queueing signals
                 '''
                 
-                self.delvis = DelvisKorrigering(token, layer_modified_egenskaper, extra_data)
+                self.delvis = DelvisKorrigeringNormalCase(token, layer_modified_egenskaper, extra_data)
 
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
 
