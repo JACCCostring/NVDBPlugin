@@ -1057,6 +1057,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         and this only happens if possible parent is not selected yet
         from source_more_window instance
         '''
+        
         if not self.after_possible_parent_selected:
             for feature in layer.selectedFeatures():
                 for field in feature.fields():
@@ -1066,6 +1067,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 data_fromSelectedObject_from_layer = road_object #storaging road object just in case
                                 
                                 self.child_object_nvdbid = road_object['nvdbId'] #can only be declared once
+                                self.possible_child_name = self.nvdbIdField.text() #storing child object name
                                 
                                 try:
                                     
@@ -1217,7 +1219,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             child_roadobject_exist: bool = False
             
-            datacatalog_enumid = AreaGeoDataParser.get_datacatalog_relation_type(self.possible_parent_type, 'Belysningspunkt')
+            datacatalog_enumid = AreaGeoDataParser.get_datacatalog_relation_type(self.possible_parent_type, self.possible_child_name)
             
             '''
             now we have relation data, then now the child road object that was selected from kart in QGIS
