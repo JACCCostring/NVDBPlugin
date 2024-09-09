@@ -100,7 +100,20 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="object_id_line"/>
+       <widget class="QLineEdit" name="object_id_line">
+        <property name="maximumSize">
+         <size>
+          <width>150</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="frame">
+         <bool>false</bool>
+        </property>
+        <property name="readOnly">
+         <bool>false</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

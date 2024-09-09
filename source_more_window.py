@@ -140,19 +140,19 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.table_relation_show.setHorizontalHeaderLabels(label_headers)
 
     def display_msg(self):
-        layers_list = []
+        """layers_list = []
+
         for layer in QgsProject.instance().mapLayers().values():
             layers_list.append(layer)
 
         for lay in layers_list[2:]:
             if lay.name() != "OpenStreetMap":
-                QgsProject.instance().removeMapLayer(lay.id())
+                QgsProject.instance().removeMapLayer(lay.id())"""
 
         msg = QMessageBox()
         msg.setWindowTitle("Status")
         msg.setText("Operasjon sendt!")
         msg.exec()
-
 
 
     def set_status(self, status):
@@ -164,6 +164,7 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
             self.status_fremdrfit_lbl.setStyleSheet(f"color: red; font: 12pt 'MS Shell Dlg 2';")
 
         self.status_fremdrfit_lbl.setText(status)
+        self.avvist_lbl.clear()
 
     def set_msg_avvist(self, msg):
         self.avvist_lbl.setStyleSheet(f"color: red; font: 10pt 'MS Shell Dlg 2';")
@@ -188,10 +189,10 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
             self.unlink_from_parent_btn.setEnabled(False)
             if dependant_mor:
                 self.avvist_lbl.setText("Ojektet må ha mor!")
-                self.avvist_lbl.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")
+                self.avvist_lbl.setStyleSheet("color: grey; font: 14pt 'MS Shell Dlg 2';")
             elif not has_parent:
                 self.avvist_lbl.setText("Ikke koblet til mor!")
-                self.avvist_lbl.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")
+                self.avvist_lbl.setStyleSheet("color: grey; font: 14pt 'MS Shell Dlg 2';")
 
 
 

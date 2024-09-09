@@ -241,7 +241,9 @@ class AreaGeoDataParser:
             resp_json = json.loads(response.text)
             
             for child in resp_json['relasjonstyper']['barn']:
+                print(f"Child: {child['innhold']['type']['navn']}")
                 if child['innhold']['type']['navn'] == type_name:
+                    print("Found!")
                     return child['innhold']['id']
         
         return 0
