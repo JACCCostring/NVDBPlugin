@@ -1312,14 +1312,28 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     
     def on_remove_relation_completed(self, changeset):
-        self.source_more_window.display_msg()
-        print(changeset)
+        #print(changeset)
         
         '''
         when remove operation completed then trigger remove_object_signal
         meaning that now make new relation operation can be executed
         '''
         self.remove_road_object_signal.emit()
+
+        self.source_more_window.display_msg()
+
+        endpoint = changeset[0]['status_after_sent']
+        print(endpoint)
+        self.endpoint_for_status = endpoint
+
+        token = changeset[0]["token"]
+        print(token)
+        self.token_for_status = token
+        self.get_current_status(endpoint, token)
+
+        self.start_timer()
+        self.continue_search_thread_status_loop = True
+        self.fetch_status = True
         
     def on_single_add_completed(self, changeset):
         self.source_more_window.display_msg()
@@ -1602,21 +1616,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.timer.start()
             print("Timer has been started!")
 
-    def on_remove_relation_completed(self, changeset):
-        #print(changeset)
-
-        endpoint = changeset[0]['status_after_sent']
-        print(endpoint)
-        self.endpoint_for_status = endpoint
-
-        token = changeset[0]["token"]
-        print(token)
-        self.token_for_status = token
-        self.get_current_status(endpoint, token)
-
-        self.start_timer()
-        self.continue_search_thread_status_loop = True
-        self.fetch_status = True
 
     def get_current_status(self, endpoint, token):
         if self.t.isActive():
