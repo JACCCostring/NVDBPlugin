@@ -290,7 +290,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.remove_road_object_signal.connect(self.replace_single_relation_fromSourceData)
 
 
-
 #        rest of methods===============================
     def fixNVDBObjects(self):
 #        all nvdb object types no all objects, to simulate datakatalog id

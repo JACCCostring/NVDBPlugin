@@ -835,9 +835,13 @@ class nvdbFagdata(nvdbVegnett):
         terskler = [ 1000, 10000]
         feat = self.nesteForekomst()
 
-        while feat:
+        continue_loop = True
+
+        while feat and continue_loop:
+            # Remember to write documentation for this
             if exit_event.is_set():
-                break
+                continue_loop = False
+                return []
 
             count += 1
             if count == 1000 or count == 5000 or count % 10000 == 0:
