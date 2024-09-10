@@ -37,7 +37,8 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.more_main_tab.currentChanged.connect(self.activate_current_tab) #when current tab changes
         self.table_relation_show.clicked.connect(self.item_clicked) #when any item is clicked in table
         self.unlink_from_parent_btn.clicked.connect(self.onUnlink_btn_clicked) #when unlink btn is clicked
-        self.unlink_from_parent_btn.clicked.connect(self.display_msg)
+        self.unlink_from_parent_btn.clicked.connect(self.display_msg) #comment here (can be call inside self.onUnlink_btn_clicked() method as well
+        
         self.unlink_from_parent_btn.setEnabled(False)
         self.object_id_line.setReadOnly(True)
 
@@ -136,6 +137,7 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
             
     def setup_default_table_relation(self):
         label_headers = ['Objekttype', 'Navn']
+        
         self.table_relation_show.setColumnCount(2)
         self.table_relation_show.setHorizontalHeaderLabels(label_headers)
 
@@ -150,8 +152,10 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
                 QgsProject.instance().removeMapLayer(lay.id())"""
 
         msg = QMessageBox()
+        
         msg.setWindowTitle("Status")
         msg.setText("Operasjon sendt!")
+        
         msg.exec()
 
 
@@ -187,9 +191,11 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
 
         else:
             self.unlink_from_parent_btn.setEnabled(False)
+            
             if dependant_mor:
                 self.avvist_lbl.setText("Ojektet må ha mor!")
                 self.avvist_lbl.setStyleSheet("color: grey; font: 14pt 'MS Shell Dlg 2';")
+                
             elif not has_parent:
                 self.avvist_lbl.setText("Ikke koblet til mor!")
                 self.avvist_lbl.setStyleSheet("color: grey; font: 14pt 'MS Shell Dlg 2';")

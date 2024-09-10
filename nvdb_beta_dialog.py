@@ -1,12 +1,5 @@
-import sys
-import os
 import inspect
-import time
-
-import xml.etree.ElementTree as ET
-
-from PyQt5.QtCore import QTimer
-
+import os
 
 nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe() )))
 nvdblibrary = nvdblibrary.replace('\\', '/')
@@ -65,9 +58,16 @@ from qgis.core import *
 #python built-in libs
 #========================================
 #includes need it for development
+import xml.etree.ElementTree as ET
+
 import threading
 import requests
 import json
+
+import time
+import sys
+
+from PyQt5.QtCore import QTimer
 
 # -*- coding: utf-8 -*-
 """
@@ -255,7 +255,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #        self.tableResult.itemClicked.connect(self.onItemClicked)
 
         self.tableResult.clicked.connect(self.onItemClicked)
+        
+        #when scrolling in tableview result
         self.tableResult.verticalScrollBar().valueChanged.connect(self.onScroll)
+        
 #        when egenskap box change current item then
         self.egenskapBox.currentIndexChanged.connect(self.onEgenskapChanged)
 
@@ -467,8 +470,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # threading
         target = self.handle_threaded_search_objeckt
+        
         self.thread_search_objekt = threading.Thread(target=target)
+        
         self.thread_search_objekt.start()
+        
         #self.thread_search_objekt.join()
 
 
@@ -489,7 +495,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #connecting signal when objects ready for UI
         self.ready_for_setting_searched_objekt.connect(self.prepareObjectsForUI)
-
+        
+        #this here must be in a function/method
         if self.searchObjectBtn.text() == "Søk Objekt":
             self.searchObjectBtn.setText("Avbryt Søk")
             self.searchObjectBtn.setStyleSheet("background-color : red")
@@ -497,17 +504,20 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             self.searchObjectBtn.setText("Søk Objekt")
             self.searchObjectBtn.setStyleSheet("background-color : white; color : green")
+            
             self.visKartCheck.setEnabled(False)
             self.limit_roadObject_info_inTable.setEnabled(False)
 
             # Thread for setting exit_event to true so search_objects_thread is stopped
             self.t2 = threading.Thread(self.interrupt_thread())
+            
             self.t2.start()
 
 
         #        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
         if self.skrivWindowOpened:
             self.skrivWindowInstance.hide()
+            
             self.skrivWindowInstance = None
             self.skrivWindowOpened = False
 
@@ -515,7 +525,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             #this btn needs to be disabled if skriv windows was opened before the search
             self.openSkrivWindowBtn.setEnabled(False)
 
-    # method to set thread event
     def interrupt_thread(self):
         #self.logger1.disable_logging()
         print("INTERRUPT!")
@@ -968,7 +977,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             idx = self.operatorCombo.findText('ikke verdi')
             self.operatorCombo.setCurrentIndex(idx) #on each iteration onOperatorChange method is also called
             self.operatorCombo.setEnabled(False)
-#        self.verdiField.setEnabled(True)
 
     def onOperatorChanged(self):
         if self.operatorCombo.currentText() == 'ikke verdi':
@@ -978,8 +986,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         else:
             self.verdiField.setEnabled(True)
-#            when operator is selected then we want auto-completion to verdie field
-#            self.subEgenskaper()
 
     def removeActiveLayers(self):
         names = [layer.name() for layer in QgsProject.instance().mapLayers().values()]
@@ -1015,7 +1021,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.verdierDictionary[str(key)] = value #key should be string types
 
         self.setCompleterVerdierObjects(verdierList)
-#        print(self.verdierDictionary)
 
     def setCompleterVerdierObjects(self, data):
         autoCompleter = QCompleter(data)
@@ -1124,8 +1129,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     '''
                                     
                                     self.hasChildParentRoadObject = False
-                                    self.has_parent = False
+                                    self.has_parent = False #same as self.hasChildParentRoadObject
+                                    
                                     print("no parent_indexerror")
+                                    
                                     return relation_collection_parent
 
                                     #return {} #must watch this return
@@ -1138,8 +1145,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     we know that child has no any parent related to
                                     '''
                                     self.hasChildParentRoadObject = False
-                                    self.has_parent = False
+                                    self.has_parent = False #same as self.hasChildParentRoadObject
+                                    
                                     print("No parent_keyerror")
+                                    
                                     return {}
 
                                 for item in relation_type:
@@ -1151,6 +1160,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                             type_name = type['navn']
 
                                             relation_collection_parent[type_name] = type_id
+                                            
         return relation_collection_parent
 
     def onAnyFeatureSelected(self):
@@ -1295,7 +1305,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def has_to_have_mor(self, object_type):
         endpoint = f'https://nvdbapiles-v3.atlas.vegvesen.no/vegobjekttyper/{object_type}?inkluder=stedfesting'
+        
         response = requests.get(endpoint)
+        
         result_txt = json.loads(response.text)
 
         if response.ok:
@@ -1841,7 +1853,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #     enable
 
         self.source_more_window.set_login_status(status="logged")
-        self.status_login = True
+        
+        self.status_login = True #why two
         self.status_login = True
 
         self.source_more_window.koble_fra_til_btn(self.dependant_mor, self.has_parent, self.status_login)

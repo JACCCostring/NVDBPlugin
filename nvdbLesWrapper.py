@@ -2,7 +2,6 @@ import io
 import json
 import requests
 
-
 class AreaGeoDataParser:
     def __init__(self):
         pass
