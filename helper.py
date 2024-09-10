@@ -1,10 +1,78 @@
+# logging 2.0 Singleton Design Pattern
+
+import logging
+from pathlib import Path
+
+class Logger:
+    # class variable for check if there is instance present
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        # creates an instance of the logger if one doesn't already exist
+        if cls._instance is None:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+            cls._instance.setup_logger()
+        return cls._instance
+
+
+    def setup_logger(self):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+        self.format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+
+    def log(self, message, output_type):
+        if output_type.lower() == "console":
+            # logging to console
+            self.ch = logging.StreamHandler()
+            self.ch.setFormatter(self.format)
+            self.logger.addHandler(self.ch)
+            self.logger.info(message)
+        elif output_type.lower() == "file":
+            # logging to file
+            home_dir = Path.home()
+            log_path = home_dir / 'Documents' / 'log.log'
+            self.fh = logging.FileHandler(log_path, mode="a")
+            self.fh.setFormatter(self.format)
+            self.logger.addHandler(self.fh)
+            self.logger.info(message)
+        else:
+            print("Choose either 'console' or 'file' as log destination")
+
+
+    def disable_logging(cls):
+        #self.logger.disabled = True
+        #cls._instance = None
+        del cls._instance
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+# logging 1.0
 import logging
 from pathlib import Path
 
 class Logger:
     def __init__(self):
         # Create a logger
-        self.logger = logging.getLogger("__name__")
+        self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         self.format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         self.console_handler = None
@@ -47,3 +115,41 @@ class Logger:
             self.write_log("file")
         else:
             print("Logging is already enabled")
+            
+            
+ """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

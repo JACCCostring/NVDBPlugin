@@ -32,11 +32,6 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         
         self.setupUi(self)
 
-        self.my_logger = Logger()
-
-        # log to console
-        self.my_logger.write_log("console")
-
         self.endringsett = endringsett
 
 #        starting up default UI values
@@ -61,8 +56,7 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
 
     def populate_table(self, endringsetts):
         row = 0
-        #print("Endringssett: ", endringsetts) #debugin
-        self.my_logger.logger.info(f"Endringssett: {endringsetts}")
+        print("Endringssett: ", endringsetts) #debugin
 
         for endringsett in endringsetts:
             for item in endringsett:
@@ -88,7 +82,6 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
                 column_index = _column
         
         print(columnName, ' found in ', column_index)
-        #self.my_logger.logger.info(f"{columnName} found in {column_index}")
         return column_index
         
     def getTextFieldFromColumnIndex(self, item, columnName):
@@ -114,15 +107,12 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         
         response = requests.get(url, headers = header)
         print('nvdb_endringsset_status_windows: ', response.text)
-        #self.my_logger.logger.info(f"nvdb_endringsset_status_windows: {response.text}")
 
         print(response.text)
-        #self.my_logger.logger.info(response.text)
 
         #if response is not ok, then we just clear all the items
         if response.ok != True:
             print("Response not ok: ",response)
-            #self.my_logger.logger.info(f"Response not ok: {response}")
             if self.tableProgress.rowCount() > 0:
                 self.tableProgress.clear()
                 self.endringsett.clear()
@@ -132,7 +122,6 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
             tree = ET.parse(file_stream)
             root = tree.getroot()
             print("Response ok: ",response)
-            #self.my_logger.logger.info(f"Response ok: {response}")
 
             concat_str = str('')
             show_melding = str('')
@@ -206,5 +195,4 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
     def itemClicked(self):
         if self.isVegObjektThere():
             print('current selected item: ', self.current_item['status_after_sent'])
-            #self.my_logger.logger.info(f"Current selected item: {self.current_item['status_after_sent']}")
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])

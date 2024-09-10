@@ -586,7 +586,7 @@ class nvdbNoder(nvdbVegnett):
 
 
 
-class nvdbFagdata(nvdbVegnett): 
+class nvdbFagdata(nvdbVegnett):
     """Søkeobjekt - dvs klasse for spørringer mot NVDB ang en spesifikk objekttype. 
     Jobber dynamisk mot NVDB api for å hente statistikk, laste ned data etc.
     Holder alle parametre som inngår i dialogen med NVDB api. 
@@ -620,9 +620,9 @@ class nvdbFagdata(nvdbVegnett):
         bomst = n.nesteForekomst()
 
     """
-    
-    
-    
+
+
+
     def __init__( self, objTypeID, miljo=None, debug=False, filter=None ):
 
 
@@ -835,9 +835,14 @@ class nvdbFagdata(nvdbVegnett):
         terskler = [ 1000, 10000]
         feat = self.nesteForekomst()
 
-        while feat:
+        continue_loop = True
+
+        while feat and continue_loop:
+            # Remember to write documentation for this
             if exit_event.is_set():
-                break
+                continue_loop = False
+                return []
+
             count += 1
             if count == 1000 or count == 5000 or count % 10000 == 0:
                 print( 'Objekt', count, 'av', self.antall)
