@@ -113,6 +113,7 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         #if response is not ok, then we just clear all the items
         if response.ok != True:
             print("Response not ok: ",response)
+            
             if self.tableProgress.rowCount() > 0:
                 self.tableProgress.clear()
                 self.endringsett.clear()
@@ -121,6 +122,7 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
             file_stream = io.StringIO(response.text)
             tree = ET.parse(file_stream)
             root = tree.getroot()
+            
             print("Response ok: ",response)
 
             concat_str = str('')

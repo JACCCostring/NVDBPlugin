@@ -24,6 +24,10 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         #tab widget control flags
         self.location_tab_active = False
         self.relation_tab_active = False
+        
+        #for controlling env, default is test
+        self.current_env: str = 'test'
+        
         #end of tab widget control flags
         
         #setting default tab index flag according to current index
@@ -72,27 +76,34 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     def feed_data(self, component_type: str = str(), data: dict = {}, active_parent: str = str()):
         if component_type == 'relation':
            #relation code here ...
-            AreaGeoDataParser.set_env('test') #setting environment before use
+            AreaGeoDataParser.set_env(self.get_current_env()) #setting environment before use
             
             #getting possible parents
             possible_relation = AreaGeoDataParser.get_possible_parents(int(data['objekttype']))
-            #print("Possible relations: " , possible_relation)
-
-            #before population, check if object is linked to a parent
-            #if it's then do not allow selection
-            # if active_parent:
-            #     self.table_relation_show.setEnabled(False)
             
             #populating relation component with possible parents
             self.populate_relation_component(possible_relation)
 
-            #for parent_name, parent_id in active_parent.items():
-               # self.current_linked_parent_lbl.setText(f"{parent_id} - {parent_name}")
-
         if component_type == 'location':
             #location code here ...
             pass
-
+    
+    def get_current_env(self):
+        return self.current_env
+    
+    def set_current_env(self, current_env: str = str()):
+        curr: str = str()
+        
+        if 'test' in current_env:
+            curr = 'test'
+        
+        if 'prod' in current_env:
+            curr = 'prod'
+            
+        self.current_env = curr
+        
+        print('chaning env in more window', self.get_current_env())
+        
     def get_parent_status(self, parent_object):
         for parent_name, parent_id in parent_object.items():
             self.current_linked_parent_lbl.setText(f"{parent_id} - {parent_name}")
@@ -162,8 +173,10 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     def set_status(self, status):
         if status in ("BEHANDLES", "VENTER"):
             self.status_fremdrfit_lbl.setStyleSheet(f"color: grey; font: 12pt 'MS Shell Dlg 2';")
+            
         elif status in ("UTFØRT", "UTFØRT_OG_ETTERBEHANDLET"):
             self.status_fremdrfit_lbl.setStyleSheet(f"color: green; font: 12pt 'MS Shell Dlg 2';")
+            
         elif status in ("AVVIST", "KANSELLERT"):
             self.status_fremdrfit_lbl.setStyleSheet(f"color: red; font: 12pt 'MS Shell Dlg 2';")
 
@@ -179,6 +192,7 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         if status == "logged":
             self.status_innlogging_lbl.setText("Logged")
             self.status_innlogging_lbl.setStyleSheet("color: green; font: 14pt 'MS Shell Dlg 2';")
+            
         else:
             self.status_innlogging_lbl.setText('må logg på')
             self.status_innlogging_lbl.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")

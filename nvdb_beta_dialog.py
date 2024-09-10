@@ -1,4 +1,5 @@
 import inspect
+import sys
 import os
 
 nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe() )))
@@ -65,7 +66,6 @@ import requests
 import json
 
 import time
-import sys
 
 from PyQt5.QtCore import QTimer
 
@@ -282,7 +282,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #when QSlider value change then change label_limiter_info
         self.limit_roadObject_info_inTable.valueChanged.connect(lambda: self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value())))
-
+        
+        #open more window for relation or stedfesting
         self.more_btn.clicked.connect(self.open_more_window)
         
         '''
@@ -670,8 +671,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         for layer in self.all_layers:
             if layer in temp_list:
                 print("Removing layer...")
+                
                 self.layers_list.remove(layer)
                 obj_size = 5
+                
             else:
                 self.layers_list.append(layer)
 
@@ -732,12 +735,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def onComboMiljoChange(self):
         print('changing to: ', self.comboEnvironment.currentText())
-        #self.my_logger.logger.info(f"Changing to: {self.comboEnvironment.currentText()}")
 
-        # if len(self.listOfnvdbObjects) > 0:
         AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
-        print(AreaGeoDataParser.get_env())
-        #self.my_logger.logger.info(AreaGeoDataParser.get_env())
+        
+        #feeding new env when this change to source_more_window instance
+        if self.source_more_window:
+            self.source_more_window.set_current_env(self.comboEnvironment.currentText())
 
     def verifyNvdbField(self, vegobjekt_type):
         for key, value in self.listOfnvdbObjects.items():
@@ -1059,7 +1062,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def start_timer_refresh_status(self):
         if not self.t.isActive():
             self.t.setInterval(5000)
+            
             self.t.start()
+            
             print("Timer has been started!")
 
     def open_more_window(self):
@@ -1330,46 +1335,51 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         meaning that now make new relation operation can be executed
         '''
         self.remove_road_object_signal.emit()
-
+        
+        #make it decopuple in a function or method
         self.source_more_window.display_msg()
 
         endpoint = changeset[0]['status_after_sent']
-        print(endpoint)
+
         self.endpoint_for_status = endpoint
 
         token = changeset[0]["token"]
-        print(token)
+        
         self.token_for_status = token
         self.get_current_status(endpoint, token)
 
         self.start_timer()
+        
         self.continue_search_thread_status_loop = True
         self.fetch_status = True
         
     def on_single_add_completed(self, changeset):
-        self.source_more_window.display_msg()
         #print(changeset)
-        print("on_single_add_completed\n")
+        
+        #make it decouple in a function
+        self.source_more_window.display_msg()
 
         endpoint = changeset[0]['status_after_sent']
-        print(endpoint)
+
         self.endpoint_for_status = endpoint
 
         token = changeset[0]["token"]
-        print(token)
+
         self.token_for_status = token
+        
         self.get_current_status(endpoint, token)
 
         self.start_timer()
+        
         self.continue_search_thread_status_loop = True
+        
         self.fetch_status = True
 
     
     def on_single_replace_completed(self, changeset):
-        self.source_more_window.display_msg()
-
         #print(changeset)
-        print("on_single_replace_completed")
+
+        self.source_more_window.display_msg()
 
         endpoint = changeset[0]['status_after_sent']
         print(endpoint)
@@ -1399,22 +1409,20 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
             AreaGeoDataParser.set_env(env)
 
-            username = self.username_session
-            parent_nvdbid = self.possible_selected_parent_nvdbid  # self.parent_roadObject_linked_nvdbid[0]
-            object_type_id = self.possible_parent_type  # self.parent_roadObject_linked_type
-            version = AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
+            username =                                  self.username_session
+            parent_nvdbid =                          self.possible_selected_parent_nvdbid  # self.parent_roadObject_linked_nvdbid[0]
+            object_type_id =                          self.possible_parent_type  # self.parent_roadObject_linked_type
+            version =                                       AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
 
-            last_time_road_object_modified = AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid,
-                                                                                      version)
-            datacatalog_version = AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
-            endpoint = self.get_env_write_endpoint()
-            relation = AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
-            id_token = self.current_session_token['idToken']
+            last_time_road_object_modified = AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid, version)
+            datacatalog_version =                     AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
+            endpoint =                                      self.get_env_write_endpoint()
+            relation =                                      AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
+            id_token =                                      self.current_session_token['idToken']
 
             child_roadobject_exist: bool = False
 
-            datacatalog_enumid = AreaGeoDataParser.get_datacatalog_relation_type(self.possible_parent_type,
-                                                                                 self.possible_child_name)
+            datacatalog_enumid =                        AreaGeoDataParser.get_datacatalog_relation_type(self.possible_parent_type, self.possible_child_name)
 
             '''
             now we have relation data, then now the child road object that was selected from kart in QGIS
@@ -1457,19 +1465,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 'add_child_nvdbid': self.child_object_nvdbid  # tagging road object to be removed
             }
 
-            print(extra_data)
-
-            print('enum', datacatalog_enumid)
-            print('type', self.possible_parent_type)
-            print('name', self.possible_parent_name)
-
             # writing to NVDB changes made in road object relationship
             self.single_delvis_add_relation_instance = CustomDelvisKorrSingleAdd(id_token, modified_data, extra_data)
 
             self.single_delvis_add_relation_instance.new_endringsset_sent.connect(self.on_single_add_completed)
 
-            self.single_delvis_add_relation_instance.endringsett_form_done.connect(
-                self.single_delvis_add_relation_instance.prepare_post)
+            self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.single_delvis_add_relation_instance.prepare_post)
 
             self.single_delvis_add_relation_instance.formXMLRequest(active_egenskap=False)
 
@@ -1487,17 +1488,17 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
             AreaGeoDataParser.set_env(env)
 
-            username = self.username_session
-            parent_nvdbid = self.possible_selected_parent_nvdbid  # self.parent_roadObject_linked_nvdbid[0]
-            object_type_id = self.possible_parent_type  # self.parent_roadObject_linked_type
-            version = AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
+            username =                                  self.username_session
+            parent_nvdbid =                         self.possible_selected_parent_nvdbid  # self.parent_roadObject_linked_nvdbid[0]
+            object_type_id =                        self.possible_parent_type  # self.parent_roadObject_linked_type
+            version =                                     AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
 
             last_time_road_object_modified = AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid,
                                                                                       version)
-            datacatalog_version = AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
-            endpoint = self.get_env_write_endpoint()
-            relation = AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
-            id_token = self.current_session_token['idToken']
+            datacatalog_version =                   AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
+            endpoint =                                     self.get_env_write_endpoint()
+            relation =                                      AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
+            id_token =                                      self.current_session_token['idToken']
 
             '''
             now we have relation data, then now the child road object that was selected from kart in QGIS
@@ -1529,15 +1530,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     }
 
                     # writing to NVDB changes made in road object relationship
-                    self.single_delvis_replace_relation_instance = CustomDelvisKorrReplaceParent(id_token,
-                                                                                                 modified_data,
-                                                                                                 extra_data)
+                    self.single_delvis_replace_relation_instance = CustomDelvisKorrReplaceParent(id_token, modified_data, extra_data)
 
-                    self.single_delvis_replace_relation_instance.new_endringsset_sent.connect(
-                        self.on_single_replace_completed)
+                    self.single_delvis_replace_relation_instance.new_endringsset_sent.connect(self.on_single_replace_completed)
 
-                    self.single_delvis_replace_relation_instance.endringsett_form_done.connect(
-                        self.single_delvis_replace_relation_instance.prepare_post)
+                    self.single_delvis_replace_relation_instance.endringsett_form_done.connect(self.single_delvis_replace_relation_instance.prepare_post)
 
                     self.single_delvis_replace_relation_instance.formXMLRequest(active_egenskap=False)
 
@@ -1613,6 +1610,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def reapply(self):
         names = [layer.name() for layer in QgsProject.instance().mapLayers().values()]
+        
         for name in names:
             if name == self.selected_layer[-1]:
                 layer = QgsProject.instance().mapLayersByName(self.selected_layer[-1])[0]
@@ -1625,6 +1623,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.timer.isActive():
             self.timer.setInterval(5000)
             self.timer.start()
+            
             print("Timer has been started!")
 
 
@@ -1632,13 +1631,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.t.isActive():
             if not self.source_more_window.isVisible():
                 self.t.stop()
-                print("Timer t stopped!")
+                
+                print("Timer stopped!")
 
-        #print("Getting current status...")
         # get the xml response
         response = requests.get(endpoint, headers={'Authorization': f'Bearer {token}'})
+        
         if response.ok:
-            #print("response: ", response.text)
 
             # parsing the response
             root = ET.fromstring(response.text)
@@ -1658,7 +1657,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 position = melding.find(",")
                 if position != -1:
                     split_melding = melding[:position]
+                    
                     print("Melding:", split_melding)
+                    
                     self.source_more_window.set_msg_avvist(split_melding)
                 else:
                     self.source_more_window.set_msg_avvist(melding)
@@ -1722,98 +1723,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
             else:
                 self.get_current_status(endpoint, token)
-                #print("Timer is active!")
-
-
-    def add_relation_fromSourceData(self, p_nvdbid: int = int(), c_nvdbid: int = int()) -> bool:
-        '''
-        to get and modify the relation from the selected object on the current fetched data
-        from the last search in module nvdb_beta_dialog.py
-        '''
-
-        #only happens if child road object selected from QGIS kart has a parent
-        
-        if self.after_possible_parent_selected:
-
-            for refdata in self.data:
-                for key, value in refdata.items():
-                    if key == 'nvdbId':
-                        if str(refdata[key]) == str(p_nvdbid):
-                            for field_name, field_values in refdata.items():
-                                if field_name == 'relasjoner':
-                                    children = field_values['barn']
-
-                                    # children is a list
-                                    for child in children:
-
-                                        #only tag if child id to road object is not there
-                                        if c_nvdbid not in child['vegobjekter']:
-                                            print('tagging ADD')
-                                            child['operation'] = 'add' #tagged with remove for removing relation object later
-                                            child['child_nvdbid'] = c_nvdbid #nvdbid of child road object to remove
-        
-
-    def single_add_relation_fromSourceData(self):
-        '''
-        adding relationship between parent road object and child object
-        will be through a call to a new module, this module will be in a separate file.
-        '''
-        
-        #only happens if child road object selected from QGIS kart has a parent
-        if self.after_possible_parent_selected and self.current_session_token['idToken']:
-            
-            #setting AreaGeoDataParser env, before using it
-            AreaGeoDataParser.set_env(self.comboEnvironment.currentText())
-
-            username =                          self.username_session
-            parent_nvdbid =                     self.possible_selected_parent_nvdbid
-            object_type_id =                    self.parent_roadObject_linked_type
-            version =                           AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
-            
-            last_time_road_object_modified =    AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid, version)
-            datacatalog_version =               AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
-            endpoint =                          self.get_env_write_endpoint()
-            relation =                          AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
-            id_token =                          self.current_session_token['idToken']
-            
-            '''
-            now we have relation data, then now the child road object that was selected from kart in QGIS
-            must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
-            '''
-            child_in_parent_nvdbid_found: int = int()
-            
-            for datacatalog_id, items in relation.items():
-                #if child road object id not exist there, then added
-                if self.child_object_nvdbid not in items['vegobjekter']:
-            
-                    #already modified data
-                    modified_data = {
-                    'nvdbid': parent_nvdbid,
-                    'versjon': version #last version to road object
-                    }
-                        
-                    #extra data need it for xml escheme completion
-                    extra_data = {
-                    'current_nvdbid': parent_nvdbid,
-                    'nvdb_object_type': object_type_id,
-                    'datakatalog_version': datacatalog_version, #datacatalog current version
-                    'sistmodifisert': last_time_road_object_modified,
-                    'username': username,
-                    'endpoint': endpoint,
-                    'objekt_navn': 'object_name', #test name
-                    'relation': relation,
-                    'remove_child_nvdbid': self.child_object_nvdbid
-                    }
-                        
-                    #writing to NVDB changes made in road object relationship
-                    self.single_delvis_add_relation_instance = CustomDelvisKorrSingleAdd(id_token, modified_data, extra_data)
-                        
-                    self.single_delvis_add_relation_instance.new_endringsset_sent.connect(lambda: print('sent'))
-
-                    self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.single_delvis_add_relation_instance.prepare_post)
-                        
-                    self.single_delvis_add_relation_instance.formXMLRequest(active_egenskap = False)
-            
+                #print("Timer is active!")        
 
     def isUserLogged(self):
         #first checking if user is logged in
@@ -1849,8 +1759,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.username_session = username
         self.current_session_token = token
 
-        # if self.isUserLogged():
-        #     enable
+        #make it decouple, into another function
 
         self.source_more_window.set_login_status(status="logged")
         
@@ -1862,7 +1771,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def onUserNotLoggedIn(self):
         self.status_login = False
 
-    
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
         renderer = layer.renderer()
