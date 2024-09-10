@@ -39,13 +39,20 @@ class CustomDelvisKorrSingleAdd(DelvisKorrigeringNormalCase):
         parent object must add child as a relation to it and not the other way around.
         '''
         relations = self.extra['relation']
-
+        
+        '''
+        if relations variable is populated, means that we need to add all the relation
+        plus the one selected from QGIS kart.
+        '''
         if relations and self.extra['hasAnyRelation']:
             print('hasAnyRelation == True')
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')
             
             for enum_catalog_type_nvdb, item in relations.items():
-                #Note: for each relation or assosiasjon a sub or new assosiasjon must be added individual if need it.
+                '''
+                Note:
+                        for each relation or assosiasjon a sub or new assosiasjon must be added individual if need it.
+                '''
                 relation = ET.SubElement(relations_egenskap, 'assosiasjon')
                 relation.attrib = {'typeId': str(enum_catalog_type_nvdb), 'operasjon': 'oppdater'}
                 
@@ -54,6 +61,10 @@ class CustomDelvisKorrSingleAdd(DelvisKorrigeringNormalCase):
 
                 sub_remove_relation.text = str( self.extra['add_child_nvdbid'] )
         
+        '''
+        if not relation is found, means that we can not add any relatio from relations variable
+        and we must add the only child road object selected from QGIS kart.
+        '''
         if not self.extra['hasAnyRelation']:
             print('hasAnyRelation == False')
             relations_egenskap = ET.SubElement(vegobjekt, 'assosiasjoner')

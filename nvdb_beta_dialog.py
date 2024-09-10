@@ -1075,6 +1075,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         relations = self.get_related_parent(self.child_object_nvdbid)
 
                                         active_relation_parent = relations
+                                        print(active_relation_parent)
                                         
                                         #sync with source_more_window instance, to feed more data, in this case related to (relation = sammenkobling)
                                         self.source_more_window.feed_data('relation', data_fromSelectedObject_from_layer, active_relation_parent)
@@ -1083,8 +1084,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     pass
         
         '''
-        do something else with possible parents type and name
-        gotten from source_more_window, when possible parent road object
+        when parent road object
         is already selected
         '''
         if self.after_possible_parent_selected:
@@ -1100,7 +1100,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                             
                             if road_object['nvdbId'] == feature[field.name()]:
                                 if road_object['objekttype'] == self.possible_parent_type:
-                                    print('current objeck type are the same as possible parent type')
                                     
                                     parent_object_nvdbid = road_object['nvdbId']
                                     roadObjectTypeChild_toConnect = road_object['objekttype']
@@ -1110,8 +1109,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     #if possible parent type is equal to object child type
                                     #user want to connect to, then is it a valid parent child relationship connection
                                     if self.possible_parent_type == roadObjectTypeChild_toConnect:
-                                        print('parent possible objeck type are the same as child type to connect')
-                                        
                                         #for now road object types are both same type,
                                         self.valid_roadObject_types = True
                                     
@@ -1261,12 +1258,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             'datacatalog_enumId': datacatalog_enumid,
             'add_child_nvdbid': self.child_object_nvdbid #tagging road object to be removed
             }
-            
-            print(extra_data)
-            
-            print('enum', datacatalog_enumid)
-            print('type', self.possible_parent_type)
-            print('name', self.possible_parent_name)
                                 
             #writing to NVDB changes made in road object relationship
             self.single_delvis_add_relation_instance = CustomDelvisKorrSingleAdd(id_token, modified_data, extra_data)
