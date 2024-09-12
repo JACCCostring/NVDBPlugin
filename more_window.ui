@@ -173,7 +173,7 @@
        <x>380</x>
        <y>440</y>
        <width>221</width>
-       <height>61</height>
+       <height>63</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -226,6 +226,19 @@
        </widget>
       </item>
      </layout>
+    </widget>
+    <widget class="QPushButton" name="login_btn_more_window">
+     <property name="geometry">
+      <rect>
+       <x>380</x>
+       <y>510</y>
+       <width>51</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Log-In</string>
+     </property>
     </widget>
    </widget>
   </widget>

@@ -33,12 +33,12 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     userLogged = pyqtSignal(str, dict)
     not_logged = pyqtSignal()
 
-    def __init__(self, data, listOfEgenskaper):
+    def __init__(self, data, listOfEgens):
         super().__init__()
 
         # init variables
         self.data = data  # all fetched nvdb objects in json format from Les vinduet
-        self.listOfEgenskaper = listOfEgenskaper  # all fetched nvdb egenskaper from current nvdb searched objects
+        self.listOfEgenskaper = listOfEgens  # all fetched nvdb egenskaper from current nvdb searched objects
         self.successLogin = False
         self.idsOfSelectedItems = []  # list of selected ids from QGIS kart layer
         self.progressWindowInstance = None  # windows instance
@@ -723,9 +723,20 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.delvis.endringsett_form_done.connect(self.preparePost)
 
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
-
+    
+    def feed_new_list_egenskaper_and_data(self, new_data: dict = {}, new_list: dict = {}):
+        print('getting egenskaper', new_list)
+        print('getting data', new_data)
+        
+        # self.data.clear()
+        # self.listOfEgenskaper.clear()
+            
+        self.data = new_data
+        self.listOfEgenskaper = new_list
+        
     def get_env_write_endpoint(self):
         currentMiljo = self.miljoCombo.currentText()
+        
         url = None
 
         if 'Produksjon' in currentMiljo:

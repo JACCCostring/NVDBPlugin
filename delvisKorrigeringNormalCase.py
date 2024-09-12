@@ -121,8 +121,7 @@ class DelvisKorrigeringNormalCase(QObject):
                                         operation will depend on if value is 'N/A' or not
                                         if 'N/A' then we delete egenskap and if not then update egenskap
                                         '''
-                                        operation = 'slett' if self.modified_data[
-                                                                   egenskap_navn] == 'N/A' else 'oppdater'
+                                        operation = 'slett' if self.modified_data[egenskap_navn] == 'N/A' else 'oppdater'
                                         # operation = 'slett' if new_modified_data[egenskap_navn] == 'N/A' else 'oppdater'
 
                                         # print(operation) #debug
@@ -130,6 +129,8 @@ class DelvisKorrigeringNormalCase(QObject):
 
                                         new_egenskap = ET.SubElement(egenskaper, 'egenskap')
                                         new_egenskap.attrib = {'typeId': str(value), 'operasjon': operation}
+                                        
+                                        print('=====>', egenskap_navn, ': ', value)
 
                                         # debug
                                         # print(egenskap_navn, ': ', val, ' type ', type(val))

@@ -1,10 +1,13 @@
-from nvdbLesWrapper import AreaGeoDataParser
+import asyncio
+import time
 
-
-def test():
-    AreaGeoDataParser.set_env('test')
-    data = AreaGeoDataParser.get_datacatalog_relation_type(461, 'Belysningspunkt')
+async def sleeping(seconds: int = int()):    
+    if seconds > 0:
+        
+        asyncio.sleep(seconds)
+        print('sleeping')
+        
+async def test():
+    await asyncio.gather(sleeping(1), sleeping(2), sleeping(3))
     
-    print(data)
-    
-test()
+asyncio.run(test())

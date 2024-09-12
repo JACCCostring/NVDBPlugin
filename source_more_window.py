@@ -15,6 +15,7 @@ FORM_CLASS, BASE_CLASS = uic.loadUiType(os.path.join(
 class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     new_relation_event = pyqtSignal(int, str) #signal for sending selected items
     unlink_btn_clicked = pyqtSignal() #signal for when unlink btn clicked
+    logging_btn_moreWindow_clicked = pyqtSignal() #signal when user clicked open window btn
     
     def __init__(self):
         super().__init__()
@@ -36,15 +37,18 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         #setting default values to table relation show
         self.setup_default_table_relation()
         
+        #setting some default to UI components
+        self.unlink_from_parent_btn.setEnabled(False)
+        self.object_id_line.setReadOnly(True)
+        self.login_btn_more_window.setEnabled(False)
+        
         #end of setting default index flag
         
         self.more_main_tab.currentChanged.connect(self.activate_current_tab) #when current tab changes
         self.table_relation_show.clicked.connect(self.item_clicked) #when any item is clicked in table
         self.unlink_from_parent_btn.clicked.connect(self.onUnlink_btn_clicked) #when unlink btn is clicked
         self.unlink_from_parent_btn.clicked.connect(self.display_msg) #comment here (can be call inside self.onUnlink_btn_clicked() method as well
-        
-        self.unlink_from_parent_btn.setEnabled(False)
-        self.object_id_line.setReadOnly(True)
+        self.login_btn_more_window.clicked.connect(self.onLoggingClicked)
 
     def activate_current_tab(self, index):
         if self.more_main_tab.currentIndex() == 0:
@@ -107,7 +111,6 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     def get_parent_status(self, parent_object):
         for parent_name, parent_id in parent_object.items():
             self.current_linked_parent_lbl.setText(f"{parent_id} - {parent_name}")
-            #print(f"parent_id: {parent_id} - parent_name: {parent_name}")
 
     def populate_relation_component(self, data: dict = {}):
         row: int = 0
@@ -215,4 +218,6 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
                 self.avvist_lbl.setStyleSheet("color: grey; font: 14pt 'MS Shell Dlg 2';")
 
 
+    def onLoggingClicked(self):
+        self.logging_btn_moreWindow_clicked.emit()
 

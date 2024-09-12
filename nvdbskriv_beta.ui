@@ -109,6 +109,19 @@
       <string/>
      </property>
     </widget>
+    <widget class="QPushButton" name="hideWindowBtn">
+     <property name="geometry">
+      <rect>
+       <x>690</x>
+       <y>770</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>skjul vinduet</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="tabLogin">
     <attribute name="title">
@@ -393,19 +406,6 @@
      </property>
     </widget>
    </widget>
-  </widget>
-  <widget class="QPushButton" name="hideWindowBtn">
-   <property name="geometry">
-    <rect>
-     <x>710</x>
-     <y>810</y>
-     <width>93</width>
-     <height>28</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>skjul vinduet</string>
-   </property>
   </widget>
  </widget>
  <resources/>
