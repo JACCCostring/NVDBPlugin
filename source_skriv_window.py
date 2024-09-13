@@ -602,7 +602,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                     if rel_name == 'barn':
 
                                         for relation in rel_value:
-                                            print('showing operation before parsing--->', relation)
 
                                             try:
                                                 nvdbids_action = relation['child_nvdbid']
