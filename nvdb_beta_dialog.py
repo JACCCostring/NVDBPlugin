@@ -2,6 +2,7 @@ import sys
 import os
 import inspect
 import time
+import asyncio
 
 import xml.etree.ElementTree as ET
 
@@ -617,7 +618,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return listObjects
 
-
     def onVisIKart(self, checked):
         if checked:
         #     #threading
@@ -633,6 +633,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             # self.thread_showing_objekt_iKart.join()
 
             self.v.refresh()
+
             nvdbsok2qgis(self.v)
 
 #        setting size slider widget for objects size enabled, after features are in layer
@@ -647,10 +648,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.openSkrivWindowBtn.setEnabled(False)
 
     def set_layer_size(self):
-        # TODO:Clear the layers once child and parent and child object are koblet (Just an idea for better user experience)
-        #if len(self.layers_list) > 5 or len(self.all_layers) > 5:
-          #  self.removeActiveLayers()
-            #self.layers_list = []
 
         obj_size = 9
 
@@ -1319,7 +1316,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         '''
         self.remove_road_object_signal.emit()
 
-        self.source_more_window.display_msg()
 
         endpoint = changeset[0]['status_after_sent']
         print(endpoint)
@@ -1335,7 +1331,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fetch_status = True
         
     def on_single_add_completed(self, changeset):
-        self.source_more_window.display_msg()
         #print(changeset)
         print("on_single_add_completed\n")
 
@@ -1354,8 +1349,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     
     def on_single_replace_completed(self, changeset):
-        self.source_more_window.display_msg()
-
         #print(changeset)
         print("on_single_replace_completed")
 
@@ -1704,6 +1697,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.source_more_window.get_parent_status(parent_status)
 
                 self.after_possible_parent_selected = False
+                self.source_more_window.display_msg()
+
 
             elif not self.source_more_window.isVisible():
                 self.timer.stop()

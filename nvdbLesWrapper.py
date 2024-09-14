@@ -36,6 +36,7 @@ class AreaGeoDataParser:
 
         if response.ok:
             data = response.text
+            
 
             parsed = json.loads(data)
 
