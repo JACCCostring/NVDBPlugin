@@ -156,22 +156,13 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.table_relation_show.setHorizontalHeaderLabels(label_headers)
 
     def display_msg(self):
-        """layers_list = []
-
-        for layer in QgsProject.instance().mapLayers().values():
-            layers_list.append(layer)
-
-        for lay in layers_list[2:]:
-            if lay.name() != "OpenStreetMap":
-                QgsProject.instance().removeMapLayer(lay.id())"""
-
         msg = QMessageBox()
         
         msg.setWindowTitle("Status")
         msg.setText("Operasjon sendt!")
         
         msg.exec()
-
+                
 
     def set_status(self, status):
         if status in ("BEHANDLES", "VENTER"):

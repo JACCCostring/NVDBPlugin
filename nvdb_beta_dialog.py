@@ -67,6 +67,7 @@ import json
 
 # import asyncio
 import time
+import asyncio
 
 from PyQt5.QtCore import QTimer
 
@@ -633,7 +634,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return listObjects
 
-
     def onVisIKart(self, checked):
         if checked:
         #     #threading
@@ -649,6 +649,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             # self.thread_showing_objekt_iKart.join()
             
             self.v.refresh()
+
             nvdbsok2qgis(self.v)
 
             # self.v.refresh()
@@ -667,10 +668,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.openSkrivWindowBtn.setEnabled(False)
 
     def set_layer_size(self):
-        # TODO:Clear the layers once child and parent and child object are koblet (Just an idea for better user experience)
-        #if len(self.layers_list) > 5 or len(self.all_layers) > 5:
-          #  self.removeActiveLayers()
-            #self.layers_list = []
 
         obj_size = 9
 
@@ -1342,9 +1339,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         meaning that now make new relation operation can be executed
         '''
         self.remove_road_object_signal.emit()
-        
-        #make it decopuple in a function or method
-        self.source_more_window.display_msg()
 
         endpoint = changeset[0]['status_after_sent']
 
@@ -1384,9 +1378,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     
     def on_single_replace_completed(self, changeset):
-        print(changeset)
+        #print(changeset)
 
-        self.source_more_window.display_msg()
+        print("on_single_replace_completed")
 
         endpoint = changeset[0]['status_after_sent']
 
@@ -1726,6 +1720,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.source_more_window.get_parent_status(parent_status)
 
                 self.after_possible_parent_selected = False
+                self.source_more_window.display_msg()
+
 
             elif not self.source_more_window.isVisible():
                 self.timer.stop()
