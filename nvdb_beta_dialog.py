@@ -668,7 +668,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.openSkrivWindowBtn.setEnabled(False)
 
     def set_layer_size(self):
-
         obj_size = 9
 
         # making a copy list for checking matching values in loop
