@@ -35,6 +35,7 @@ from PyQt5.QtWidgets import QCompleter, QVBoxLayout, QLabel, QTableWidgetItem, Q
 from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal, QAbstractTableModel, QTimer
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
+
 #third party libs
 from .nvdbapiV3qgis3 import nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
 from nvdbapiv3 import nvdbFagdata, nvdbVegnett
@@ -65,6 +66,7 @@ import threading
 import requests
 import json
 import time
+import asyncio
 
 # -*- coding: utf-8 -*-
 """
@@ -99,7 +101,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     setting_each_uiItem_inTable = pyqtSignal(int, dict, tuple, dict)
     amount_of_vegobjekter_collected = pyqtSignal(int)
     remove_road_object_signal = pyqtSignal()
-    
+    update_more_window_statusbar = pyqtSignal(int)
+
     def __init__(self, parent=None):
         """Constructor."""
         super(NvdbBetaProductionDialog, self).__init__(parent)
@@ -129,6 +132,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.username_session: str = str() #username session only when atempting removing relation
         self.current_session_token: dict = {} #current session tokens for current logged user
         self.possible_selected_parent_nvdbid: int = int() #possible selected parent nvdbId from QGIS kart layer
+        self.cnt_more_window_statusbar = 0
 
 #        development starts here
 #        setting up all data need it for starting up
@@ -143,8 +147,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.continue_search_thread_status_loop = True
         self.status_login = False
-        self.selected_layer = []
-        self.object_selected = []
+        self.selected_layer_from_map = []
+        self.selected_object_from_map = []
         self.source_more_window = None
         self.endpoint_for_status = None
         self.token_for_status = None
@@ -152,16 +156,14 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.reset_more_window = False
         self.data_fromSelectedObject_from_layer = None
         self.relations = None
-        self.has_parent = None
-        self.call_after_search = None
         self.dependant_mor = False
         self.active_relation_parent = {}
         self.layers_list = []
 
 
         # timer instance for use in to get continuous update on status f endringssett in mer-vindu
-        self.timer = QTimer()
-        self.t = QTimer()
+        self.timer_for_update_status_after_sendtEndring = QTimer()
+        self.timer_for_refresh_status_after_openMoreWindow = QTimer()
 
         #        dictionary with endpoints necessary for environment
         self.environment = {
@@ -174,12 +176,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 #        creating a QStandardItemModel for being able to connect itemChange() signal
 #        rows, columns and headers will be assigned later on self.setObjectsToUI() method
         self.tableViewResultModel = QStandardItemModel()
-        self.model = CustomStandardItemModel()
+        self.mvc_table_model = CustomStandardItemModel()
 
 #        proxy model, to filter table view data on any column
         self.proxyModel = QSortFilterProxyModel()
 
-        self.proxyModel.setSourceModel(self.model)
+        self.proxyModel.setSourceModel(self.mvc_table_model)
         
         #self.proxyModel.setSourceModel(self.tableViewResultModel)
         
@@ -192,7 +194,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
 #        selecting a default environment
         self.comboEnvironment.setCurrentText('Akseptansetest')
-        # self.comboEnvironment.setCurrentText('Produksjon')
+
 #        setting an environment for default
         AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
 
@@ -282,6 +284,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         a remove signal is triggerd so new relation parent can be added to child object
         '''
         self.remove_road_object_signal.connect(self.replace_single_relation_fromSourceData)
+        #self.source_more_window.update.connect(lambda value:self.relation_status_bar.setValue(value))
 
 
 #        rest of methods===============================
@@ -403,7 +406,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     def searchObj(self):
         self.exit_event.clear() #FIX: check if still set, before set False or clear it
         
-        self.model.clear_fetch()
+        self.mvc_table_model.clear_fetch()
         
         #feeding ne wlist of egenskaper, if new search is performed after one object search
         if self.skrivWindowOpened and self.skrivWindowInstance:
@@ -524,9 +527,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.limit_roadObject_info_inTable.setEnabled(False)
 
             # Thread for setting exit_event to true so search_objects_thread is stopped
-            self.t2 = threading.Thread(self.interrupt_thread())
+            self.thread_avbryt_sok = threading.Thread(self.interrupt_thread())
             
-            self.t2.start()
+            self.thread_avbryt_sok.start()
 
 
         #        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
@@ -562,7 +565,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.data = self.source_data.to_records(self.exit_event)
 
         if len(self.data) > 0:
-            self.model.feed_data(self.data)
+            self.mvc_table_model.feed_data(self.data)
 
         #collecting size of the current onject search, it can be different for
         #all of the road objects in NVDB
@@ -621,11 +624,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.ready_for_setting_searched_objekt.emit(objects_for_ui)
 
-
     def onScroll(self):
         if self.tableResult.verticalScrollBar().value() < len(self.data) and self.tableResult.verticalScrollBar().value() == self.tableResult.verticalScrollBar().maximum():
-            self.model.fetch_more()
-
+            self.mvc_table_model.fetch_more()
 
     def makeMyDataObjects(self, data):
         listObjects = []
@@ -638,7 +639,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 listObjects.append(obj)
 
         return listObjects
-
 
     def onVisIKart(self, checked):
         if checked:
@@ -659,23 +659,18 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             # paginator._done_fetching.connect( lambda obj: self.draw_layer() )
             ########
             
-            self.changeObjectsSize.setEnabled(True)
-            
-            self.all_layers = QgsProject.instance().mapLayers().values()
-            
             self.set_layer_size()
 
         else:
             self.removeActiveLayers()
             self.layers_list = []
-#            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
+            #            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
             self.openSkrivWindowBtn.setEnabled(False)
 
     def set_layer_size(self):
-        # TODO:Clear the layers once child and parent and child object are koblet (Just an idea for better user experience)
-        #if len(self.layers_list) > 5 or len(self.all_layers) > 5:
-          #  self.removeActiveLayers()
-            #self.layers_list = []
+
+        self.changeObjectsSize.setEnabled(True)
+        self.all_layers = QgsProject.instance().mapLayers().values()
 
         obj_size = 9
 
@@ -1043,12 +1038,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             self.skrivWindowInstance.show()
 
-
     def start_timer_refresh_status(self):
-        if not self.t.isActive():
-            self.t.setInterval(5000)
+        if not self.timer_for_refresh_status_after_openMoreWindow.isActive() and not self.timer_for_update_status_after_sendtEndring.isActive():
+            self.timer_for_refresh_status_after_openMoreWindow.setInterval(5000)
             
-            self.t.start()
+            self.timer_for_refresh_status_after_openMoreWindow.start()
             
             print("Timer has been started!")
 
@@ -1065,6 +1059,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.source_more_window.new_relation_event.connect(self.handle_relation) #to handle relation when clicked from source_more_window module
         self.source_more_window.unlink_btn_clicked.connect(self.remove_relation_fromSourceData) #when event un disconnect relation from source_more_window
         self.source_more_window.logging_btn_moreWindow_clicked.connect(self.openSkrivWindow) #when user open skriv window from more_window
+        self.update_more_window_statusbar.connect(lambda value: self.source_more_window.relation_status_bar.setValue(value))
 
         if self.status_login:
             self.source_more_window.set_login_status(status="logged")
@@ -1073,8 +1068,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             if self.token_for_status and self.endpoint_for_status and self.fetch_status:
                 self.start_timer_refresh_status()
 
-                self.t.timeout.connect(lambda: self.get_current_status(self.endpoint_for_status, self.token_for_status))
-
+                self.timer_for_refresh_status_after_openMoreWindow.timeout.connect(lambda: self.get_current_status(self.endpoint_for_status, self.token_for_status))
 
     def get_related_parent(self, nvdbid: int = int()) -> dict:
         #to get the current relationship on the current fetched data
@@ -1094,7 +1088,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
                                 try:
                                     relation_type = field_values['foreldre'] #parent
-
+                                    print(relation_type)
                                     ''' 
                                     making sure that current selected child road object has a parent
                                     road object related to, this is just to make the flag to True, for later
@@ -1105,9 +1099,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     #child objects has only one parent in all cases, never more then one
                                     self.parent_roadObject_linked_nvdbid = relation_type[0]['vegobjekter']
                                     self.parent_roadObject_linked_type = relation_type[0]['type']['id']
+                                    self.parent_roadObject_linked_navn = relation_type[0]['type']['navn']
 
-                                    self.has_parent = True
-                                    
                                 except IndexError:
                                     '''
                                     turning flag to False anyway, in case of index error
@@ -1115,8 +1108,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     '''
                                     
                                     self.hasChildParentRoadObject = False
-                                    self.has_parent = False #same as self.hasChildParentRoadObject
-                                    
+
                                     print("no parent_indexerror")
                                     
                                     return relation_collection_parent
@@ -1131,8 +1123,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     we know that child has no any parent related to
                                     '''
                                     self.hasChildParentRoadObject = False
-                                    self.has_parent = False #same as self.hasChildParentRoadObject
-                                    
+
                                     print("No parent_keyerror")
                                     
                                     return {}
@@ -1148,6 +1139,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                             relation_collection_parent[type_name] = type_id
                                             
         return relation_collection_parent
+
+    def re_paint(self):
+        for layer in iface.mapCanvas().layers():
+            layer.triggerRepaint()
 
     def onAnyFeatureSelected(self):
         # start of relation code
@@ -1169,6 +1164,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     if field.name() == 'nvdbid':
                         for road_object in self.data:
                             if road_object['nvdbId'] == feature[field.name()]:
+
                                 self.data_fromSelectedObject_from_layer = road_object  # storaging road object just in case
 
                                 self.child_object_nvdbid = road_object['nvdbId']  # can only be declared once
@@ -1179,23 +1175,40 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 if self.source_more_window:
                                     self.source_more_window.set_child_id(self.child_object_nvdbid, self.child_object_objectid)
 
-                                self.selected_layer.append(layer.name())
-                                self.object_selected.append(layer.selectedFeatureIds())
+                                self.selected_layer_from_map.append(layer.name())
+                                self.selected_object_from_map.append(layer.selectedFeatureIds())
 
                                 self.possible_child_name = self.nvdbIdField.text()
 
                                 try:
-
                                     if self.source_more_window:
                                         self.relations = self.get_related_parent(self.child_object_nvdbid)
-                                        
                                         self.has_to_have_mor(self.child_object_objectid)
 
                                         self.active_relation_parent = self.relations
 
                                         # sync with source_more_window instance, to feed more data, in this case related to (relation = sammenkobling)
                                         self.source_more_window.feed_data('relation', self.data_fromSelectedObject_from_layer, self.active_relation_parent)
-                                        
+
+
+                                        parent_status = {"parent_id": self.parent_roadObject_linked_type,
+                                                         "parent_name": self.parent_roadObject_linked_navn,
+                                                         "parent_nvdbid": self.parent_roadObject_linked_nvdbid[0]
+                                                         }
+
+                                        self.source_more_window.set_parent_status(parent_status)
+
+                                        #if has no parent set empty
+                                        if not self.active_relation_parent:
+
+                                            parent_status = {"parent_id": "",
+                                                             "parent_name": "",
+                                                             "parent_nvdbid": ""
+                                                             }
+
+                                            self.source_more_window.set_parent_status(parent_status)
+
+
                                         self.source_more_window.get_parent_status(self.active_relation_parent) #better name setter not getter
                                     
                                     #already declared up line 1186 and __init__(self) method
@@ -1283,27 +1296,24 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # enabeling open skriv window button, to make the effect: ONLY
         # when any feaure from QGIS cart/map is selected
         self.openSkrivWindowBtn.setEnabled(True)
-        
+
+        # refresh when we choose layer
+        #self.re_paint()
+
         if self.source_more_window:
             self.source_more_window.login_btn_more_window.setEnabled(True)
 
         # if self.isSourceMoreWindowOpen:
         #     self.source_more_window.action_()
 
-
     def has_to_have_mor(self, object_type):
-        #have to parse url according to envairoment, test, prod eller utv
         endpoint = f'https://nvdbapiles-v3.atlas.vegvesen.no/vegobjekttyper/{object_type}?inkluder=stedfesting'
-        
         response = requests.get(endpoint)
-        
         result_txt = json.loads(response.text)
 
         if response.ok:
             self.dependant_mor = result_txt["må_ha_mor"]
-            
-            #no UI here, this must return and UI with return data
-            self.source_more_window.koble_fra_til_btn(self.dependant_mor, self.has_parent, self.status_login)
+            self.source_more_window.koble_fra_til_btn(self.dependant_mor, self.hasChildParentRoadObject, self.status_login)
 
 
     def handle_relation(self, type: int = int(), name: str = str()):
@@ -1312,28 +1322,22 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.possible_parent_type = type
         self.possible_parent_name = name
 
-    
     def on_remove_relation_completed(self, changeset):
-        print(changeset)
+        #print(changeset)
         
         '''
         when remove operation completed then trigger remove_object_signal
         meaning that now make new relation operation can be executed
         '''
         self.remove_road_object_signal.emit()
-        
-        #make it decopuple in a function or method
-        self.source_more_window.display_msg()
 
         endpoint = changeset[0]['status_after_sent']
-
         self.endpoint_for_status = endpoint
 
         token = changeset[0]["token"]
-        
         self.token_for_status = token
-        self.get_current_status(endpoint, token)
 
+        self.get_current_status(endpoint, token)
         self.start_timer()
         
         self.continue_search_thread_status_loop = True
@@ -1341,42 +1345,33 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         
     def on_single_add_completed(self, changeset):
         #print(changeset)
-        
-        #make it decouple in a function
-        self.source_more_window.display_msg()
 
         endpoint = changeset[0]['status_after_sent']
-
         self.endpoint_for_status = endpoint
 
         token = changeset[0]["token"]
-
         self.token_for_status = token
         
         self.get_current_status(endpoint, token)
-
         self.start_timer()
         
         self.continue_search_thread_status_loop = True
-        
         self.fetch_status = True
-
     
     def on_single_replace_completed(self, changeset):
-        print(changeset)
+        #print(changeset)
 
-        self.source_more_window.display_msg()
+        print("on_single_replace_completed")
 
         endpoint = changeset[0]['status_after_sent']
-
         self.endpoint_for_status = endpoint
 
         token = changeset[0]["token"]
-
         self.token_for_status = token
-        self.get_current_status(endpoint, token)
 
+        self.get_current_status(endpoint, token)
         self.start_timer()
+
         self.continue_search_thread_status_loop = True
         self.fetch_status = True
 
@@ -1524,7 +1519,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
                     self.single_delvis_replace_relation_instance.formXMLRequest(active_egenskap=False)
 
-
     def remove_relation_fromSourceData(self) -> None:
         '''
         removing relationship between parent road object and child object
@@ -1594,37 +1588,68 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             
             self.delvis_remove_relation_instance.formXMLRequest(active_egenskap = False)
 
+    def reapply_old_selected_layers(self):
+        self.onVisIKart(True)
+        self.visKartCheck.setChecked(True)
+        self.openSkrivWindowBtn.setEnabled(True)
 
-    def reapply(self):
         names = [layer.name() for layer in QgsProject.instance().mapLayers().values()]
         
         for name in names:
-            if name == self.selected_layer[-1]:
-                layer = QgsProject.instance().mapLayersByName(self.selected_layer[-1])[0]
-                
+            if name == self.selected_layer_from_map[-1]:
+                layer = QgsProject.instance().mapLayersByName(self.selected_layer_from_map[-1])[0]
                 iface.setActiveLayer(layer)
                 break
 
-        layer.select(self.object_selected[-1])
+        layer.select(self.selected_object_from_map[-1])
+
+        #parent_status = self.get_related_parent(self.child_object_nvdbid)
+        parent_status = {"parent_id": self.parent_roadObject_linked_type,
+                         "parent_name": self.parent_roadObject_linked_navn,
+                         "parent_nvdbid": self.parent_roadObject_linked_nvdbid[0]
+                         }
+
+        self.source_more_window.set_parent_status(parent_status)
+
+        self.after_possible_parent_selected = False
+
+    def prepare_refresh_search(self):
+        self.searchObjectBtn.setText("Søk Objekt")
+        self.removeActiveLayers()
+        self.layers_list = []
+
+        current_layer = self.selected_layer_from_map[-1]
+        position = current_layer.find("_")
+
+        if position != -1:
+            split_layer = current_layer[:position]
+            print("split_layer", split_layer)
+            self.nvdbIdField.setText(split_layer)
+
+        else:
+            print("last_layer", self.selected_layer_from_map[-1])
+            self.nvdbIdField.setText(self.selected_layer_from_map[-1])
 
     def start_timer(self):
-        if not self.timer.isActive():
-            self.timer.setInterval(5000)
-            self.timer.start()
+        if self.timer_for_refresh_status_after_openMoreWindow.isActive():
+            self.timer_for_refresh_status_after_openMoreWindow.stop()
+
+        if not self.timer_for_update_status_after_sendtEndring.isActive():
+            self.timer_for_update_status_after_sendtEndring.setInterval(5000)
+            self.timer_for_update_status_after_sendtEndring.start()
             
             print("Timer has been started!")
 
-
     def get_current_status(self, endpoint, token):
-        if self.t.isActive():
+        if self.timer_for_refresh_status_after_openMoreWindow.isActive():
             if not self.source_more_window.isVisible():
-                self.t.stop()
+                self.timer_for_refresh_status_after_openMoreWindow.stop()
                 
                 print("Timer stopped!")
 
         # get the xml response
         response = requests.get(endpoint, headers={'Authorization': f'Bearer {token}'})
-        
+
         if response.ok:
 
             # parsing the response
@@ -1635,7 +1660,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                     status = child.text
                     # display the status_message in mer vindu
                     self.source_more_window.set_status(status)
-                    self.timer.timeout.connect(lambda: self.check_status(status, endpoint, token))
+                    self.timer_for_update_status_after_sendtEndring.timeout.connect(lambda: self.check_status(status, endpoint, token))
                     break
 
             if status == "AVVIST":
@@ -1646,7 +1671,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 if position != -1:
                     split_melding = melding[:position]
                     
-                    print("Melding:", split_melding)
+                    #print("Melding:", split_melding)
                     
                     self.source_more_window.set_msg_avvist(split_melding)
                     
@@ -1660,60 +1685,40 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         else:
             print("response not ok!")
 
-
     def check_status(self, status, endpoint, token):
-        if self.timer.isActive():
-            # continuously update the status of the endringssett until a final status message appears
-            #if status in ("VENTER", "UTFØRT", "AVVIST"):
-             #   print("Timer is done!")
+        if self.timer_for_update_status_after_sendtEndring.isActive():
+            # continuously update the status of the endringssett until a status message appears
+            if status == "UTFØRT":
+                self.timer_for_update_status_after_sendtEndring.setInterval(8000)
+                self.cnt_more_window_statusbar = 70
 
-                #self.timer.stop()
+            if status in ("VENTER", "UTFØRT_OG_ETTERBEHANDLET","AVVIST"):
+                if status == "UTFØRT_OG_ETTERBEHANDLET":
+                    self.update_more_window_statusbar.emit(100)
 
-            if status in ("VENTER","UTFØRT_OG_ETTERBEHANDLET","AVVIST"):
                 print("Timer is done!")
+                self.timer_for_update_status_after_sendtEndring.stop()
 
-                self.timer.stop()
-                
-                if self.after_possible_parent_selected:
+                self.prepare_refresh_search()
 
-                    self.searchObjectBtn.setText("Søk Objekt")
-                    self.removeActiveLayers()
-                    self.layers_list = []
+                self.searchObj()
+                self.thread_search_objekt.join()
 
-                    # self.call_after_search = True
+                self.reapply_old_selected_layers()
 
-                    current_layer = self.selected_layer[-1]
-                    position = current_layer.find("_")
-
-                    if position != -1:
-                        split_layer = current_layer[:position]
-                        self.nvdbIdField.setText(split_layer)
-
-                    else:
-                        self.nvdbIdField.setText(self.selected_layer[-1])
-
-                    self.searchObj()
-
-                    self.thread_search_objekt.join()
-
-                    self.onVisIKart(True)
-                    
-                    self.visKartCheck.setChecked(True)
-                    self.openSkrivWindowBtn.setEnabled(True)
-                    
-                    self.reapply()
-
-                parent_status = self.get_related_parent(self.child_object_nvdbid)
-                self.source_more_window.get_parent_status(parent_status)
-
-                self.after_possible_parent_selected = False
-                self.after_possible_chilld_selected = False
+                #self.source_more_window.display_msg()
 
             elif not self.source_more_window.isVisible():
-                self.timer.stop()
+                self.timer_for_update_status_after_sendtEndring.stop()
 
             else:
                 self.get_current_status(endpoint, token)
+                self.cnt_more_window_statusbar += 10
+
+                self.update_more_window_statusbar.emit(self.cnt_more_window_statusbar)
+
+                #print("Timer is active!")
+
 
     def isUserLogged(self):
         #first checking if user is logged in
@@ -1744,7 +1749,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return url
 
-
     def onUserLoggedIn(self, username, token):
         self.username_session = username
         self.current_session_token = token
@@ -1754,9 +1758,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.source_more_window:
             self.source_more_window.set_login_status(status="logged")
         
-            self.status_login = True #why two
+            self.status_login = True
 
-            self.source_more_window.koble_fra_til_btn(self.dependant_mor, self.has_parent, self.status_login)
+            self.source_more_window.koble_fra_til_btn(self.dependant_mor, self.hasChildParentRoadObject, self.status_login)
 
     def onUserNotLoggedIn(self):
         self.status_login = False

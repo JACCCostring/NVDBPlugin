@@ -1,5 +1,5 @@
 # NVDBPlugin
-NVDB Read and Write: QGIS It's a Plugin for NVDB (Norwegian Road Database) to analyse and modified objects road and submited back to NVDB.
+NVDB Read and Write: QGIS It's a Plugin for NVDB (National Norwegian Road Database) to analyse and modify road objects and deliver changes back to NVDB.
 
 ![README](https://github.com/JACCCostring/NVDBPlugin/assets/93591202/c444632b-c8e9-4add-8634-86a01a1cbc6b)
 
