@@ -773,7 +773,7 @@ class nvdbFagdata(nvdbVegnett):
             return None
 
 
-    def to_records(self, exit_event, vegsegmenter=True, relasjoner=True, geometri=False, debug=False, tidspunkt=None ):
+    def to_records(self, exit_event=None, vegsegmenter=True, relasjoner=True, geometri=False, debug=False, tidspunkt=None ):
         """
         Eksporterer til en liste med dictionaries med struktur 
         "objekttype" : INT,
@@ -839,9 +839,11 @@ class nvdbFagdata(nvdbVegnett):
 
         while feat and continue_loop:
             # Remember to write documentation for this
-            if exit_event.is_set():
-                continue_loop = False
-                return []
+            if exit_event is not None:
+                if exit_event.is_set():
+                        continue_loop = False
+                        return []
+
 
             count += 1
             if count == 1000 or count == 5000 or count % 10000 == 0:
