@@ -475,20 +475,21 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def onItemSelected(self, item):
         pass
-
-    #        row = item.row()
-    #        column_index = 0 #0 field by default
-    #
-    #        #        try to substract only nvdbid field from table widge
-    #        for _column in range(0, self.tableSelectedObjects.columnCount()):
-    #            columnText = self.tableSelectedObjects.horizontalHeaderItem(_column).text()
-    #
-    #            if 'nvdbid' in columnText:
-    #                column_index = _column
-    #
-    #        nvdbid = self.tableSelectedObjects.item(row, column_index).text()
-    #        self.idsOfSelectedItems.append(nvdbid)
-
+        '''
+        row = item.row()
+        column_index = 0 #0 field by default
+    
+        #        try to substract only nvdbid field from table widge
+        for _column in range(0, self.tableSelectedObjects.columnCount()):
+            columnText = self.tableSelectedObjects.horizontalHeaderItem(_column).text()
+    
+            if 'nvdbid' in columnText:
+                column_index = _column
+    
+        nvdbid = self.tableSelectedObjects.item(row, column_index).text()
+        self.idsOfSelectedItems.append(nvdbid)
+        '''
+        
     def getFieldEgenskaper(self):
         layer = iface.activeLayer()
 
@@ -726,7 +727,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     def feed_new_list_egenskaper_and_data(self, new_data: dict = {}, new_list: dict = {}):
         #print('getting egenskaper', new_list)
         #print('getting data', new_data)
-        
+             
         # self.data.clear()
         # self.listOfEgenskaper.clear()
             
