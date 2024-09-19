@@ -724,8 +724,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
     
     def feed_new_list_egenskaper_and_data(self, new_data: dict = {}, new_list: dict = {}):
-        print('getting egenskaper', new_list)
-        print('getting data', new_data)
+        #print('getting egenskaper', new_list)
+        #print('getting data', new_data)
         
         # self.data.clear()
         # self.listOfEgenskaper.clear()

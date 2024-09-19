@@ -47,8 +47,9 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.more_main_tab.currentChanged.connect(self.activate_current_tab) #when current tab changes
         self.table_relation_show.clicked.connect(self.item_clicked) #when any item is clicked in table
         self.unlink_from_parent_btn.clicked.connect(self.onUnlink_btn_clicked) #when unlink btn is clicked
-        self.unlink_from_parent_btn.clicked.connect(self.display_msg) #comment here (can be call inside self.onUnlink_btn_clicked() method as well
+        #self.unlink_from_parent_btn.clicked.connect(self.display_msg) #comment here (can be call inside self.onUnlink_btn_clicked() method as well
         self.login_btn_more_window.clicked.connect(self.onLoggingClicked)
+
 
     def activate_current_tab(self, index):
         if self.more_main_tab.currentIndex() == 0:
@@ -108,9 +109,11 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         
         print('chaning env in more window', self.get_current_env())
         
-    def get_parent_status(self, parent_object):
-        for parent_name, parent_id in parent_object.items():
-            self.current_linked_parent_lbl.setText(f"{parent_id} - {parent_name}")
+    def set_parent_status(self, status_info):
+        self.current_linked_parent_lbl.setText(f"Koblinger - {status_info['parent_id']} - {status_info['parent_name']} - {status_info['parent_nvdbid']}")
+
+        #for parent_name, parent_id, parent_nvdbid in parent_object.items():
+         #   self.current_linked_parent_lbl.setText(f"Koblinger - {parent_id} - {parent_name} - {parent_nvdbid}")
 
     def populate_relation_component(self, data: dict = {}):
         row: int = 0
@@ -157,12 +160,9 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
 
     def display_msg(self):
         msg = QMessageBox()
-        
         msg.setWindowTitle("Status")
         msg.setText("Operasjon sendt!")
-        
         msg.exec()
-                
 
     def set_status(self, status):
         if status in ("BEHANDLES", "VENTER"):
@@ -181,15 +181,16 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.avvist_lbl.setStyleSheet(f"color: red; font: 10pt 'MS Shell Dlg 2';")
         self.avvist_lbl.setText(msg)
 
-
     def set_login_status(self, status):
         if status == "logged":
             self.status_innlogging_lbl.setText("Logged")
             self.status_innlogging_lbl.setStyleSheet("color: green; font: 14pt 'MS Shell Dlg 2';")
+            self.login_btn_more_window.setEnabled(False)
             
         else:
             self.status_innlogging_lbl.setText('må logg på')
             self.status_innlogging_lbl.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")
+            self.login_btn_more_window.setEnabled(True)
 
     def koble_fra_til_btn(self, dependant_mor, has_parent, status_login):
         self.avvist_lbl.clear()
@@ -207,7 +208,6 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
             elif not has_parent:
                 self.avvist_lbl.setText("Ikke koblet til mor!")
                 self.avvist_lbl.setStyleSheet("color: grey; font: 14pt 'MS Shell Dlg 2';")
-
 
     def onLoggingClicked(self):
         self.logging_btn_moreWindow_clicked.emit()
