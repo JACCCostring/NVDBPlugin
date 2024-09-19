@@ -672,7 +672,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             self.openSkrivWindowBtn.setEnabled(False)
 
     def set_layer_size(self):
-        
+
         self.changeObjectsSize.setEnabled(True)
         self.all_layers = QgsProject.instance().mapLayers().values()
 
