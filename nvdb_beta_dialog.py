@@ -119,7 +119,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.limit_roadObject_info_inTable.setEnabled(False)
 
         self.skrivWindowInstance = None #making skriv window null
-        self.skrivWindowOpened = False #making windows opened false
+        self.skrivWindowOpened: boolean = False #making windows opened false
         self.isSourceMoreWindowOpen = False #making more window flag false
         self.after_possible_parent_selected = False #to control that parent is or not selected when sammenkoblin
         self.after_possible_chilld_selected = False #o control that parent is or not selected when sammenkoblin
@@ -132,7 +132,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.username_session: str = str() #username session only when atempting removing relation
         self.current_session_token: dict = {} #current session tokens for current logged user
         self.possible_selected_parent_nvdbid: int = int() #possible selected parent nvdbId from QGIS kart layer
-        self.cnt_more_window_statusbar = 0
+        self.cnt_more_window_statusbar: int = int() #for counting progress for statusbar in source_more_window
 
 #        development starts here
 #        setting up all data need it for starting up
@@ -147,18 +147,18 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.continue_search_thread_status_loop = True
         self.status_login = False
-        self.selected_layer_from_map = []
-        self.selected_object_from_map = []
+        self.selected_layer_from_map: list = []
+        self.selected_object_from_map: list = []
         self.source_more_window = None
         self.endpoint_for_status = None
         self.token_for_status = None
         self.fetch_status = None
-        self.reset_more_window = False
+        self.reset_more_window: boolean = False
         self.data_fromSelectedObject_from_layer = None
         self.relations = None
-        self.dependant_mor = False
-        self.active_relation_parent = {}
-        self.layers_list = []
+        self.dependant_mor: boolean = False
+        self.active_relation_parent: dict = {}
+        self.layers_list: list = []
 
 
         # timer instance for use in to get continuous update on status f endringssett in mer-vindu
@@ -1085,10 +1085,31 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                             if field_name == 'relasjoner':
 
                                 relation_type = None
+                                final_parsed_relation = None
 
                                 try:
                                     relation_type = field_values['foreldre'] #parent
-                                    print(relation_type)
+                                    
+                                    print( relation_type )
+                                    print( 'size', len(relation_type) )
+                                    
+                                    '''
+                                    if road object has more then 1 relation, then
+                                    parsed relation only taking the last relation
+                                    
+                                    if not then take first and the only realtion
+                                    existing
+                                    '''
+                                    if len( relation_type ) > 1:
+                                        parsed_relation = relation_type[ len( relation_type ) - 1 ]
+                                        
+                                        final_parsed_relation = parsed_relation
+                                    
+                                    if len( relation_type ) == 1:
+                                        parsed_relation = relation_type[ len( relation_type ) ]
+                                        
+                                        final_parsed_relation = parsed_relation
+                                    
                                     ''' 
                                     making sure that current selected child road object has a parent
                                     road object related to, this is just to make the flag to True, for later
@@ -1097,9 +1118,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     self.hasChildParentRoadObject = True
 
                                     #child objects has only one parent in all cases, never more then one
-                                    self.parent_roadObject_linked_nvdbid = relation_type[0]['vegobjekter']
-                                    self.parent_roadObject_linked_type = relation_type[0]['type']['id']
-                                    self.parent_roadObject_linked_navn = relation_type[0]['type']['navn']
+                                    self.parent_roadObject_linked_nvdbid = final_parsed_relation['vegobjekter']
+                                    self.parent_roadObject_linked_type = final_parsed_relation['type']['id']
+                                    self.parent_roadObject_linked_navn = final_parsed_relation['type']['navn']
 
                                 except IndexError:
                                     '''
@@ -1108,8 +1129,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     '''
                                     
                                     self.hasChildParentRoadObject = False
-
-                                    print("no parent_indexerror")
+                                    
+                                    print("no parent_index_error")
                                     
                                     return relation_collection_parent
 
@@ -1124,7 +1145,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     '''
                                     self.hasChildParentRoadObject = False
 
-                                    print("No parent_keyerror")
+                                    print("No parent_key_error")
                                     
                                     return {}
 
@@ -1183,9 +1204,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 try:
                                     if self.source_more_window:
                                         self.relations = self.get_related_parent(self.child_object_nvdbid)
+                                        
                                         self.has_to_have_mor(self.child_object_objectid)
 
                                         self.active_relation_parent = self.relations
+                                        
+                                        print('active relation parent', self.active_relation_parent)
 
                                         # sync with source_more_window instance, to feed more data, in this case related to (relation = sammenkobling)
                                         self.source_more_window.feed_data('relation', self.data_fromSelectedObject_from_layer, self.active_relation_parent)
@@ -1209,11 +1233,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                             self.source_more_window.set_parent_status(parent_status)
 
 
-                                        self.source_more_window.get_parent_status(self.active_relation_parent) #better name setter not getter
-                                    
-                                    #already declared up line 1186 and __init__(self) method
-                                    # self.child_object_nvdbid = road_object['nvdbId'] #can only be declared once 
-                                    # self.possible_child_name = self.nvdbIdField.text() #storing child object name
+                                        self.source_more_window.set_parent_status(self.active_relation_parent) #better name setter not getter
 
                                 except AttributeError:
                                     pass
@@ -1255,10 +1275,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         '''
                                         if not self.hasChildParentRoadObject:
                                             print('has not relation object')
-
-                                            # self.add_relation_fromSourceData(parent_object_nvdbid, self.child_object_nvdbid)
-                                            # thread_add_single_relation = threading.Thread(self.add_single_relation_fromSourceData())
-                                            # thread_add_single_relation.start()
 
                                             self.add_single_relation_fromSourceData()
 
@@ -1323,7 +1339,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.possible_parent_name = name
 
     def on_remove_relation_completed(self, changeset):
-        #print(changeset)
+        print(changeset)
         
         '''
         when remove operation completed then trigger remove_object_signal
@@ -1344,7 +1360,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fetch_status = True
         
     def on_single_add_completed(self, changeset):
-        #print(changeset)
+        print(changeset)
 
         endpoint = changeset[0]['status_after_sent']
         self.endpoint_for_status = endpoint
