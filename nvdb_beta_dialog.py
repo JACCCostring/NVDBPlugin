@@ -46,6 +46,7 @@ from .nvdbLesWrapper import AreaGeoDataParser
 
 #user defined devils korrigering modules
 from .custom_qstandard_item_model import CustomStandardItemModel
+
 from .customDelvisKorrRemoveCase import CustomDelvisKorrRemoveCase
 from .customKorrSingleAdd import CustomDelvisKorrSingleAdd
 from .customDelvisKorrReplaceParent import CustomDelvisKorrReplaceParent
@@ -1088,9 +1089,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                 try:
                                     relation_type = field_values['foreldre'] #parent
                                     
-                                    print( relation_type )
-                                    print( 'size', len(relation_type) )
-                                    
                                     '''
                                     if road object has more then 1 relation, then
                                     parsed relation only taking the last relation
@@ -1099,20 +1097,16 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     existing
                                     '''
                                     if len( relation_type ) > 1:
-                                        print('relation type > 1 case')
                                         
                                         parsed_relation = relation_type[len( relation_type ) - 1]
                                         
                                         final_parsed_relation = parsed_relation
                                     
                                     elif len( relation_type ) == 1:
-                                        print('relation type == 1 case')
                                         
                                         parsed_relation = relation_type[len( relation_type ) - 1]
                                         
                                         final_parsed_relation = parsed_relation
-                                        
-                                        print('final_parsed_relation', final_parsed_relation)
                                     
                                     ''' 
                                     making sure that current selected child road object has a parent

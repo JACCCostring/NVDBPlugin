@@ -6,7 +6,7 @@ import requests, json, io
 
 
 # class DelvisKorrigering(AbstractPoster, QObject):
-class DelvisKorrigeringNormalCase(QObject):
+class DelvisKorrEgenskaperCase(QObject):
     new_endringsset_sent = pyqtSignal(list)
     endringsett_form_done = pyqtSignal()
     response_error = pyqtSignal(str)
@@ -122,23 +122,15 @@ class DelvisKorrigeringNormalCase(QObject):
                                         if 'N/A' then we delete egenskap and if not then update egenskap
                                         '''
                                         operation = 'slett' if self.modified_data[egenskap_navn] == 'N/A' else 'oppdater'
-                                        # operation = 'slett' if new_modified_data[egenskap_navn] == 'N/A' else 'oppdater'
-
-                                        # print(operation) #debug
-                                        # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
 
                                         new_egenskap = ET.SubElement(egenskaper, 'egenskap')
                                         new_egenskap.attrib = {'typeId': str(value), 'operasjon': operation}
                                         
-                                        print('=====>', egenskap_navn, ': ', value)
-
-                                        # debug
-                                        # print(egenskap_navn, ': ', val, ' type ', type(val))
+                                        print('=====>', egenskap_navn, ': ', value, ':', self.modified_data[egenskap_navn])
 
                                         if operation == 'oppdater':
                                             egenskap_value = ET.SubElement(new_egenskap, 'verdi')
                                             egenskap_value.text = str(self.modified_data[egenskap_navn])
-                                            # egenskap_value.text = str(new_modified_data[egenskap_navn])
 
                                 if 'Geometri' in egenskap_navn:  # this is a especial case, when vegobjekter has geometri
 
@@ -164,6 +156,8 @@ class DelvisKorrigeringNormalCase(QObject):
         Note: when adding relation to a road object, convention is that
         parent object must add child as a relation to it and not the other way around.
         '''
+        
+        '''
         relations = self.extra['relation']
 
         if relations:
@@ -184,7 +178,8 @@ class DelvisKorrigeringNormalCase(QObject):
                     for nvdbid in item['vegobjekter']:
                         value_relation = ET.SubElement(relation, 'nvdbId')
                         value_relation.text = str(nvdbid)
-
+        '''
+        
         self.xml_string = ET.tostring(root, encoding='utf-8')  # be carefull with the unicode
 
         print(self.xml_string)  # debuging info of hole formed XML endingsett
@@ -215,17 +210,18 @@ class DelvisKorrigeringNormalCase(QObject):
         '''
         response = requests.post(endpoint, headers=header, data=self.xml_string)
 
-        if response.ok != True:
+        if not response.ok:
             self.parseXml_prepare_method(response.text)
             return
-
+        
         if response.ok:
             successful = "Status: OK"
             self.response_success.emit(successful)
-
+            
             file_stream = io.StringIO(response.text)
-
+    
             tree = ET.parse(file_stream)
+                
             root = tree.getroot()
 
             for child in root.findall('.//'):
@@ -233,7 +229,7 @@ class DelvisKorrigeringNormalCase(QObject):
                     if 'src' in tag:
                         if 'start' in src:
                             start = src
-
+                            
                         if 'src' in tag:
                             if 'kanseller' in src:
                                 kanseller = src
@@ -246,20 +242,20 @@ class DelvisKorrigeringNormalCase(QObject):
                             if 'fremdrift' in src:
                                 fremdrift = src
 
-            self.tokensBeforePost = {
-                'start': start,
-                'kanseller': kanseller,
-                'status': status,
-                'fremdrift': fremdrift
-            }
+                self.tokensBeforePost = {
+                    'start': start,
+                    'kanseller': kanseller,
+                    'status': status,
+                    'fremdrift': fremdrift
+                }
 
-            # print('prepare post: ', self.tokensBeforePost['status'])
-
+                # print('prepare post: ', self.tokensBeforePost['status'])
+                
         '''
         now start/send the current data to NVDB
         only if start endpoint exist
-         '''
-        if self.tokensBeforePost['start']:
+        '''
+        if self.tokensBeforePost['start']:            
             self.startPosting()
 
     def startPosting(self):

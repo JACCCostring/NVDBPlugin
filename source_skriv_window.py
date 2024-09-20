@@ -10,7 +10,7 @@ from PyQt5.QtCore import pyqtSignal
 from .nvdb_endringsset_status_window import Ui_windowProgress  # dialog class
 
 from .nvdbLesWrapper import AreaGeoDataParser
-from .delvisKorrigeringNormalCase import DelvisKorrigeringNormalCase
+from .delvisKorrEgenskaperCase import DelvisKorrEgenskaperCase
 from .tokenManager import TokenManager
 
 from qgis.utils import iface
@@ -55,7 +55,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fixMiljo()  # setting miljo data
         self.nvdbStatus()  # calling nvdb status
 
-
+        self.check_endringsBtn.setEnabled( False )
+        
         # set login tab at the start of the plug-in
         self.mainTab.setCurrentIndex(1)
 
@@ -532,7 +533,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 nvdbid_list.append(nvdbid)
 
         nvdbid_list = list(set(nvdbid_list))  # remove duplicates
-
+        
+        print('debug: list of IDs', nvdbid_list)
+        
         return nvdbid_list
 
     def get_field_egenskaper_by_nvdbid(self, nvdbid):
@@ -674,7 +677,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.mainTab.setCurrentIndex(1)
 
             if layer_modified_egenskaper and self.successLogin:  # if user is logged in and data no is populated then continue
-
+                
+                #sending status for user
+                self.response_endringsset.setText(' sending ... ')
+                
                 road_object_type = self.data[0]['objekttype']  # ex: Anttenna: 470, Veganlegg: 30
 
                 road_object_name = self.getEspecificFieldContent(layer_modified_egenskaper, 'Navn')
@@ -702,21 +708,22 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 }
 
                 '''
-                creating DelvisKorrigering object, this class flow execution, first
+                creating DelvisKorrEgenskaperCase instance, this class flow execution, first
                 call object.formXMLRequest() method, then this method will emit a signal
-                and that signal well react and call object.prepare_post() method.
+                and that signal well react and call self.preparePost() method.
 
-                and a the end of preparePost() method, then will make a call to startPosting() method
-                and then this method will emit a signal and that signal well react to a slot call on_new_endringsset().
+                and a the end of self.preparePost() method, then will make a call to object.prepare_post() method
+                and then this method will make a call method object.startPosting().
 
-                This last method will queued all sent endringssett to NVDB, for passing as argument the status/progress windows,
-                on it's creating/instantiation in openProgressWindow() method.
-
+                This last method will queued all sent endringssett to NVDB, and emit new_endringsset_sent signal
+                then this signal react and call a on_new_endringsset slot/method, for adding or queuing all sent endringsset
+                in a list
+                
                 Note: Signals and Slots must be connected in same order as coded here, because
                 of how Qt works when queueing signals
                 '''
                 
-                self.delvis = DelvisKorrigeringNormalCase(token, layer_modified_egenskaper, extra_data)
+                self.delvis = DelvisKorrEgenskaperCase(token, layer_modified_egenskaper, extra_data)
 
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
 
@@ -724,13 +731,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
     
-    def feed_new_list_egenskaper_and_data(self, new_data: dict = {}, new_list: dict = {}):
-        #print('getting egenskaper', new_list)
-        #print('getting data', new_data)
-             
-        # self.data.clear()
-        # self.listOfEgenskaper.clear()
-            
+    def feed_new_list_egenskaper_and_data(self, new_data: dict = {}, new_list: dict = {}):            
         self.data = new_data
         self.listOfEgenskaper = new_list
         
@@ -842,12 +843,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def on_new_endringsset(self, endringsset):
         self.info_after_sent_objects.append(endringsset)
-        # opening progress window after andringset is added to list
-        # self.openProgressWindow()
-
-        # for info in self.info_after_sent_objects:
-        #     for inf in info:
-        #         print(inf['status_after_sent'])
 
     def preparePost(self):
         # when some events UB happens on DelvisKorrigering class side
@@ -862,6 +857,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     def update_status(self, text, color):
         self.response_endringsset.setText(text)
         self.response_endringsset.setStyleSheet(f"color: {color}; font: 12pt 'MS Shell Dlg 2';")
+        
+        # self.openProgressWindow()
+        self.check_endringsBtn.setEnabled( True )
 
     def login_time_expired(self):
         '''

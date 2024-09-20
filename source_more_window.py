@@ -48,7 +48,7 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.table_relation_show.clicked.connect(self.item_clicked) #when any item is clicked in table
         self.unlink_from_parent_btn.clicked.connect(self.onUnlink_btn_clicked) #when unlink btn is clicked
         #self.unlink_from_parent_btn.clicked.connect(self.display_msg) #comment here (can be call inside self.onUnlink_btn_clicked() method as well
-        self.login_btn_more_window.clicked.connect(self.onLoggingClicked)
+        self.login_btn_more_window.clicked.connect(self.onLoggingClicked) #an easy access to login tab from skrivWindow
 
 
     def activate_current_tab(self, index):
@@ -115,9 +115,6 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
             
         if status_info:
             self.current_linked_parent_lbl.setText(f"Koblinger - {status_info['parent_id']} - {status_info['parent_name']} - {status_info['parent_nvdbid']}")
-        
-        #for parent_name, parent_id, parent_nvdbid in parent_object.items():
-         #   self.current_linked_parent_lbl.setText(f"Koblinger - {parent_id} - {parent_name} - {parent_nvdbid}")
 
     def populate_relation_component(self, data: dict = {}):
         row: int = 0

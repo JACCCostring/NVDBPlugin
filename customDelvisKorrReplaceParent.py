@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET 
 
-from .delvisKorrigeringNormalCase import DelvisKorrigeringNormalCase
+from .delvisKorrEgenskaperCase import DelvisKorrEgenskaperCase
 
-class CustomDelvisKorrReplaceParent(DelvisKorrigeringNormalCase):
+class CustomDelvisKorrReplaceParent(DelvisKorrEgenskaperCase):
     def __init__(self, token, data, extra):
         super().__init__(token, data, extra)
         pass
