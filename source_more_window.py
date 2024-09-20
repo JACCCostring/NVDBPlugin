@@ -109,9 +109,13 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         
         print('chaning env in more window', self.get_current_env())
         
-    def set_parent_status(self, status_info):
-        self.current_linked_parent_lbl.setText(f"Koblinger - {status_info['parent_id']} - {status_info['parent_name']} - {status_info['parent_nvdbid']}")
-
+    def set_parent_status(self, status_info: dict = {}):
+        if not status_info:
+            self.current_linked_parent_lbl.clear()
+            
+        if status_info:
+            self.current_linked_parent_lbl.setText(f"Koblinger - {status_info['parent_id']} - {status_info['parent_name']} - {status_info['parent_nvdbid']}")
+        
         #for parent_name, parent_id, parent_nvdbid in parent_object.items():
          #   self.current_linked_parent_lbl.setText(f"Koblinger - {parent_id} - {parent_name} - {parent_nvdbid}")
 

@@ -6,7 +6,6 @@ nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfra
 nvdblibrary = nvdblibrary.replace('\\', '/')
 nvdblibrary = nvdblibrary + '/nvdbapi'
 
-
 ## Hvis vi ikke klarer å importere nvdbapiv3 så prøver vi å føye
 ## mappen nvdblibrary til søkestien.
 try:
@@ -66,7 +65,6 @@ import threading
 import requests
 import json
 import time
-import asyncio
 
 # -*- coding: utf-8 -*-
 """
@@ -1101,14 +1099,20 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                     existing
                                     '''
                                     if len( relation_type ) > 1:
-                                        parsed_relation = relation_type[ len( relation_type ) - 1 ]
+                                        print('relation type > 1 case')
+                                        
+                                        parsed_relation = relation_type[len( relation_type ) - 1]
                                         
                                         final_parsed_relation = parsed_relation
                                     
-                                    if len( relation_type ) == 1:
-                                        parsed_relation = relation_type[ len( relation_type ) ]
+                                    elif len( relation_type ) == 1:
+                                        print('relation type == 1 case')
+                                        
+                                        parsed_relation = relation_type[len( relation_type ) - 1]
                                         
                                         final_parsed_relation = parsed_relation
+                                        
+                                        print('final_parsed_relation', final_parsed_relation)
                                     
                                     ''' 
                                     making sure that current selected child road object has a parent
@@ -1213,27 +1217,25 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
                                         # sync with source_more_window instance, to feed more data, in this case related to (relation = sammenkobling)
                                         self.source_more_window.feed_data('relation', self.data_fromSelectedObject_from_layer, self.active_relation_parent)
-
-
+                                        
+                                        '''
+                                        creating an status info dict, for populating more window UI elements
+                                        when user select a road object from Kart/map in QGIS
+                                        '''
                                         parent_status = {"parent_id": self.parent_roadObject_linked_type,
                                                          "parent_name": self.parent_roadObject_linked_navn,
                                                          "parent_nvdbid": self.parent_roadObject_linked_nvdbid[0]
                                                          }
-
-                                        self.source_more_window.set_parent_status(parent_status)
-
-                                        #if has no parent set empty
+                                        
+                                        #if no relation was found, then clear status, before sending
                                         if not self.active_relation_parent:
-
-                                            parent_status = {"parent_id": "",
-                                                             "parent_name": "",
-                                                             "parent_nvdbid": ""
-                                                             }
-
-                                            self.source_more_window.set_parent_status(parent_status)
-
-
-                                        self.source_more_window.set_parent_status(self.active_relation_parent) #better name setter not getter
+                                            parent_status.clear()
+                                        
+                                        '''
+                                        populating UI elem... status according to if has or not relation
+                                        this will be sent anyway has or not relation, but it will populate or clear UI elem...
+                                        '''
+                                        self.source_more_window.set_parent_status(parent_status)
 
                                 except AttributeError:
                                     pass
