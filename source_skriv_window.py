@@ -32,6 +32,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     userLogged = pyqtSignal(str, dict)
     not_logged = pyqtSignal()
+    
+    endringsett_count_watcher = pyqtSignal(int)
 
     def __init__(self, data, listOfEgens):
         super().__init__()
@@ -46,6 +48,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.progressWindowOpened = False  # to check if windows is already opened
         self.info_after_sent_objects = []  # all endringer sent to NVDB
         self.session_expired = False
+        self.nvdbids_counter: int = int( 0 ) #for counting number of road objects sent
 
 
         # setting up all UI
@@ -129,6 +132,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         #        username field and password when enter pressed signals
         self.usernameLine.returnPressed.connect(lambda: self.login())
         self.passwordLine.returnPressed.connect(lambda: self.login())
+        
+        #watching if counter get to max num of nvdbids selected from road objects to sent table widget
+        self.endringsett_count_watcher.connect( self.onCountWatcherChanged )
 
     def fixMiljo(self):
         self.miljo = {
@@ -730,6 +736,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.delvis.endringsett_form_done.connect(self.preparePost)
 
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
+                
+                self.nvdbids_counter += 1 #counting
+                
+                self.endringsett_count_watcher.emit( self.nvdbids_counter )
     
     def feed_new_list_egenskaper_and_data(self, new_data: dict = {}, new_list: dict = {}):            
         self.data = new_data
@@ -845,11 +855,11 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.info_after_sent_objects.append(endringsset)
 
     def preparePost(self):
-        # when some events UB happens on DelvisKorrigering class side
-
         # Lambda functions pass correct feedback and color to function
-        self.delvis.response_error.connect(lambda error: self.update_status(error, "red"))
-        self.delvis.response_success.connect(lambda successful: self.update_status(successful, "green"))
+        
+        #not need it for now
+        # self.delvis.response_error.connect(lambda error: self.update_status(error, "red"))
+        # self.delvis.response_success.connect(lambda successful: self.update_status(successful, "green"))
 
         # prepare_post will send post request after preparing it
         self.delvis.prepare_post()
@@ -859,8 +869,16 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.response_endringsset.setStyleSheet(f"color: {color}; font: 12pt 'MS Shell Dlg 2';")
         
         # self.openProgressWindow()
-        self.check_endringsBtn.setEnabled( True )
-
+        # self.check_endringsBtn.setEnabled( True )
+    
+    def onCountWatcherChanged(self, count):
+        if count == len( self.list_of_nvdbids() ):
+            self.check_endringsBtn.setEnabled( True )
+            
+            self.update_status('Sent', 'Green')
+            
+            self.nvdbids_counter = 0 #restaring counter
+    
     def login_time_expired(self):
         '''
         verify if current time and start time hours

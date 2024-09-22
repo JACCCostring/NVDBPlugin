@@ -6,7 +6,8 @@ class CustomDelvisKorrSingleAdd(DelvisKorrEgenskaperCase):
     def __init__(self, token, data, extra):
         super().__init__(token, data, extra)
         pass
-
+    
+    #override
     def formXMLRequest(self, active_egenskap=True):
         root = ET.Element('endringssett')
         root.attrib = {'xmlns': 'http://nvdb.vegvesen.no/apiskriv/domain/changeset/v3'}

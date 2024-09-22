@@ -209,14 +209,21 @@ class DelvisKorrEgenskaperCase(QObject):
         remember xml_string variable is comming from formXMLRequest method
         '''
         response = requests.post(endpoint, headers=header, data=self.xml_string)
-
-        if not response.ok:
-            self.parseXml_prepare_method(response.text)
-            return
+        
+        #not need for now, dont want to show any msg from here
+        
+        # if not response.ok:
+        #     self.parseXml_prepare_method(response.text)
+            
+        #     print('<========DEBUG===========>', response.text)
+            
+        #     return
         
         if response.ok:
-            successful = "Status: OK"
-            self.response_success.emit(successful)
+            #not need for now, dont want to show any msg from here
+            
+            # successful = "Status: OK"
+            # self.response_success.emit(successful)
             
             file_stream = io.StringIO(response.text)
     
@@ -255,7 +262,9 @@ class DelvisKorrEgenskaperCase(QObject):
         now start/send the current data to NVDB
         only if start endpoint exist
         '''
-        if self.tokensBeforePost['start']:            
+        if self.tokensBeforePost['start']:
+            
+            print('===========POSTING===========')
             self.startPosting()
 
     def startPosting(self):
@@ -275,8 +284,12 @@ class DelvisKorrEgenskaperCase(QObject):
 
         # posting with start request
         response = requests.post(start_endpoint, headers=header)
-
+        
+        print('===== result posting======')
+        print(response.text)
+        
         file_stream = io.StringIO(response.text)
+        
         tree = ET.parse(file_stream)
         root = tree.getroot()
 
@@ -293,6 +306,7 @@ class DelvisKorrEgenskaperCase(QObject):
 
         splitted = fremdrift.split('/')
         splitted = splitted[len(splitted) - 2]
+        
         endrinsett_id = splitted
 
         self.tokensAfterPosting = {

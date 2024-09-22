@@ -106,9 +106,8 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         }
         
         response = requests.get(url, headers = header)
+        
         print('nvdb_endringsset_status_windows: ', response.text)
-
-        print(response.text)
 
         #if response is not ok, then we just clear all the items
         if response.ok != True:
@@ -123,8 +122,6 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
             tree = ET.parse(file_stream)
             root = tree.getroot()
             
-            print("Response ok: ",response)
-
             concat_str = str('')
             show_melding = str('')
      
