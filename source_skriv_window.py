@@ -496,17 +496,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.idsOfSelectedItems.append(nvdbid)
         '''
         
-    def getFieldEgenskaper(self):
-        layer = iface.activeLayer()
-
-        selected_object_fields = {}
-        nvdbid = None
-
-        for item in self.tableSelectedObjects.selectedItems():
-            if item.isSelected():
-                nvdbid = self.getTextFieldFromColumnIndex(item, 'nvdbid')
-                self.current_nvdbid = nvdbid
-
         for feature in layer.selectedFeatures():
             for field in feature.fields():
                 if 'nvdbid' in field.name():
@@ -569,7 +558,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                                 if 'PolygonZ' in self.geometry_found:
                                     self.geometry_found = self.geometry_found.replace('PolygonZ', 'Polygon Z')
                             
-                            print(feat_field.name(), 'type', type(feature[feat_field.name()]))
+                            # print(feat_field.name(), 'type', type(feature[feat_field.name()]))
                             
                             #if QDate or QDateTime type is found, then converted to Python str format
                             if isinstance(feature[feat_field.name()], (QDate, QDateTime)):
@@ -679,7 +668,6 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # get all nvdb id of selected features
         for nvdbid in self.list_of_nvdbids():
-
             # get egenskaper data from each of the nvdbids
             layer_modified_egenskaper = self.get_field_egenskaper_by_nvdbid(nvdbid)
 
@@ -712,7 +700,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     'datakatalog_version': datacatalog_version,
                     'endpoint': env_write_endpoint,
                     'sistmodifisert': sistmodifisert,
-                    'current_nvdbid': self.current_nvdbid,
+                    'current_nvdbid': nvdbid,
                     #'relation': relations,  # dict not need it. Only egenskaper sent
                     'geometry_found': self.geometry_found,
                     'objekt_navn': road_object_name
@@ -741,11 +729,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.delvis.endringsett_form_done.connect(self.preparePost)
 
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
-                
+            
                 self.nvdbids_counter += 1 #counting
                 
                 self.endringsett_count_watcher.emit( self.nvdbids_counter )
-    
+            
+            # self.delvis.formXMLRequest(self.listOfEgenskaper)
+            
     def feed_new_list_egenskaper_and_data(self, new_data: dict = {}, new_list: dict = {}):            
         self.data = new_data
         self.listOfEgenskaper = new_list
@@ -829,6 +819,15 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         #        only make instance of windows if this is None
         if self.progressWindowInstance == None:
             # self.progressWindowInstance = QtWidgets.QDialog()
+            
+            #=========
+            print('len', len( self.info_after_sent_objects ) )
+            
+            for endrings in self.info_after_sent_objects:
+                for endring in endrings:
+                    print(endring['current_nvdbid'])
+            #=======
+            
             self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
 
             #print(self.info_after_sent_objects)

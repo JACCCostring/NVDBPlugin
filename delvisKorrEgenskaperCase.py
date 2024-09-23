@@ -27,7 +27,7 @@ class DelvisKorrEgenskaperCase(QObject):
         self.extra = extra  # data coming from writeToNVB method and need it
         self.xml_string = None  # to form xml template
         self.vegobjekter_after_send = []  # to store important info about vegobjekter endepunkter sent til nvdb
-
+        
     def parseXml_prepare_method(self, xml_text):
         # Parse the XML content
         root = ET.fromstring(xml_text)
@@ -71,8 +71,6 @@ class DelvisKorrEgenskaperCase(QObject):
         instantiating/creating the class
         '''
         if active_egenskap:
-            print('including egenskaper---->')
-
             egenskaper = ET.SubElement(vegobjekt, 'egenskaper')
 
             new_egenskap = None
@@ -126,7 +124,7 @@ class DelvisKorrEgenskaperCase(QObject):
                                         new_egenskap = ET.SubElement(egenskaper, 'egenskap')
                                         new_egenskap.attrib = {'typeId': str(value), 'operasjon': operation}
                                         
-                                        print('=====>', egenskap_navn, ': ', value, ':', self.modified_data[egenskap_navn])
+                                        # print('=====>', egenskap_navn, ': ', value, ':', self.modified_data[egenskap_navn])
 
                                         if operation == 'oppdater':
                                             egenskap_value = ET.SubElement(new_egenskap, 'verdi')
@@ -258,14 +256,13 @@ class DelvisKorrEgenskaperCase(QObject):
 
                 # print('prepare post: ', self.tokensBeforePost['status'])
                 
-        '''
-        now start/send the current data to NVDB
-        only if start endpoint exist
-        '''
-        if self.tokensBeforePost['start']:
-            
-            print('===========POSTING===========')
-            self.startPosting()
+            '''
+            now start/send the current data to NVDB
+            only if start endpoint exist
+            '''
+            if self.tokensBeforePost['start']:
+                print('===========POSTING===========')
+                self.startPosting()
 
     def startPosting(self):
         fremdrift = None
@@ -278,61 +275,68 @@ class DelvisKorrEgenskaperCase(QObject):
             'Content-Type': 'application/xml',
             'Authorization': self.token
         }
-
+        
         # getting endpoint start url
         start_endpoint = self.tokensBeforePost['start']
 
         # posting with start request
         response = requests.post(start_endpoint, headers=header)
         
-        print('===== result posting======')
-        print(response.text)
+        if not response.ok:
+            print('bad request:', response.text)
+            
+        if response.ok:
         
-        file_stream = io.StringIO(response.text)
-        
-        tree = ET.parse(file_stream)
-        root = tree.getroot()
+            print('===== result posting======')
+            # print(response.text)
+            
+            file_stream = io.StringIO(response.text)
+            
+            tree = ET.parse(file_stream)
+            root = tree.getroot()
 
-        # parsing endpoints after sending start request
-        for child in root.findall('.//'):
-            for tag, src in child.attrib.items():
-                if 'src' in tag:
-                    if 'fremdrift' in src:
-                        fremdrift = src
-
+            # parsing endpoints after sending start request
+            for child in root.findall('.//'):
+                for tag, src in child.attrib.items():
                     if 'src' in tag:
-                        if 'status' in src:
-                            status = src
+                        if 'fremdrift' in src:
+                            fremdrift = src
 
-        try:
-            
-            splitted = fremdrift.split('/')
-            splitted = splitted[len(splitted) - 2]
-            
-            endrinsett_id = splitted
+                        if 'src' in tag:
+                            if 'status' in src:
+                                status = src
 
-            self.tokensAfterPosting = {
+            try:
+                
+                splitted = fremdrift.split('/')
+                splitted = splitted[len(splitted) - 2]
+                
+                endrinsett_id = splitted
+
+                self.tokensAfterPosting = {
                 'current_nvdbid': self.extra['current_nvdbid'],
                 'fremdrift': fremdrift,
                 'status': status,
                 'endringsett_id': self.extra['endpoint'] + '/' + endrinsett_id
-            }
+                }
 
-            list_vegobjekter_info = {
+                list_vegobjekter_info = {
                 'current_nvdbid': self.tokensAfterPosting['current_nvdbid'],
                 'status_after_sent': self.tokensAfterPosting['status'],
                 'endringsett_id': self.tokensAfterPosting['endringsett_id'],
                 'start_endpunkter': self.tokensBeforePost['start'],
                 'token': self.token,
                 'vegobjekt_navn': self.extra['objekt_navn']
-            }
+                }
 
-            # print('posting: ', list_vegobjekter_info['status_after_sent'])
+                # print('posting: ', list_vegobjekter_info['status_after_sent'])
+                
+                print('-____-------___>', list_vegobjekter_info['current_nvdbid'])
 
-            self.vegobjekter_after_send.append(list_vegobjekter_info)
+                self.vegobjekter_after_send.append(list_vegobjekter_info)
 
-            # emiting signal
-            self.new_endringsset_sent.emit(self.vegobjekter_after_send)
-        
-        except AttributeError:
-            print('error found, endringsett missing UIID and could not be deliverd')
+                # emiting signal
+                self.new_endringsset_sent.emit(self.vegobjekter_after_send)
+            
+            except AttributeError:
+                print('error found, endringsett missing UIID and could not be deliverd')
