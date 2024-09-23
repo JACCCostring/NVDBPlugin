@@ -92,7 +92,7 @@ class DelvisKorrEgenskaperCase(QObject):
                 if 'egenskaper' in item.tag:
 
                     for egenskap_navn, value in new_modified_data.items():
-                        print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
+                        # print(egenskap_navn, ': ', self.modified_data[egenskap_navn])
 
                         if 'Assosierte' not in egenskap_navn:  # avoiding adding objekt relasjoner here
 
@@ -304,30 +304,35 @@ class DelvisKorrEgenskaperCase(QObject):
                         if 'status' in src:
                             status = src
 
-        splitted = fremdrift.split('/')
-        splitted = splitted[len(splitted) - 2]
+        try:
+            
+            splitted = fremdrift.split('/')
+            splitted = splitted[len(splitted) - 2]
+            
+            endrinsett_id = splitted
+
+            self.tokensAfterPosting = {
+                'current_nvdbid': self.extra['current_nvdbid'],
+                'fremdrift': fremdrift,
+                'status': status,
+                'endringsett_id': self.extra['endpoint'] + '/' + endrinsett_id
+            }
+
+            list_vegobjekter_info = {
+                'current_nvdbid': self.tokensAfterPosting['current_nvdbid'],
+                'status_after_sent': self.tokensAfterPosting['status'],
+                'endringsett_id': self.tokensAfterPosting['endringsett_id'],
+                'start_endpunkter': self.tokensBeforePost['start'],
+                'token': self.token,
+                'vegobjekt_navn': self.extra['objekt_navn']
+            }
+
+            # print('posting: ', list_vegobjekter_info['status_after_sent'])
+
+            self.vegobjekter_after_send.append(list_vegobjekter_info)
+
+            # emiting signal
+            self.new_endringsset_sent.emit(self.vegobjekter_after_send)
         
-        endrinsett_id = splitted
-
-        self.tokensAfterPosting = {
-            'current_nvdbid': self.extra['current_nvdbid'],
-            'fremdrift': fremdrift,
-            'status': status,
-            'endringsett_id': self.extra['endpoint'] + '/' + endrinsett_id
-        }
-
-        list_vegobjekter_info = {
-            'current_nvdbid': self.tokensAfterPosting['current_nvdbid'],
-            'status_after_sent': self.tokensAfterPosting['status'],
-            'endringsett_id': self.tokensAfterPosting['endringsett_id'],
-            'start_endpunkter': self.tokensBeforePost['start'],
-            'token': self.token,
-            'vegobjekt_navn': self.extra['objekt_navn']
-        }
-
-        # print('posting: ', list_vegobjekter_info['status_after_sent'])
-
-        self.vegobjekter_after_send.append(list_vegobjekter_info)
-
-        # emiting signal
-        self.new_endringsset_sent.emit(self.vegobjekter_after_send)
+        except AttributeError:
+            print('error found, endringsett missing UIID and could not be deliverd')

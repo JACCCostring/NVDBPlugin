@@ -56,7 +56,7 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
 
     def populate_table(self, endringsetts):
         row = 0
-        print("Endringssett: ", endringsetts) #debugin
+        # print("Endringssett: ", endringsetts) #debugin
 
         for endringsett in endringsetts:
             for item in endringsett:
@@ -193,5 +193,5 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         
     def itemClicked(self):
         if self.isVegObjektThere():
-            print('current selected item: ', self.current_item['status_after_sent'])
+            # print('current selected item: ', self.current_item['status_after_sent'])
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])

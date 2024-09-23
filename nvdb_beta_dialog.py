@@ -732,6 +732,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             egenskaper = AreaGeoDataParser.egenskaper(self.listOfnvdbObjects[self.nvdbIdField.text()])
 
             for key, value in egenskaper.items():
+                
+                # print(key,  ' value', value, ' type', type(value))
+                
                 self.egenskapBox.addItem(key)
                 self.listOfEgenskaper[key] = value
 

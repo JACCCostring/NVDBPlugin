@@ -1,10 +1,9 @@
 from PyQt5 import QtWidgets
 
-# from .nvdbskriv_beta import Ui_SkrivDialog
 ########
 from PyQt5.QtWidgets import QTableWidgetItem, QAbstractItemView, QCheckBox
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QDate, QTime
+from PyQt5.QtCore import QDate, QDateTime, QTime
 from PyQt5.QtCore import pyqtSignal
 
 from .nvdb_endringsset_status_window import Ui_windowProgress  # dialog class
@@ -569,7 +568,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
                                 if 'PolygonZ' in self.geometry_found:
                                     self.geometry_found = self.geometry_found.replace('PolygonZ', 'Polygon Z')
-
+                            
+                            print(feat_field.name(), 'type', type(feature[feat_field.name()]))
+                            
+                            #if QDate or QDateTime type is found, then converted to Python str format
+                            if isinstance(feature[feat_field.name()], (QDate, QDateTime)):
+                                feature[feat_field.name()] = feature[feat_field.name()].toString('yyyy-MM-dd')
+                            
                             selected_object_fields[feat_field.name()] = feature[feat_field.name()]
 
         return selected_object_fields
@@ -699,7 +704,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 
                 sistmodifisert = AreaGeoDataParser.get_last_time_modified(road_object_type, layer_modified_egenskaper['nvdbid'], layer_modified_egenskaper['versjon'])
                 
-                relations = self.get_road_object_relationship( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parent
+                #relations = self.get_road_object_relationship( self.current_nvdbid) #getting relasjoner av vegobjekter only childs not parent
                 
                 extra_data = {
                     'nvdb_object_type': road_object_type,
@@ -708,7 +713,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     'endpoint': env_write_endpoint,
                     'sistmodifisert': sistmodifisert,
                     'current_nvdbid': self.current_nvdbid,
-                    'relation': relations,  # dict
+                    #'relation': relations,  # dict not need it. Only egenskaper sent
                     'geometry_found': self.geometry_found,
                     'objekt_navn': road_object_name
                 }
