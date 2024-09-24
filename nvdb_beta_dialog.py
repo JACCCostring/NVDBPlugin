@@ -1338,7 +1338,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.possible_parent_name = name
 
     def on_remove_relation_completed(self, changeset):
-        print(changeset)
+        # print(changeset)
         
         '''
         when remove operation completed then trigger remove_object_signal
@@ -1346,10 +1346,10 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         '''
         self.remove_road_object_signal.emit()
 
-        endpoint = changeset[0]['status_after_sent']
+        endpoint = changeset['status_after_sent']
         self.endpoint_for_status = endpoint
 
-        token = changeset[0]["token"]
+        token = changeset["token"]
         self.token_for_status = token
 
         self.get_current_status(endpoint, token)
@@ -1359,12 +1359,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fetch_status = True
         
     def on_single_add_completed(self, changeset):
-        print(changeset)
+        # print(changeset)
 
-        endpoint = changeset[0]['status_after_sent']
+        endpoint = changeset['status_after_sent']
         self.endpoint_for_status = endpoint
 
-        token = changeset[0]["token"]
+        token = changeset["token"]
         self.token_for_status = token
         
         self.get_current_status(endpoint, token)
@@ -1374,14 +1374,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fetch_status = True
     
     def on_single_replace_completed(self, changeset):
-        #print(changeset)
+        # print(changeset)
 
-        print("on_single_replace_completed")
-
-        endpoint = changeset[0]['status_after_sent']
+        endpoint = changeset['status_after_sent']
         self.endpoint_for_status = endpoint
 
-        token = changeset[0]["token"]
+        token = changeset["token"]
         self.token_for_status = token
 
         self.get_current_status(endpoint, token)
@@ -1567,6 +1565,8 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
             '''
             child_in_parent_nvdbid_found: int = int()
+            
+            # print('relations', relation)
             
             for datacatalog_id, items in relation.items():
                 for nvdbid_ in items['vegobjekter']:

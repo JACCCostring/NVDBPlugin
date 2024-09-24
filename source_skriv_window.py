@@ -15,7 +15,7 @@ from .tokenManager import TokenManager
 from qgis.utils import iface
 from qgis.core import *
 
-import requests, io, json
+import requests, io, json, time
 import threading
 import os
 
@@ -419,11 +419,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         layer = iface.activeLayer()
         someSelected = False
         #        TODO: make sure only selected items are remove from layer and tableview
-
-        #        Posible Solution: loop throug selectedItems in tableview
-        #        if item selected then added to the self.idsOfSelectedItems
-        #        only if item nvdbid doesn't exist in the list
-
+        
+        '''
+        Posible Solution: loop throug selectedItems in tableview
+        if item selected then added to the self.idsOfSelectedItems
+        only if item nvdbid doesn't exist in the list
+        '''
+        
         numSelectedItems = len(self.tableSelectedObjects.selectedItems())  # number of selected items
 
         for item in self.tableSelectedObjects.selectedItems():
@@ -440,8 +442,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 for feature in layer.selectedFeatures():  # loop throug all selected features in layer
                     for itemIdToDeselect in self.idsOfSelectedItems:  # loop throug all selected items from table
                         if 'nvdbid' in field.name():  # if field is nvdbid then
-                            if str(itemIdToDeselect) in str(feature[
-                                                                field.name()]):  # if item id selected from table is = to layer feature id then
+                            if str(itemIdToDeselect) in str(feature[field.name()]):  # if item id selected from table is = to layer feature id then
                                 layer.deselect(feature.id())  # deselect feature
                                 self.selectedObjectsFromLayer()  # re-read selected features from layer
 
@@ -526,7 +527,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 nvdbid = self.getTextFieldFromColumnIndex(item, 'nvdbid')
                 nvdbid_list.append(nvdbid)
 
-        nvdbid_list = list(set(nvdbid_list))  # remove duplicates
+        nvdbid_list = list(set(nvdbid_list))  # a Set() collection will remove duplicates
         
         print('debug: list of IDs', nvdbid_list)
         
@@ -727,6 +728,14 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
 
                 self.delvis.endringsett_form_done.connect(self.preparePost)
+                '''
+                TODO:
+                    for now we're using requests module for fetching HTTP data, and it do not
+                    allow async but planing to use Asyncio and aioHttp module for async HTTP fetching.
+                    
+                    For now sleeping for half a second, ;)
+                '''
+                time.sleep(0.5) #sleeping for half a second, to give time for the nex endringsett to be sent
 
                 self.delvis.formXMLRequest(self.listOfEgenskaper)
             
@@ -792,24 +801,28 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         return especific_field
 
     def openProgressWindow(self):
-        # verifying if login time still valid
-        # if login time is greater then 8 hours
-        # then is not valid anymore, so we update login
+        '''
+        verifying if login time still valid
+        if login time is greater then 8 hours
+        then is not valid anymore, so we update login
+        '''
         if self.login_time_expired():
             # print('login expired!')
 
             self.login()  # update login
-
-            # making session expired to True, so when try opening status windows
-            # can know if session has been expired or not, and no matter what
-            # it can re-assign new token
+            
+            '''
+            making session expired to True, so when try opening status windows
+            can know if session has been expired or not, and no matter what
+            it can re-assign new token
+            '''
             self.session_expired = True
-
-            # here we need to re-open status windows, for re-sending new tokens
-            # and endringssett again
-            # self.progressWindowInstance = None
-
-            # self.openProgressWindow() #be carefull it can be a loop and block main thread
+            '''
+            here we need to re-open status windows, for re-sending new tokens
+            and endringssett again
+            self.progressWindowInstance = None
+            '''
+            
             return
 
         if self.progressWindowInstance:
@@ -818,19 +831,10 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
         #        only make instance of windows if this is None
         if self.progressWindowInstance == None:
-            # self.progressWindowInstance = QtWidgets.QDialog()
             
-            #=========
-            print('len', len( self.info_after_sent_objects ) )
-            
-            for endrings in self.info_after_sent_objects:
-                for endring in endrings:
-                    print(endring['current_nvdbid'])
-            #=======
+            print('size of ids collected:', len( self.info_after_sent_objects ) )
             
             self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
-
-            #print(self.info_after_sent_objects)
 
             '''
             re-assigning new generated token if session has been expired
@@ -842,21 +846,20 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     for endring in item:
                         endring['token'] = self.tokens['idToken']
 
-            # self.ui.setupUi(self.progressWindowInstance)
             self.progressWindowInstance.show()
-
-            # making session expired to False after showing the windows
-            # after this it means that session is first time loging or re-loging
+            
+            '''
+            making session expired to False after showing the windows
+            after this it means that session is first time loging or re-loging
+            '''
             self.session_expired = False
 
-            # self.progressWindowOpened = True
-
-        # only shows windows again if this is already opened
-        # if self.progressWindowOpened and self.progressWindowInstance:
-        #    self.progressWindowInstance.show()
-
     def on_new_endringsset(self, endringsset):
+        print('new endringsett sent===================')
         self.info_after_sent_objects.append(endringsset)
+        
+        if self.progressWindowInstance:
+            self.progressWindowInstance.populate_table( self.info_after_sent_objects )
 
     def preparePost(self):
         # Lambda functions pass correct feedback and color to function

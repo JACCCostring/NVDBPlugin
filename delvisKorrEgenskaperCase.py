@@ -5,15 +5,14 @@ import xml.etree.ElementTree as ET
 import requests, json, io
 
 
-# class DelvisKorrigering(AbstractPoster, QObject):
 class DelvisKorrEgenskaperCase(QObject):
-    new_endringsset_sent = pyqtSignal(list)
+    new_endringsset_sent = pyqtSignal(dict)
     endringsett_form_done = pyqtSignal()
+    
     response_error = pyqtSignal(str)
     response_success = pyqtSignal(str)
 
     def __init__(self, token, modified_data, extra):
-        # super().__init__(token, modified_data)
         QObject.__init__(self)  # initializing QObject super class
         '''
         decided not to inherit or have any abstract depending class
@@ -26,7 +25,7 @@ class DelvisKorrEgenskaperCase(QObject):
 
         self.extra = extra  # data coming from writeToNVB method and need it
         self.xml_string = None  # to form xml template
-        self.vegobjekter_after_send = []  # to store important info about vegobjekter endepunkter sent til nvdb
+        # self.vegobjekter_after_send = []  # to store important info about vegobjekter endepunkter sent til nvdb
         
     def parseXml_prepare_method(self, xml_text):
         # Parse the XML content
@@ -210,10 +209,10 @@ class DelvisKorrEgenskaperCase(QObject):
         
         #not need for now, dont want to show any msg from here
         
-        # if not response.ok:
+        if not response.ok:
         #     self.parseXml_prepare_method(response.text)
             
-        #     print('<========DEBUG===========>', response.text)
+            print('<========DEBUG===========>', response.text)
             
         #     return
         
@@ -283,8 +282,8 @@ class DelvisKorrEgenskaperCase(QObject):
         response = requests.post(start_endpoint, headers=header)
         
         if not response.ok:
-            print('bad request:', response.text)
-            
+            print('bad request======================', response.text)
+
         if response.ok:
         
             print('===== result posting======')
@@ -329,14 +328,8 @@ class DelvisKorrEgenskaperCase(QObject):
                 'vegobjekt_navn': self.extra['objekt_navn']
                 }
 
-                # print('posting: ', list_vegobjekter_info['status_after_sent'])
-                
-                print('-____-------___>', list_vegobjekter_info['current_nvdbid'])
-
-                self.vegobjekter_after_send.append(list_vegobjekter_info)
-
                 # emiting signal
-                self.new_endringsset_sent.emit(self.vegobjekter_after_send)
-            
+                self.new_endringsset_sent.emit(list_vegobjekter_info)
+                
             except AttributeError:
                 print('error found, endringsett missing UIID and could not be deliverd')

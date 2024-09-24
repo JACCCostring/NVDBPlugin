@@ -56,18 +56,17 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
 
     def populate_table(self, endringsetts):
         row = 0
-        # print("Endringssett: ", endringsetts) #debugin
 
         for endringsett in endringsetts:
-            for item in endringsett:
-                for key, value in item.items():
-                    if key == 'current_nvdbid':
-                        self.tableProgress.setRowCount(row + 1)
+            # for item in endringsett:
+            for key, value in endringsett.items():
+                if key == 'current_nvdbid':
+                    self.tableProgress.setRowCount(row + 1)
                         
-                        self.tableProgress.setItem(row, self.getIndexFieldFromColumn('nvdbid'), QTableWidgetItem(str(value)))
+                    self.tableProgress.setItem(row, self.getIndexFieldFromColumn('nvdbid'), QTableWidgetItem(str(value)))
                     
-                    if key == 'vegobjekt_navn':
-                        self.tableProgress.setItem(row, self.getIndexFieldFromColumn('navn'), QTableWidgetItem(str(value)))
+                if key == 'vegobjekt_navn':
+                    self.tableProgress.setItem(row, self.getIndexFieldFromColumn('navn'), QTableWidgetItem(str(value)))
             
             row += 1
     
@@ -81,7 +80,6 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
             if columnName in columnText:
                 column_index = _column
         
-        print(columnName, ' found in ', column_index)
         return column_index
         
     def getTextFieldFromColumnIndex(self, item, columnName):
@@ -182,12 +180,12 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         nvdbid = self.getClicked_NVDBID()
         
         for endring in self.endringsett:
-            for item in endring:
-                for key, value in item.items():
-                    if key == 'current_nvdbid':
-                        if str(value) == nvdbid:
-                            self.current_item = item
-                            return True
+            for key, value in endring.items():
+                if key == 'current_nvdbid':
+                    if str(value) == nvdbid:
+                        self.current_item = endring
+                        
+                        return True
         
         return False
         
