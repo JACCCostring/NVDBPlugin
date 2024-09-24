@@ -9,8 +9,10 @@ class DelvisKorrEgenskaperCase(QObject):
     new_endringsset_sent = pyqtSignal(dict)
     endringsett_form_done = pyqtSignal()
     
-    response_error = pyqtSignal(str)
-    response_success = pyqtSignal(str)
+    onEndringsett_fail = pyqtSignal(int, bool)
+    
+    # response_error = pyqtSignal(str)
+    # response_success = pyqtSignal(str)
 
     def __init__(self, token, modified_data, extra):
         QObject.__init__(self)  # initializing QObject super class
@@ -214,6 +216,12 @@ class DelvisKorrEgenskaperCase(QObject):
             
             print('<========DEBUG===========>', response.text)
             
+            print(self.extra['current_nvdbid'])
+            print(type(self.extra['current_nvdbid']))
+            
+            #emiting signal to comunicate with table widget in skriv window module
+            self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False)
+            
         #     return
         
         if response.ok:
@@ -261,6 +269,10 @@ class DelvisKorrEgenskaperCase(QObject):
             '''
             if self.tokensBeforePost['start']:
                 print('===========POSTING===========')
+                
+                #emiting signal to comunicate with table widget in skriv window module
+                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), True)
+                
                 self.startPosting()
 
     def startPosting(self):

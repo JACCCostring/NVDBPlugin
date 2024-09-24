@@ -63,8 +63,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.mainTab.setCurrentIndex(1)
 
         #        setting columncount and headers here
-        self.tableSelectedObjects.setColumnCount(3)
-        tableSelectedObjectsHeaders = ['nvdbid', 'navn', 'vegref']
+        # self.tableSelectedObjects.setColumnCount(3)
+        self.tableSelectedObjects.setColumnCount(4)
+        tableSelectedObjectsHeaders = ['nvdbid', 'navn', 'vegref', 'sent/ikke sent']
 
         #        setting headers to table
         self.tableSelectedObjects.setHorizontalHeaderLabels(tableSelectedObjectsHeaders)
@@ -414,7 +415,19 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.tableSelectedObjects.setItem(row, 2, QTableWidgetItem(object['vegsystemreferanse']))
 
                 row += 1
-
+    
+    def set_status_sent_or_not(self, nvdbid: int, isSent: bool) -> None:
+        #first loop through all items
+        for row in range(self.tableSelectedObjects.rowCount()):
+            item = self.tableSelectedObjects.item(row, 0)
+            
+            if item.text() == str(nvdbid):
+                if not isSent:
+                    self.tableSelectedObjects.setItem(row, 3, QTableWidgetItem('ikke sent'))
+            
+                if isSent:
+                    self.tableSelectedObjects.setItem(row, 3, QTableWidgetItem('sent'))
+    
     def on_removeSelectedObject(self):
         layer = iface.activeLayer()
         someSelected = False
@@ -728,12 +741,16 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.delvis.new_endringsset_sent.connect(self.on_new_endringsset)
 
                 self.delvis.endringsett_form_done.connect(self.preparePost)
+                
+                self.delvis.onEndringsett_fail.connect(self.set_status_sent_or_not) #when endringsett fail in Delvis object
+                
                 '''
                 TODO:
                     for now we're using requests module for fetching HTTP data, and it do not
                     allow async but planing to use Asyncio and aioHttp module for async HTTP fetching.
                     
                     For now sleeping for half a second, ;)
+                    
                 '''
                 time.sleep(0.5) #sleeping for half a second, to give time for the nex endringsett to be sent
 
