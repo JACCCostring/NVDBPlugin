@@ -13,6 +13,8 @@ class DelvisKorrEgenskaperCase(QObject):
     
     # response_error = pyqtSignal(str)
     # response_success = pyqtSignal(str)
+    
+#new changes for Senay
 
     def __init__(self, token, modified_data, extra):
         QObject.__init__(self)  # initializing QObject super class
@@ -214,15 +216,15 @@ class DelvisKorrEgenskaperCase(QObject):
         if not response.ok:
         #     self.parseXml_prepare_method(response.text)
             
-            print('<========DEBUG===========>', response.text)
+            print('<========DEBUG RESPONSE===========>', response.text)
             
-            print(self.extra['current_nvdbid'])
-            print(type(self.extra['current_nvdbid']))
+            # print(self.extra['current_nvdbid'])
+            # print(type(self.extra['current_nvdbid']))
             
             #emiting signal to comunicate with table widget in skriv window module
             self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False)
             
-        #     return
+            # return
         
         if response.ok:
             #not need for now, dont want to show any msg from here
@@ -231,8 +233,13 @@ class DelvisKorrEgenskaperCase(QObject):
             # self.response_success.emit(successful)
             
             file_stream = io.StringIO(response.text)
-    
-            tree = ET.parse(file_stream)
+            
+            try:
+                
+                tree = ET.parse(file_stream)
+                
+            except xml.etree.ElementTree.ParseError:
+                pass
                 
             root = tree.getroot()
 
