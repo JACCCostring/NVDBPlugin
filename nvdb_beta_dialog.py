@@ -424,7 +424,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         '''
         if not self.after_possible_parent_selected and not self.after_possible_chilld_selected:
             self.removeActiveLayers()
-            self.set_layer_size()
+            #self.set_layer_size()
 
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
