@@ -183,7 +183,7 @@ class DelvisKorrEgenskaperCase(QObject):
         
         self.xml_string = ET.tostring(root, encoding='utf-8')  # be carefull with the unicode
 
-        print(self.xml_string)  # debuging info of hole formed XML endingsett
+        # print(self.xml_string)  # debuging info of hole formed XML endingsett
 
         # emiting signal
         self.endringsett_form_done.emit()
@@ -216,7 +216,7 @@ class DelvisKorrEgenskaperCase(QObject):
         if not response.ok:
         #     self.parseXml_prepare_method(response.text)
             
-            print('<========DEBUG RESPONSE===========>', response.text)
+            # print('<========DEBUG RESPONSE===========>', response.text)
             
             # print(self.extra['current_nvdbid'])
             # print(type(self.extra['current_nvdbid']))
@@ -238,8 +238,12 @@ class DelvisKorrEgenskaperCase(QObject):
                 
                 tree = ET.parse(file_stream)
                 
-            except xml.etree.ElementTree.ParseError:
-                pass
+            except ET.ParseError:
+                print('xml parser exception raised!')
+                
+                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False)
+                
+                return
                 
             root = tree.getroot()
 
@@ -275,7 +279,7 @@ class DelvisKorrEgenskaperCase(QObject):
             only if start endpoint exist
             '''
             if self.tokensBeforePost['start']:
-                print('===========POSTING===========')
+                # print('===========POSTING===========')
                 
                 #emiting signal to comunicate with table widget in skriv window module
                 self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), True)
@@ -301,11 +305,12 @@ class DelvisKorrEgenskaperCase(QObject):
         response = requests.post(start_endpoint, headers=header)
         
         if not response.ok:
-            print('bad request======================', response.text)
+            pass
+            # print('bad request======================', response.text)
 
         if response.ok:
         
-            print('===== result posting======')
+            # print('===== result posting======')
             # print(response.text)
             
             file_stream = io.StringIO(response.text)
@@ -351,4 +356,4 @@ class DelvisKorrEgenskaperCase(QObject):
                 self.new_endringsset_sent.emit(list_vegobjekter_info)
                 
             except AttributeError:
-                print('error found, endringsett missing UIID and could not be deliverd')
+                print('error found, endringsett missing UIID and could not be delivered')
