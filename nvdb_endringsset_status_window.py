@@ -105,11 +105,11 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         
         response = requests.get(url, headers = header)
         
-        print('nvdb_endringsset_status_windows: ', response.text)
+        # print('nvdb_endringsset_status_windows: ', response.text)
 
         #if response is not ok, then we just clear all the items
         if response.ok != True:
-            print("Response not ok: ",response)
+            print("Response in nvdb_endringsett_status::check_status not ok: ",response)
             
             if self.tableProgress.rowCount() > 0:
                 self.tableProgress.clear()
@@ -191,5 +191,5 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
         
     def itemClicked(self):
         if self.isVegObjektThere():
-            print('current selected item: ', self.current_item['status_after_sent'])
+            # print('current selected item: ', self.current_item['status_after_sent'])
             self.check_status(self.current_item['status_after_sent'], self.current_item['token'])

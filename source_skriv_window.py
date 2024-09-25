@@ -537,12 +537,14 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
         for item in self.tableSelectedObjects.selectedItems():
             if item.isSelected():
+                
                 nvdbid = self.getTextFieldFromColumnIndex(item, 'nvdbid')
+                
                 nvdbid_list.append(nvdbid)
 
         nvdbid_list = list(set(nvdbid_list))  # a Set() collection will remove duplicates
         
-        print('debug: list of IDs', nvdbid_list)
+        # print('debug: list of IDs', nvdbid_list)
         
         return nvdbid_list
 
@@ -681,7 +683,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             pass
 
         # get all nvdb id of selected features
-        for nvdbid in self.list_of_nvdbids():
+        self.list_of_nvdbids_var = self.list_of_nvdbids()
+        
+        for nvdbid in self.list_of_nvdbids_var:
             # get egenskaper data from each of the nvdbids
             layer_modified_egenskaper = self.get_field_egenskaper_by_nvdbid(nvdbid)
 
@@ -849,7 +853,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         #        only make instance of windows if this is None
         if self.progressWindowInstance == None:
             
-            print('size of ids collected:', len( self.info_after_sent_objects ) )
+            # print('size of ids collected:', len( self.info_after_sent_objects ) )
             
             self.progressWindowInstance = Ui_windowProgress(self.info_after_sent_objects)
 
@@ -872,7 +876,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             self.session_expired = False
 
     def on_new_endringsset(self, endringsset):
-        print('new endringsett sent===================')
+        # print('new endringsett sent===================')
         self.info_after_sent_objects.append(endringsset)
         
         if self.progressWindowInstance:
@@ -896,7 +900,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         # self.check_endringsBtn.setEnabled( True )
     
     def onCountWatcherChanged(self, count):
-        if count == len( self.list_of_nvdbids() ):
+        if count == len( self.list_of_nvdbids_var ):
             self.check_endringsBtn.setEnabled( True )
             
             self.update_status('Sent', 'Green')
