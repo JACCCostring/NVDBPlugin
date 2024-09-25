@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>637</width>
-    <height>644</height>
+    <height>725</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <x>20</x>
      <y>20</y>
      <width>611</width>
-     <height>581</height>
+     <height>691</height>
     </rect>
    </property>
    <property name="currentIndex">
@@ -62,7 +62,7 @@
       <rect>
        <x>10</x>
        <y>330</y>
-       <width>301</width>
+       <width>571</width>
        <height>32</height>
       </rect>
      </property>
@@ -70,14 +70,14 @@
       <item>
        <widget class="QLabel" name="current_linked_parent_lbl">
         <property name="text">
-         <string>current linked parent</string>
+         <string>Nåværende forelder</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="unlink_from_parent_btn">
         <property name="text">
-         <string>Slett Kobling</string>
+         <string>Fjern Kobling</string>
         </property>
        </widget>
       </item>
@@ -87,9 +87,9 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>370</y>
-       <width>301</width>
-       <height>51</height>
+       <y>380</y>
+       <width>141</width>
+       <height>21</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -103,22 +103,6 @@
         </property>
         <property name="text">
          <string>Valgt Barn - Objekt:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="object_id_line">
-        <property name="maximumSize">
-         <size>
-          <width>150</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="frame">
-         <bool>false</bool>
-        </property>
-        <property name="readOnly">
-         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -184,19 +168,6 @@
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_3">
-      <item alignment="Qt::AlignTop">
-       <widget class="QLabel" name="label_3">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Innlogging:</string>
-        </property>
-       </widget>
-      </item>
       <item>
        <widget class="QLabel" name="status_innlogging_lbl">
         <property name="font">
@@ -209,7 +180,14 @@
          <string notr="true">color: red;</string>
         </property>
         <property name="text">
-         <string>må logg på</string>
+         <string>må logge på</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="login_btn_more_window">
+        <property name="text">
+         <string>Log-In</string>
         </property>
        </widget>
       </item>
@@ -219,35 +197,72 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>490</y>
-       <width>331</width>
-       <height>51</height>
+       <y>530</y>
+       <width>591</width>
+       <height>31</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
-       <widget class="QLabel" name="avvist_lbl">
-        <property name="text">
-         <string/>
+       <widget class="QLineEdit" name="avvist_lbl">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>588</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
      </layout>
     </widget>
-    <widget class="QPushButton" name="login_btn_more_window">
+    <widget class="QLineEdit" name="object_id_line">
      <property name="geometry">
       <rect>
-       <x>380</x>
-       <y>510</y>
-       <width>51</width>
-       <height>31</height>
+       <x>150</x>
+       <y>380</y>
+       <width>150</width>
+       <height>21</height>
       </rect>
      </property>
-     <property name="text">
-      <string>Log-In</string>
+     <property name="maximumSize">
+      <size>
+       <width>150</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="frame">
+      <bool>true</bool>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
     </widget>
    </widget>
+  </widget>
+  <widget class="QWidget" name="horizontalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>669</y>
+     <width>591</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+     <widget class="QProgressBar" name="relation_status_bar">
+      <property name="value">
+       <number>0</number>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>
