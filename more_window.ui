@@ -214,6 +214,9 @@
           <height>32</height>
          </size>
         </property>
+        <property name="frame">
+         <bool>false</bool>
+        </property>
         <property name="readOnly">
          <bool>true</bool>
         </property>
