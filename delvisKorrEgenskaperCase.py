@@ -243,7 +243,7 @@ class DelvisKorrEgenskaperCase(QObject):
                 
                 self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False)
                 
-                return
+                return self.prepare_post()
                 
             root = tree.getroot()
 
