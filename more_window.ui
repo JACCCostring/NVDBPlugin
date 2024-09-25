@@ -68,9 +68,9 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLabel" name="current_linked_parent_lbl">
-        <property name="text">
-         <string>Nåværende forelder</string>
+       <widget class="QLineEdit" name="current_linked_parent_lbl">
+        <property name="readOnly">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -213,6 +213,11 @@
           <width>588</width>
           <height>32</height>
          </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>7</pointsize>
+         </font>
         </property>
         <property name="frame">
          <bool>false</bool>
