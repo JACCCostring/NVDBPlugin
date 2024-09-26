@@ -112,6 +112,8 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     def set_parent_status(self, status_info: dict = {}):
         if not status_info:
             self.current_linked_parent_lbl.clear()
+            self.avvist_lbl.setText("Ikke koblet til mor!")
+            self.avvist_lbl.setStyleSheet("color: grey; font: 14pt 'MS Shell Dlg 2';")
             
         if status_info:
             self.current_linked_parent_lbl.setText(f"Koblinger - {status_info['parent_id']} - {status_info['parent_name']} - {status_info['parent_nvdbid']}")

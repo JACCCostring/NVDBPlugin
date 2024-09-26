@@ -1234,6 +1234,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         '''
                                         self.source_more_window.set_parent_status(parent_status)
 
+
                                 except AttributeError:
                                     pass
 
@@ -1320,6 +1321,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # if self.isSourceMoreWindowOpen:
         #     self.source_more_window.action_()
+
 
     def has_to_have_mor(self, object_type):
         endpoint = f'https://nvdbapiles-v3.atlas.vegvesen.no/vegobjekttyper/{object_type}?inkluder=stedfesting'
