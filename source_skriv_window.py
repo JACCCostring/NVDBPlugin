@@ -57,15 +57,15 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.fixMiljo()  # setting miljo data
         self.nvdbStatus()  # calling nvdb status
 
-        self.check_endringsBtn.setEnabled( False )
-        
+        # self.check_endringsBtn.setEnabled( False )
+
         # set login tab at the start of the plug-in
         self.mainTab.setCurrentIndex(1)
 
         #        setting columncount and headers here
         # self.tableSelectedObjects.setColumnCount(3)
-        self.tableSelectedObjects.setColumnCount(4)
-        tableSelectedObjectsHeaders = ['nvdbid', 'navn', 'vegref', 'sent/ikke sent']
+        self.tableSelectedObjects.setColumnCount(5)
+        tableSelectedObjectsHeaders = ['nvdbid', 'navn', 'vegref', 'sent/ikke sent', 'grunn av']
 
         #        setting headers to table
         self.tableSelectedObjects.setHorizontalHeaderLabels(tableSelectedObjectsHeaders)
@@ -416,17 +416,29 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 row += 1
     
-    def set_status_sent_or_not(self, nvdbid: int, isSent: bool) -> None:
+    def set_status_sent_or_not(self, nvdbid: int, isSent: bool, reason: str) -> None:
         #first loop through all items
         for row in range(self.tableSelectedObjects.rowCount()):
-            item = self.tableSelectedObjects.item(row, 0)
+            
+            item = self.tableSelectedObjects.item(row, 0) #main item for data
             
             if item.text() == str(nvdbid):
                 if not isSent:
+                    start_msg_tag = reason.find('<message>')
+                    end_msg_tag = reason.rfind('</message>')
+                    
+                    main_reason = reason[start_msg_tag + len(str('<message>')): end_msg_tag]
+                    
                     self.tableSelectedObjects.setItem(row, 3, QTableWidgetItem('ikke sent'))
+                    self.tableSelectedObjects.setItem(row, 4, QTableWidgetItem(main_reason)) #reason
+                    
+                    self.tableSelectedObjects.item(row, 4).setBackground(QtGui.QColor(255, 0, 0)) #backgound red color
             
                 if isSent:
                     self.tableSelectedObjects.setItem(row, 3, QTableWidgetItem('sent'))
+                    self.tableSelectedObjects.setItem(row, 4, QTableWidgetItem(reason)) #reason
+                    
+                    self.tableSelectedObjects.item(row, 4).setBackground(QtGui.QColor(0, 255, 0)) #backgound green color
     
     def on_removeSelectedObject(self):
         layer = iface.activeLayer()
@@ -685,6 +697,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         # get all nvdb id of selected features
         self.list_of_nvdbids_var = self.list_of_nvdbids()
         
+        self.write_window_endrings_progressbar.setMaximum(len( self.list_of_nvdbids_var ))
+        
         for nvdbid in self.list_of_nvdbids_var:
             # get egenskaper data from each of the nvdbids
             layer_modified_egenskaper = self.get_field_egenskaper_by_nvdbid(nvdbid)
@@ -901,12 +915,14 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def onCountWatcherChanged(self, count):
         if count == len( self.list_of_nvdbids_var ):
-            self.check_endringsBtn.setEnabled( True )
+            # self.check_endringsBtn.setEnabled( True )
             
-            self.update_status('Sent', 'Green')
+            self.update_status('Ferdig', 'green')
             
             self.nvdbids_counter = 0 #restaring counter
-    
+        
+        self.write_window_endrings_progressbar.setValue(count)
+            
     def login_time_expired(self):
         '''
         verify if current time and start time hours
