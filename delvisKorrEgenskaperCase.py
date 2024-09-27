@@ -9,7 +9,7 @@ class DelvisKorrEgenskaperCase(QObject):
     new_endringsset_sent = pyqtSignal(dict)
     endringsett_form_done = pyqtSignal()
     
-    onEndringsett_fail = pyqtSignal(int, bool)
+    onEndringsett_fail = pyqtSignal(int, bool, str)
     
     # response_error = pyqtSignal(str)
     # response_success = pyqtSignal(str)
@@ -222,7 +222,7 @@ class DelvisKorrEgenskaperCase(QObject):
             # print(type(self.extra['current_nvdbid']))
             
             #emiting signal to comunicate with table widget in skriv window module
-            self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False)
+            self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False, response.text)
             
             # return
         
@@ -239,11 +239,15 @@ class DelvisKorrEgenskaperCase(QObject):
                 tree = ET.parse(file_stream)
                 
             except ET.ParseError:
+                # print('xml parser exception raised!')
+                
+                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False, 'error: parsing XML')
+                
                 print('xml parser exception raised!')
                 
-                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False)
+                # return self.prepare_post()
                 
-                return self.prepare_post()
+                return
                 
             root = tree.getroot()
 
@@ -282,7 +286,7 @@ class DelvisKorrEgenskaperCase(QObject):
                 # print('===========POSTING===========')
                 
                 #emiting signal to comunicate with table widget in skriv window module
-                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), True)
+                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), True, 'utført og startet')
                 
                 self.startPosting()
 
