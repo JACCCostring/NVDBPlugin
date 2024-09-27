@@ -89,7 +89,7 @@
        <x>10</x>
        <y>380</y>
        <width>141</width>
-       <height>21</height>
+       <height>49</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -106,13 +106,29 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QLineEdit" name="object_id_line">
+        <property name="maximumSize">
+         <size>
+          <width>150</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="frame">
+         <bool>true</bool>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
     <widget class="QWidget" name="verticalLayoutWidget_2">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>430</y>
+       <y>440</y>
        <width>261</width>
        <height>51</height>
       </rect>
@@ -228,28 +244,6 @@
        </widget>
       </item>
      </layout>
-    </widget>
-    <widget class="QLineEdit" name="object_id_line">
-     <property name="geometry">
-      <rect>
-       <x>150</x>
-       <y>380</y>
-       <width>150</width>
-       <height>21</height>
-      </rect>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>150</width>
-       <height>16777215</height>
-      </size>
-     </property>
-     <property name="frame">
-      <bool>true</bool>
-     </property>
-     <property name="readOnly">
-      <bool>true</bool>
-     </property>
     </widget>
     <widget class="QWidget" name="verticalLayoutWidget_5">
      <property name="geometry">

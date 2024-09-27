@@ -1706,7 +1706,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.timer_for_update_status_after_sendtEndring.isActive():
             # continuously update the status of the endringssett until a status message appears
             if status == "UTFØRT":
-                self.timer_for_update_status_after_sendtEndring.setInterval(8000)
+                self.timer_for_update_status_after_sendtEndring.setInterval(6000)
                 self.cnt_more_window_statusbar = 70
 
             if status in ("VENTER", "UTFØRT_OG_ETTERBEHANDLET","AVVIST"):
