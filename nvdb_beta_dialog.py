@@ -132,7 +132,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.current_session_token: dict = {} #current session tokens for current logged user
         self.possible_selected_parent_nvdbid: int = int() #possible selected parent nvdbId from QGIS kart layer
         self.cnt_more_window_statusbar: int = int() #for counting progress for statusbar in source_more_window
-
+        self.times_to_refresh_status = 0
 #        development starts here
 #        setting up all data need it for starting up
 
@@ -1654,6 +1654,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.timer_for_update_status_after_sendtEndring.isActive():
             self.timer_for_update_status_after_sendtEndring.setInterval(5000)
             self.timer_for_update_status_after_sendtEndring.start()
+            self.times_to_refresh_status = 0
             
             print("Timer has been started!")
 
@@ -1706,10 +1707,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.timer_for_update_status_after_sendtEndring.isActive():
             # continuously update the status of the endringssett until a status message appears
             if status == "UTFØRT":
-                self.timer_for_update_status_after_sendtEndring.setInterval(6000)
+                self.timer_for_update_status_after_sendtEndring.setInterval(8000)
                 self.cnt_more_window_statusbar = 70
+                self.times_to_refresh_status += 1
+                print(self.times_to_refresh_status)
 
-            if status in ("VENTER", "UTFØRT_OG_ETTERBEHANDLET","AVVIST"):
+            if status in ("VENTER", "UTFØRT_OG_ETTERBEHANDLET","AVVIST") or self.times_to_refresh_status == 5:
                 if status == "UTFØRT_OG_ETTERBEHANDLET":
                     self.update_more_window_statusbar.emit(100)
 
