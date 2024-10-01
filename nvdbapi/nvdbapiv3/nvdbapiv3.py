@@ -586,7 +586,7 @@ class nvdbNoder(nvdbVegnett):
 
 
 
-class nvdbFagdata(nvdbVegnett): 
+class nvdbFagdata(nvdbVegnett):
     """Søkeobjekt - dvs klasse for spørringer mot NVDB ang en spesifikk objekttype. 
     Jobber dynamisk mot NVDB api for å hente statistikk, laste ned data etc.
     Holder alle parametre som inngår i dialogen med NVDB api. 
@@ -620,9 +620,9 @@ class nvdbFagdata(nvdbVegnett):
         bomst = n.nesteForekomst()
 
     """
-    
-    
-    
+
+
+
     def __init__( self, objTypeID, miljo=None, debug=False, filter=None ):
 
 
@@ -653,7 +653,8 @@ class nvdbFagdata(nvdbVegnett):
         self.egenskapsfilter = {}   # DEPRECEATED
         self.overlappfilter = {}    # DEPRECEATED
         self.forbindelse = apiforbindelse.apiforbindelse()
-        if not miljo: 
+
+        if not miljo:
             miljo = 'prod'
         self.miljo( miljo)
         self.forbindelse.velgmiljo( 'prodles')
@@ -770,8 +771,9 @@ class nvdbFagdata(nvdbVegnett):
             return( fagobj)
         else: 
             return None
-        
-    def to_records(self, vegsegmenter=True, relasjoner=True, geometri=False, debug=False, tidspunkt=None ): 
+
+
+    def to_records(self, exit_event=None, vegsegmenter=True, relasjoner=True, geometri=False, debug=False, tidspunkt=None ):
         """
         Eksporterer til en liste med dictionaries med struktur 
         "objekttype" : INT,
@@ -832,13 +834,23 @@ class nvdbFagdata(nvdbVegnett):
         nvdbid_manglergeom = []
         terskler = [ 1000, 10000]
         feat = self.nesteForekomst()
-        while feat:
+
+        continue_loop = True
+
+        while feat and continue_loop:
+            # Remember to write documentation for this
+            if exit_event is not None:
+                if exit_event.is_set():
+                        continue_loop = False
+                        return []
+
+
             count += 1
-            if count == 1000 or count == 5000 or count % 10000 == 0: 
+            if count == 1000 or count == 5000 or count % 10000 == 0:
                 print( 'Objekt', count, 'av', self.antall)
 
-            # Ignorerer dem med tomt geometrielement, ref 
-            # https://github.com/LtGlahn/diskusjon_diverse/tree/master/debug_nvdbapilesv3/vegobjekter 
+            # Ignorerer dem med tomt geometrielement, ref
+            # https://github.com/LtGlahn/diskusjon_diverse/tree/master/debug_nvdbapilesv3/vegobjekter
             if 'geometri' in feat.keys():
 
                 featureliste = nvdbfagdata2records( feat, vegsegmenter=vegsegmenter, relasjoner=relasjoner, geometri=geometri, debug=debug, tidspunkt=tidspunkt )
@@ -846,22 +858,22 @@ class nvdbFagdata(nvdbVegnett):
 
                     # tmp = deepcopy( featureliste )
                     # featureliste = []
-                    # for enfeature in tmp: 
+                    # for enfeature in tmp:
                     #     enfeature['relasjoner'] = feat['relasjoner']
 
-            
+
                 mydata.extend( featureliste )
-            else: 
+            else:
                 nvdbid_manglergeom.append( feat['id'])
 
 
             feat = self.nesteForekomst()
 
-        if len( nvdbid_manglergeom ) > 0: 
+        if len( nvdbid_manglergeom ) > 0:
             print( 'Manglende geometri-element for', len( nvdbid_manglergeom), 'vegobjekter fra dette søket')
             self.info()
             print( 'fra miljø', self.apiurl )
-            if debug: 
+            if debug:
                 print( nvdbid_manglergeom )
 
         return mydata

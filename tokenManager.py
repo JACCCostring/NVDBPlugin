@@ -12,6 +12,7 @@ class TokenManager:
             'Content-Length': str(len(self.username + self.password)),
             'Content-Type': 'application/json',
             'X-Client': 'QGISSkriv' 
+
         }
                             
         data = {'username': self.username,
@@ -21,7 +22,7 @@ class TokenManager:
         response = requests.post(self.url, json = data, headers = headers)
         
         # print(response.text)
-        
+
         idToken = ''
         accessToken = ''
         refreshToken = ''
@@ -29,7 +30,7 @@ class TokenManager:
         file_stream = io.StringIO(response.text)
         tree = ET.parse(file_stream)
         root = tree.getroot()
-        
+
         for child in root:
             if 'idToken' in child.tag:
                 idToken = child.text
@@ -38,11 +39,12 @@ class TokenManager:
                 accessToken = child.text
                 
             elif 'refreshToken' in child.tag:
+
                 refreshToken = child.text
-    
+
         returnObj = {
             'idToken': idToken, 
-            'accessToken': accessToken, 
+            'accessToken': accessToken,
             'refreshToken': refreshToken
         }
         

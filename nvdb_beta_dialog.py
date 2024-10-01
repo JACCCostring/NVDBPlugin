@@ -1,56 +1,67 @@
+import inspect
 import sys
 import os
-import inspect
 
-nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+nvdblibrary = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe() )))
 nvdblibrary = nvdblibrary.replace('\\', '/')
 nvdblibrary = nvdblibrary + '/nvdbapi'
 
 ## Hvis vi ikke klarer å importere nvdbapiv3 så prøver vi å føye
-## mappen nvdblibrary til søkestien. 
-try: 
+## mappen nvdblibrary til søkestien.
+try:
     import nvdbapiv3
 except ModuleNotFoundError:
     print( "Fant ikke nvdbapiv3 i sys.path, legger til mappen", nvdblibrary)
-    sys.path.append( nvdblibrary ) 
-    
-    try: 
+    sys.path.append( nvdblibrary )
+
+    try:
         import nvdbapiv3
     except ModuleNotFoundError as e:
         print( "\nImport av nvdbapiv3 feiler for", nvdblibrary  )
         raise ModuleNotFoundError( "==> Variabel nvdblibrary skal peke til mappen https://github.com/LtGlahn/nvdbapi-V3  <==" )
-            
-    else: 
+
+    else:
         print( "SUKSESS - kan importere nvdbapiv3 etter at vi la til", nvdblibrary, "i sys.path" )
 else:
-    print( "HURRA - vi kan importere nvdbapiv3 " ) 
+    print( "HURRA - vi kan importere nvdbapiv3 " )
 
-
-from nvdbapiv3 import nvdbFagdata, nvdbVegnett
-from .nvdbapiV3qgis3 import nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
-
-from qgis.PyQt import uic
-from qgis.PyQt import QtWidgets
-from qgis.utils import iface
-from qgis.core import *
-# from PyQt5 import QtCore
-
+#PyQt5 libs
 from PyQt5.QtWidgets import QCompleter, QVBoxLayout, QLabel, QTableWidgetItem, QAbstractItemView
+from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal, QAbstractTableModel, QTimer
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtCore import  QSortFilterProxyModel, pyqtSignal, QAbstractTableModel
 
-# from .nvdbskriv_beta import Ui_SkrivDialog
-# from .more_window import Ui_MoreDialog
+
+#third party libs
+from .nvdbapiV3qgis3 import nvdb2kart, nvdbsok2qgis, url2kart, nvdb2kartListe
+from nvdbapiv3 import nvdbFagdata, nvdbVegnett
+
+#user defined libs
 from .source_skriv_window import SourceSkrivDialog
 from .source_more_window import SourceMoreWindow
-
 from .nvdbLesWrapper import AreaGeoDataParser
+
+#user defined devils korrigering modules
+from .custom_qstandard_item_model import CustomStandardItemModel
+
+from .customDelvisKorrRemoveCase import CustomDelvisKorrRemoveCase
+from .customKorrSingleAdd import CustomDelvisKorrSingleAdd
+from .customDelvisKorrReplaceParent import CustomDelvisKorrReplaceParent
+
+#PyQt5 libs
+from qgis.PyQt import QtWidgets
+from qgis.utils import iface
+from qgis.PyQt import uic
+from qgis.core import *
+
+#python built-in libs
 #========================================
 #includes need it for development
-# import os
-import json
-import requests
+import xml.etree.ElementTree as ET
+
 import threading
+import requests
+import json
+import time
 
 # -*- coding: utf-8 -*-
 """
@@ -76,18 +87,17 @@ import threading
  ***************************************************************************/
 """
 
-# import os
-
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'nvdb_beta_dialog_base.ui'))
-
 
 class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
     ready_for_setting_searched_objekt = pyqtSignal(list)
     setting_each_uiItem_inTable = pyqtSignal(int, dict, tuple, dict)
     amount_of_vegobjekter_collected = pyqtSignal(int)
-    
+    remove_road_object_signal = pyqtSignal()
+    update_more_window_statusbar = pyqtSignal(int)
+
     def __init__(self, parent=None):
         """Constructor."""
         super(NvdbBetaProductionDialog, self).__init__(parent)
@@ -97,834 +107,1705 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
-        
+
         #setting default road object limit info to 1
         self.limit_roadObject_info_inTable.setValue(1)
         self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
         self.limit_roadObject_info_inTable.setEnabled(False)
-        
+
         self.skrivWindowInstance = None #making skriv window null
-        self.skrivWindowOpened = False #making windows opened false
-        
+        self.skrivWindowOpened: boolean = False #making windows opened false
+        self.isSourceMoreWindowOpen = False #making more window flag false
+        self.after_possible_parent_selected = False #to control that parent is or not selected when sammenkoblin
+        self.after_possible_chilld_selected = False #o control that parent is or not selected when sammenkoblin
+        self.possible_parent_type = 0 #to storage possible parent relation from source_more_window
+        self.valid_roadObject_types = False
+        self.possible_parent_name = str() # to store name of possible parent relation
+        self.hasChildParentRoadObject = False #to controll wether child road object has or not a parent
+        self.parent_roadObject_linked_nvdbid: str = str() #for store nvdbid for related parent when sammenkobling
+        self.parent_roadObject_linked_type: int = int() # || type for related parent when sammenkobling
+        self.username_session: str = str() #username session only when atempting removing relation
+        self.current_session_token: dict = {} #current session tokens for current logged user
+        self.possible_selected_parent_nvdbid: int = int() #possible selected parent nvdbId from QGIS kart layer
+        self.cnt_more_window_statusbar: int = int() #for counting progress for statusbar in source_more_window
+        self.times_to_refresh_status = 0
 #        development starts here
 #        setting up all data need it for starting up
-        
+
 #        making filter edit box unabled when program start
         self.filterByLineEdit.setEnabled(False)
         self.openSkrivWindowBtn.setEnabled(False) #setting not enabled before search is done!
         self.changeObjectsSize.setEnabled(False)
-        
-#        dictionary with andpoints necessary for environment
+
+        # Use event to stop thread
+        self.exit_event = threading.Event()
+
+        self.continue_search_thread_status_loop = True
+        self.status_login = False
+        self.selected_layer_from_map: list = []
+        self.selected_object_from_map: list = []
+        self.source_more_window = None
+        self.endpoint_for_status = None
+        self.token_for_status = None
+        self.fetch_status = None
+        self.reset_more_window: boolean = False
+        self.data_fromSelectedObject_from_layer = None
+        self.relations = None
+        self.dependant_mor: boolean = False
+        self.active_relation_parent: dict = {}
+        self.layers_list: list = []
+
+
+        # timer instance for use in to get continuous update on status f endringssett in mer-vindu
+        self.timer_for_update_status_after_sendtEndring = QTimer()
+        self.timer_for_refresh_status_after_openMoreWindow = QTimer()
+
+        #        dictionary with endpoints necessary for environment
         self.environment = {
             'Produksjon': 'https://nvdbapiles-v3.atlas.vegvesen.no',
             'Utvikling': 'https://nvdbapiles-v3.utv.atlas.vegvesen.no',
             'Akseptansetest': 'https://nvdbapiles-v3.test.atlas.vegvesen.no',
             'Systemtest': 'https://nvdbapiles-v3-stm.utv.atlas.vegvesen.no'
         }
-        
+
 #        creating a QStandardItemModel for being able to connect itemChange() signal
-#        rows, columns and headres will be assign later on self.setObjectsToUI() method
+#        rows, columns and headers will be assigned later on self.setObjectsToUI() method
         self.tableViewResultModel = QStandardItemModel()
-        
+        self.mvc_table_model = CustomStandardItemModel()
+
 #        proxy model, to filter table view data on any column
         self.proxyModel = QSortFilterProxyModel()
+
+        self.proxyModel.setSourceModel(self.mvc_table_model)
         
-        self.proxyModel.setSourceModel(self.tableViewResultModel)
+        #self.proxyModel.setSourceModel(self.tableViewResultModel)
+        
         self.proxyModel.setFilterKeyColumn(-1) #-1 means all columns
+        
         self.proxyModel.setFilterCaseSensitivity(0) #0 means insensitive
-        
-#        set combo box data to choose environmen if production/test/development
+
+#        set combo box data to choose environment if production/test/development
         self.comboEnvironment.addItems({'Produksjon', 'Utvikling', 'Akseptansetest'})
-        
+
 #        selecting a default environment
         self.comboEnvironment.setCurrentText('Akseptansetest')
+
 #        setting an environment for default
         AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
-        
-#        setting up  combobox default values
+
+
+#        setting up combobox default values
         self.operatorCombo.addItems({'ikke verdi', '>', '<', '>=', '<=', '=', '!='})
         self.operatorCombo.setCurrentIndex(-1)
-        
-#        deativating  combobox when starting
+
+#        deactivating combobox when starting
 #        self.egenskapBox.setEnabled(False)
         self.operatorCombo.setEnabled(False)
         self.verdiField.setEnabled(False)
-        
+
 #        deactivating some UI components
         self.searchObjectBtn.setEnabled(False)
         self.visKartCheck.setEnabled(False)
-        
-#        autocompletion for nvdb field
-        listObjectNames = self.fixNVDBObjects()
-        self.setCompleterNVDBObjects(listObjectNames)
-        
-#        autocompletion for fylke field
-        listOfCounties = self.fixFylkeObjects()
-        self.setCompleterFylkeObjects(listOfCounties)
-        
-#        autocompletion for kommune field
-        listOfCommunities = self.fixCommunityObjects()
-        self.setCompleterCommunityObjects(listOfCommunities)
-        
+
+        #make some default settings according miljø
+        self.set_default_settings()
+
         #checking if there is a user session already,
         #and if is then, remove it
         try:
-            
+
             if os.environ['logged']:
                 print('there is a session !, removing it ...')
                 os.environ['svv_username'] = ''
                 os.environ['svv_pass'] = ''
                 os.environ['logged'] = ''
-                
+
         except KeyError:
             pass
-            
+
 #        connecting signals and slots
 
-#        very important to fecth kommuner when field fylke change
+#        very important to fetch kommuner when field fylke change
         self.fylkeField.editingFinished.connect(self.checkComunitiesInCounty)
-        
-#        when seacrh button pressed
+
+#        when search button pressed
         self.searchObjectBtn.clicked.connect(self.searchObj)
 
 #        when vis i kart checkbox active then
         self.visKartCheck.clicked.connect(self.onVisIKart)
-        
+
 #        noen egenskap i UI skal være not enable til user skriver input
         self.nvdbIdField.editingFinished.connect(self.onIdCatalogEdited)
-        
+
 #        when an item in table widget is clicked then
 #        self.tableResult.itemClicked.connect(self.onItemClicked)
-        
+
         self.tableResult.clicked.connect(self.onItemClicked)
         
-#        when egenskap box change current item then 
-        self.egenskapBox.currentIndexChanged.connect(self.onEgenskapChanged)
+        #when scrolling in tableview result
+        self.tableResult.verticalScrollBar().valueChanged.connect(self.onScroll)
         
+#        when egenskap box change current item then
+        self.egenskapBox.currentIndexChanged.connect(self.onEgenskapChanged)
+
 #        when operator box change then
         self.operatorCombo.currentIndexChanged.connect(self.onOperatorChanged)
-        
+
 #        when filtering the search in real time
         self.filterByLineEdit.textChanged.connect(self.proxyModel.setFilterRegExp)
-                
+
 #        when current index in miljø combobox changed then
         self.comboEnvironment.currentIndexChanged.connect(self.onComboMiljoChange)
-        
+
 #        when open button clicked then
         self.openSkrivWindowBtn.clicked.connect(self.openSkrivWindow)
-        
+
 #        when selecting any feature from the active layer, then
         iface.mapCanvas().selectionChanged.connect(self.onAnyFeatureSelected)
 
 #        when changing objects size in layer then
         self.changeObjectsSize.valueChanged.connect(self.on_objectSizeOnLayerChange)
-        
+
         #when QSlider value change then change label_limiter_info
         self.limit_roadObject_info_inTable.valueChanged.connect(lambda: self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value())))
         
+        #open more window for relation or stedfesting
         self.more_btn.clicked.connect(self.open_more_window)
+        
+        '''
+        if child road object alreary as a relation parent then, and add new relation
+        operation is requiered then remove first and then when removing is done
+        a remove signal is triggerd so new relation parent can be added to child object
+        '''
+        self.remove_road_object_signal.connect(self.replace_single_relation_fromSourceData)
+        #self.source_more_window.update.connect(lambda value:self.relation_status_bar.setValue(value))
 
-    
+
 #        rest of methods===============================
+
+    def set_default_settings(self):
+#        autocompletion for nvdb field
+        listObjectNames = self.fixNVDBObjects()
+        self.setCompleterNVDBObjects(listObjectNames)
+
+#        autocompletion for fylke field
+        listOfCounties = self.fixFylkeObjects()
+        self.setCompleterFylkeObjects(listOfCounties)
+
+#        autocompletion for kommune field
+        listOfCommunities = self.fixCommunityObjects()
+        self.setCompleterCommunityObjects(listOfCommunities)
+
     def fixNVDBObjects(self):
 #        all nvdb object types no all objects, to simulate datakatalog id
         nvdbObjects = []
-        
+
         try:
             nvdbObjects = AreaGeoDataParser.fetchAllNvdbObjects()
-            
+
             listObjectNames = []
             self.listOfnvdbObjects = {}
-            
+
             for key, value in nvdbObjects.items():
                 listObjectNames.append(key)
                 self.listOfnvdbObjects[key] = value
-        
+
         except Exception:
-            print('datakatalog ikke lastett opp!')
-            
+            print('datakatalog ikke lastet opp!')
+
         return listObjectNames
-        
+
     def fixFylkeObjects(self):
         counties = []
-        
+
         try:
             counties = AreaGeoDataParser.counties()
-            
+
             listOfCountiesNames = []
             self.listOfCounties = {}
             self.reversListOfCounties = {}
-            
+
             for key, value in counties.items():
                 listOfCountiesNames.append(key)
                 self.listOfCounties[key] = value
                 self.reversListOfCounties[value] = key
-        
+
         except Exception:
             print('flyke ikke lastett opp!')
-            
+
+
         return listOfCountiesNames
-        
+
     def fixCommunityObjects(self):
         communities = []
-        
+
         try:
             communities = AreaGeoDataParser.communities()
-            
+
             listOfCommunities = []
             self.listOfCommunitiesObjects = {}
             self.reversListOfCommunities = {}
-            
+
             for key, value in communities.items():
                 listOfCommunities.append(key)
                 self.listOfCommunitiesObjects[key] = value
                 self.reversListOfCommunities[value] = key
-        
+
         except Exception:
             print('kommuner ikke lastett opp!')
-            
+
         return listOfCommunities
-        
+
     def checkComunitiesInCounty(self):
         data = []
-        
+
         if self.fylkeField.text() == '':
 #            print('empty')
             data = self.fixCommunityObjects()
             self.setCompleterCommunityObjects(data)
-        
-        elif self.fylkeField.text() != '': 
+
+        elif self.fylkeField.text() != '':
             text = self.fylkeField.text()
             for key, value in AreaGeoDataParser.communitiesInCounties.items():
                 try:
-                    
+
                     if value == self.listOfCounties[text]:
                         data.append(key)
-                    
+
                 except Exception:
                     pass
-                
+
         self.setCompleterCommunityObjects(data)
-                
+
     def setCompleterNVDBObjects(self, data):
         autoCompleter = QCompleter(data)
         autoCompleter.setCaseSensitivity(False)
-        
+
         self.nvdbIdField.setCompleter(autoCompleter)
-        
+
     def setCompleterFylkeObjects(self, data):
         autoCompleter = QCompleter(data)
         autoCompleter.setCaseSensitivity(False)
-        
+
         self.fylkeField.setCompleter(autoCompleter)
-        
+
     def setCompleterCommunityObjects(self, data):
         autoCompleter = QCompleter(data)
         autoCompleter.setCaseSensitivity(False)
-        
-        self.kommuneField.setCompleter(autoCompleter)
-        
-    def searchObj(self):
-#        here search is prepared depending on which filters user has stablished
-        
-        #clearing tableview results everytime user search new road object
-        if self.tableViewResultModel.rowCount() > 0:
-            self.tableViewResultModel.clear()
 
-#        removing layres just in case there are some actives, before a new search
-        self.removeActiveLayers()
+        self.kommuneField.setCompleter(autoCompleter)
+
+    def searchObj(self):
+        self.exit_event.clear() #FIX: check if still set, before set False or clear it
         
+        self.mvc_table_model.clear_fetch()
+        
+        #feeding ne wlist of egenskaper, if new search is performed after one object search
+        if self.skrivWindowOpened and self.skrivWindowInstance:
+            new_list = self.get_new_egenskaper_list(self.nvdbIdField.text())
+            self.skrivWindowInstance.feed_new_list_egenskaper_and_data(self.data, new_list)
+
+#        here search is prepared depending on which filters user has stablished
+
+        #clearing tableview results everytime user search new road object
+        #if self.tableViewResultModel.rowCount() > 0:
+        #self.tableViewResultModel.clear()
+
+        '''
+        removing layers just in case there are some actives, before a new search
+        only when user is not delivering relation/relasjon (sammenkobling) changes
+        '''
+        if not self.after_possible_parent_selected and not self.after_possible_chilld_selected:
+            self.removeActiveLayers()
+            #self.set_layer_size()
+
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
         self.visKartCheck.setChecked(False)
-        
-#        clearing layer map in QGIS in case exist 
+
+#        clearing layer map in QGIS in case exist
         # self.removeActiveLayers()
-            
+
         if self.nvdbIdField.text() != '':
             nvdbId = self.listOfnvdbObjects[self.nvdbIdField.text()]
-            self.v = nvdbFagdata(int(nvdbId))
-            
+            self.source_data = nvdbFagdata(int(nvdbId))
+
 #            --check nvdb envairoment
             if self.comboEnvironment.currentText() == 'Produksjon':
-                self.v.miljo('prod')
-            
+                self.source_data.miljo('prod')
+
             if self.comboEnvironment.currentText() == 'Utvikling':
-                self.v.miljo('utv')
-            
+                self.source_data.miljo('utv')
+
             if self.comboEnvironment.currentText() == 'Akseptansetest':
-                self.v.miljo('test')
-        
+                self.source_data.miljo('test')
+
         if self.fylkeField.text() in self.listOfCounties:
             fylke = self.listOfCounties[self.fylkeField.text()]
-            self.v.filter( { 'fylke': int(fylke) } )
-        
+            self.source_data.filter( { 'fylke': int(fylke) } )
+
         if self.kommuneField.text() in self.listOfCommunitiesObjects:
             kommune = self.listOfCommunitiesObjects[self.kommuneField.text()]
-            self.v.filter( { 'kommune': int(kommune) } )
-            
+            self.source_data.filter( { 'kommune': int(kommune) } )
+
         if self.vegreferanseField.text() != '':
-            self.v.filter( { 'vegsystemreferanse': self.vegreferanseField.text() } )
-        
+            self.source_data.filter( { 'vegsystemreferanse': self.vegreferanseField.text() } )
+
 #        only if egenskapbox, operatorBox and verdi fields are populated then
         if self.egenskapBox.currentText() != '' and self.operatorCombo.currentText() != '' and self.verdiField.text() != '':
 
 #            some aux variables
             egensk = self.listOfEgenskaper[self.egenskapBox.currentText()]
             egenskAndVerdi = ''
-            
+
 #            some aux variables
             key = self.verdiField.text()
             verdi = self.verdiField.text()
             operator = self.operatorCombo.currentText()
 
 #            some type checks
-            
+
             if self.verdierDictionary:
                 verdi = self.verdierDictionary[key]
-            
+
             if not self.verdierDictionary and AreaGeoDataParser.egenskapDataType() == 'Tall': #if datatype is integer
                 verdi = int(verdi)
-                
+
             if not self.verdierDictionary and AreaGeoDataParser.egenskapDataType() != 'Tall': #otherwise treat it like string
                 verdi = "'" + verdi + "'"
-            
+
             egenskAndVerdi = f"egenskap({egensk}){operator}{verdi}"
-            
-            self.v.filter( {'egenskap': egenskAndVerdi })
-        
-        #threading
+
+            self.source_data.filter( {'egenskap': egenskAndVerdi })
+
+        # threading
         target = self.handle_threaded_search_objeckt
         
-        self.thread_search_objekt = threading.Thread(target = target)
+        self.thread_search_objekt = threading.Thread(target=target)
         
-        #warn of search has started
+        self.thread_search_objekt.start()
+        
+        #self.thread_search_objekt.join()
+
+
+    #warn of search has started
         self.search_status_label.setText('Samling vegobjekter ...')
-        
+
         #warning of search status has collected road objects
         self.amount_of_vegobjekter_collected.connect(lambda vegobjekter_amount: self.search_status_label.setText(f'samlet {vegobjekter_amount} objekter'))
-        
+
         #making sure QProgressbar is set to zero before setting new values
         #on a new object search
-        if self.search_object_progress_bar.value() > 0:
+        if self.search_object_progress_bar.value() >= 0:
             self.search_object_progress_bar.setValue(0)
-        
+
         #enabling QSlider for road object limiter
-        #it's disabled at the begining of the program
+        #it's disabled at the beginning of the program
         self.limit_roadObject_info_inTable.setEnabled(True)
-        
+
         #connecting signal when objects ready for UI
         self.ready_for_setting_searched_objekt.connect(self.prepareObjectsForUI)
         
-        self.thread_search_objekt.start()
-        # self.thread_search_objekt.join()
-        
-#        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
-        
-        if self.skrivWindowOpened:
-            self.skrivWindowInstance.hide()
-            self.skrivWindowInstance = None
-            self.skrivWindowOpened = False
+        #this here must be in a function/method
+        if self.searchObjectBtn.text() == "Søk Objekt":
+            self.searchObjectBtn.setText("Avbryt Søk")
+            self.searchObjectBtn.setStyleSheet("background-color : red")
+
+        else:
+            self.searchObjectBtn.setText("Søk Objekt")
+            self.searchObjectBtn.setStyleSheet("background-color : white; color : green")
             
-            #this btn needs to be dissabled if skriv windows was opened before the search
-            self.openSkrivWindowBtn.setEnabled(False)  
-    
+            self.visKartCheck.setEnabled(False)
+            self.limit_roadObject_info_inTable.setEnabled(False)
+
+            # Thread for setting exit_event to true so search_objects_thread is stopped
+            self.thread_avbryt_sok = threading.Thread(self.interrupt_thread())
+            
+            self.thread_avbryt_sok.start()
+
+
+        #        if skriv windows open then hide it, make it none and set self.skrivWindowOpened false
+        # if self.skrivWindowOpened:
+        #     self.skrivWindowInstance.hide()
+            
+            # self.skrivWindowInstance = None
+            # self.skrivWindowOpened = False
+
+
+            #this btn needs to be disabled if skriv windows was opened before the search
+            self.openSkrivWindowBtn.setEnabled(False)
+
+    def interrupt_thread(self):
+        print("INTERRUPT!")
+        self.exit_event.set()
+
     def handle_threaded_search_objeckt(self):
         #retrieve data with applied filters
         steps = 1
         sliced_data = []
         self.data = None
-        self.times_to_run: int = 0 
-        
-        self.data = self.v.to_records()
-        
-        #collecting size of the current onject search, it can be different for 
+        self.times_to_run: int = 0
+
+        # Display information about amount of objects to be searched
+        ant_obj = self.source_data.statistikk()
+        self.antall = ant_obj['antall']
+
+        if self.antall and self.antall > 10000:
+            self.search_status_label.setText(f"Eksport av,{self.antall}, objekter vil ta tid...")
+        # Maybe use pyqtsignal to send the value of 'count' variable from nvdbfagdata,(nvdbapiv3.py), class
+
+        self.data = self.source_data.to_records(self.exit_event)
+
+        if len(self.data) > 0:
+            self.mvc_table_model.feed_data(self.data)
+
+        #collecting size of the current onject search, it can be different for
         #all of the road objects in NVDB
         data_size = len(self.data)
-        
+
         #setting meximum value to limit_roadObject_info_inTable
         self.limit_roadObject_info_inTable.setMaximum(data_size + 1)
-        
+
         #emiting signal when total road objects are collected
         self.amount_of_vegobjekter_collected.emit(data_size)
 
-        # checking the amount of vegobjects found
-        # to configure limit of info display in table view
-        if data_size > 0 and data_size < 1000:
+        #checking the data_size
+        #to configure limit of info display in table view
+        if data_size >= 0 and data_size <= 1000:
             data_size_for_info_inTable = data_size
 
         else:
+            # data_size_for_info_inTable = self.limit_roadObject_info_inTable.value()
             data_size_for_info_inTable = 1000
+            print(f"Data_size is {data_size}")
 
         # self.limit_roadObject_info_inTable.setValue(self.limit_roadObject_info_inTable.value())
         self.limit_roadObject_info_inTable.setValue(data_size_for_info_inTable)
-        self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
         
+        self.label_limiter_info.setText(str(self.limit_roadObject_info_inTable.value()))
+
         #setting QSlider value to max_obj_search
         max_obj_search = self.limit_roadObject_info_inTable.value()
-        
+
         #slicing data to show in table not in source data to sliced_data = max_obj_search
         #only if it's over that number
         if data_size == max_obj_search:
             sliced_data = self.data[0: max_obj_search: steps]
-            
+
             self.current_num_road_objects = len(sliced_data)
-            
+
         if data_size > max_obj_search:
             sliced_data = self.data[0: max_obj_search: steps]
-            
+
             self.current_num_road_objects = len(sliced_data)
-        
+
         #if not then, just copy data source to sliced_data anyway
         #without modifying/slicing data size
         elif data_size < max_obj_search:
             sliced_data = self.data
-            
+
             self.current_num_road_objects = len(sliced_data)
         print('size: ', len(sliced_data))
+
         objects_for_ui = self.makeMyDataObjects(sliced_data)
-        
+
         #undefined behavior when emiting signal, then prepareObjectsForUI method
         #is calling itself multiple times, so self.times_to_run is to controll this behavior
-        self.times_to_run += 1 
-        
+        self.times_to_run += 1
+
         self.ready_for_setting_searched_objekt.emit(objects_for_ui)
+
+    def onScroll(self):
+        if self.tableResult.verticalScrollBar().value() < len(self.data) and self.tableResult.verticalScrollBar().value() == self.tableResult.verticalScrollBar().maximum():
+            self.mvc_table_model.fetch_more()
 
     def makeMyDataObjects(self, data):
         listObjects = []
-        
+
         for element in data:
             for e in enumerate(element):
                 key = e[1]
                 obj = { key: element[key] }
-                        
+
                 listObjects.append(obj)
-          
+
         return listObjects
-        
+
     def onVisIKart(self, checked):
         if checked:
-        #     #threading
-            # target = self.showing_object_in_map
-            
-            # self.thread_showing_objekt_iKart = threading.Thread(target = target)
-            
-            # self.v.refresh()
-        
-            # if self.thread_showing_objekt_iKart.is_alive() == False:
-            #     self.thread_showing_objekt_iKart.start()
-        
-            # self.thread_showing_objekt_iKart.join()
-            
-            self.v.refresh()
-            nvdbsok2qgis(self.v)
 
-#        setting size slider widget for objects size enabled, after features are in layer
-            self.changeObjectsSize.setEnabled(True)
-        
+            self.source_data.refresh()
+            
+            nvdbsok2qgis(self.source_data)
+            
+            ########
+            # paginator = NVDBDataPaginator( self.source_data )
+    
+            # paginator.init()
+            
+            # paginator._done_fetching.connect( lambda obj: nvdb2kartListe( obj, iface ) )
+            
+            # paginator.start_pagination()
+            
+            # paginator._done_fetching.connect( lambda obj: self.draw_layer() )
+            ########
+            
+            self.set_layer_size()
+
         else:
             self.removeActiveLayers()
-#            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
+            self.layers_list = []
+            #            when vis i kart option not checked in the current search, then just disable openSkrivWindow button
             self.openSkrivWindowBtn.setEnabled(False)
-    
+
+    def set_layer_size(self):
+
+        self.changeObjectsSize.setEnabled(True)
+        self.all_layers = QgsProject.instance().mapLayers().values()
+
+        obj_size = 9
+
+        # making a copy list for checking matching values in loop
+        temp_list = self.layers_list.copy()
+        
+        try:
+             # iterate through the list to check if a layer is already on the map, if so remove that layer else append that layer to the layers_list
+            for layer in self.all_layers:
+                if layer in temp_list:
+                    print("Removing layer...")
+                    
+                    self.layers_list.remove(layer)
+                    obj_size = 5
+                    
+                else:
+                    self.layers_list.append(layer)
+
+            # Change the size beforehand to a suitable one, first the size of the child layers and then the size of parent layers
+            #for lay in layers_list[0:2]:
+             #   if len(layers_list) <= 3:
+             #       iface.setActiveLayer(lay)
+             #       self.on_objectSizeOnLayerChange(8)
+              #      layers_list.pop(lay)
+             #   else:
+               #     iface.setActiveLayer(lay)
+               #     self.on_objectSizeOnLayerChange(4)
+
+            for lay in self.layers_list[0:2]:
+                if len(self.layers_list) <= 3 and obj_size >= 0:
+                    iface.setActiveLayer(lay)
+                    self.on_objectSizeOnLayerChange(obj_size)
+            
+        except AttributeError:
+            pass
+                
     def showing_object_in_map(self):
         pass
         # self.v.refresh()
         # nvdbsok2qgis(self.v)
-        
+
         # self.thread_showing_objekt_iKart.join()
-    
+
     def onIdCatalogEdited(self):
         self.searchObjectBtn.setEnabled(True)
-        
+
         #        setting dict of agenskaper objects
         self.listOfEgenskaper = {}
-        
+
 #        clean egenskaper combobox anyway
         self.egenskapBox.clear()
-        
+
         if self.listOfEgenskaper:
             self.listOfEgenskaper.clear() #cleaning before use in case of re-use
-        
+
         is_nvdbfield_valid = self.verifyNvdbField(self.nvdbIdField.text())
         print('is nvdb field valid: ', is_nvdbfield_valid)
-        
+
         if is_nvdbfield_valid:
-            print(AreaGeoDataParser.get_env())
             egenskaper = AreaGeoDataParser.egenskaper(self.listOfnvdbObjects[self.nvdbIdField.text()])
-        
+
             for key, value in egenskaper.items():
+                
+                # print(key,  ' value', value, ' type', type(value))
+                
                 self.egenskapBox.addItem(key)
                 self.listOfEgenskaper[key] = value
-            
+
             self.egenskapBox.addItem('ikke verdi') #adding aditional value to combo
-            
+
     #     setting size slider widget for objects size not enabled, after features are in layer
             self.changeObjectsSize.setEnabled(False)
-            
-    #        removing layres just in case there are some actives
-    #        self.removeActiveLayers()
     
-    def onComboMiljoChange(self):
-        print('changing to: ', self.comboEnvironment.currentText())
-        # if len(self.listOfnvdbObjects) > 0:
-        AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
-        print(AreaGeoDataParser.get_env())
+    def get_new_egenskaper_list(self, type_name: str = str()):
+        new_listOfEgenskaper: dict = {}
         
+        egenskaper = AreaGeoDataParser.egenskaper(self.listOfnvdbObjects[type_name])
+
+        for key, value in egenskaper.items():
+            new_listOfEgenskaper[key] = value
+        
+        return new_listOfEgenskaper
+                
+    def onComboMiljoChange(self):
+        '''
+        it's really important to restar some default settings
+        each tme miljø/env is change.
+        '''
+        print('changing to: ', self.comboEnvironment.currentText())
+
+        AreaGeoDataParser.set_env(self.environment[self.comboEnvironment.currentText()])
+        
+        print('applying new default settings')
+        self.set_default_settings()
+        
+        #feeding new env when this change to source_more_window instance
+        if self.source_more_window:
+            self.source_more_window.set_current_env(self.comboEnvironment.currentText())
+
     def verifyNvdbField(self, vegobjekt_type):
         for key, value in self.listOfnvdbObjects.items():
             if key == vegobjekt_type:
                 return True
-        
+
         return False
-        
+
     def prepareObjectsForUI(self, objects):
+        if not self.exit_event.is_set():
+            self.searchObjectBtn.setText("Søk Objekt")
+            self.searchObjectBtn.setStyleSheet("background-color : white; color : green")
+
+
         if self.times_to_run == 1:
             columns = self.parseHeaders(objects)
             index = self.indexHaders(columns)
-        
+
             self.tableViewResultModel.setColumnCount(len(columns))
             self.tableViewResultModel.setHorizontalHeaderLabels(columns)
-            
+
             #if better if range start from 0 in case only 1 road object is fetched
             self.search_object_progress_bar.setRange(0, self.current_num_road_objects)
-            
+
             # thread_task_funct = self.threaded_loop_for_preparing_UI
             # thread_args = [objects, index]
-            
+
             # self.thread_loop = threading.Thread(target = thread_task_funct, args = thread_args)
-            
+
             # self.setting_each_uiItem_inTable.connect(self.set_objects_to_tableView)
-            
+
             # self.thread_loop.start()
             # self.thread_loop.join()
-            
+
             items = []
             row = 0
-            
+
+
             try:
             #try starts here ...
             #parsing columns for adding to UI
                 columns = self.parseHeaders(objects)
                 index = self.indexHaders(columns)
-        
+
                 self.tableViewResultModel.setColumnCount(len(columns))
                 self.tableViewResultModel.setHorizontalHeaderLabels(columns)
-            
+
                 for object in objects:
                     for obj in enumerate(object):
                         for idx in index:
                             if obj[1] == idx['header']:
                                 # print('headers')
-                                
+
                                 if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
                                     numFylke = object[obj[1]]
                                     nameFylke = self.reversListOfCounties[numFylke]
                                     object[obj[1]] = nameFylke
-                                    
+
                                 if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
                                     numKommune = object[obj[1]]
                                     nameKommune = self.reversListOfCommunities[numKommune]
                                     object[obj[1]] = nameKommune
-                                    
+
                                 self.tableViewResultModel.setRowCount(row + 1)
 
                                 newItem = QStandardItem(str(object[obj[1]]))
-                                
+
                                 self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
-                                
+
                                 self.tableResult.setModel(self.proxyModel)
-                            
+
                                 if obj[1] == 'geometri':
                                     row = row + 1
-                                
+
                                 # set real time filter enabled when search is done searching and setting up objects UI.
                                 self.filterByLineEdit.setEnabled(True)
                                 self.search_object_progress_bar.setValue(row)
-            
+
             except Exception: #try ends here ...
                 print('exception!')
-                
+
          # making it zero again
         self.times_to_run = 0
-            
-    def threaded_loop_for_preparing_UI(self, objects, index):
-        pass
-        # items = []
-        # row = 0
-        
-        # try:
-        #try starts here ...
-        #parsing columns for adding to UI
-            # columns = self.parseHeaders(objects)
-            # index = self.indexHaders(columns)
-    
-            # self.tableViewResultModel.setColumnCount(len(columns))
-            # self.tableViewResultModel.setHorizontalHeaderLabels(columns)
-    
-        #     for object in objects:
-        #         for obj in enumerate(object):
-        #             for idx in index:
-        #                 if obj[1] == idx['header']:
-                                
-        #                     if obj[1] == 'fylke': #if header is fylke, then use name instead of fylke number
-        #                         numFylke = object[obj[1]]
-        #                         nameFylke = self.reversListOfCounties[numFylke]
-        #                         object[obj[1]] = nameFylke
-                                    
-        #                     if obj[1] == 'kommune':  #if header is kommune, then use name instead of kommune number
-        #                         numKommune = object[obj[1]]
-        #                         nameKommune = self.reversListOfCommunities[numKommune]
-        #                         object[obj[1]] = nameKommune
-                                    
-        #                     # self.setting_each_uiItem_inTable.emit(row, object, obj, idx)
-        #                     self.tableViewResultModel.setRowCount(row + 1)
 
-        #                     newItem = QStandardItem(str(object[obj[1]]))
-                                                
-        #                     self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
-                                                
-        #                     self.tableResult.setModel(self.proxyModel)
-        
-        #                     if obj[1] == 'geometri':
-        #                         row = row + 1
-                                
-        #                     self.filterByLineEdit.setEnabled(True)
-                        
-        # except Exception: #try block ends here ...
-        #     print('exception!')
-    
     def set_objects_to_tableView(self, row, object, obj, idx):
         pass
         # self.tableViewResultModel.setRowCount(row + 1)
 
         # newItem = QStandardItem(str(object[obj[1]]))
-                            
+
         # self.tableViewResultModel.setItem(row, int(idx['index']), newItem)
-                            
+
         # self.tableResult.setModel(self.proxyModel)
-        
+
         #setting progressbar value for each table item
         # self.search_object_progress_bar.setValue(row)
-        
+
         # self.filterByLineEdit.setEnabled(True)
-        
+
     def parseHeaders(self, objects):
         headers = []
         validHeaders =[]
-        
+
         for obj in objects:
             if obj in headers:
                 break
-                
+
             headers.append(obj)
-                
+
         for data in headers:
             for key in enumerate(data):
                 validHeaders.append(key[1])
-            
+
         return validHeaders
-        
+
     def indexHaders(self, headers):
         list = []
         counter = 0
-        
+
         for header in headers:
             index = {
             'index': counter,
             'header': header
             }
-            
+
             counter = counter + 1
-            
+
             list.append(index)
-            
+
         return list
-    
+
     def onItemClicked(self, index):
         data = self.substractItemData(index)
-        
+
         self.copyNvdbId.setText(data['nvdbId'])
         self.copyVegRef.setText(data['vref'])
-        
+
 #        when click any item then select object in layer
         nvdbid = data['nvdbId']
 
         layer = iface.activeLayer()
-        
+
         if self.visKartCheck.isChecked():
-            
             try:
                 for feature in layer.getFeatures():
                     for field in layer.fields():
                         if 'nvdbid' in field.name():
                             if str(nvdbid) in str(feature[field.name()]):
                                 layer.select(feature.id())
+                                
             except Exception:
                 pass
-                
+
     def substractItemData(self, index):
         #for now the proxy model is the one in charge for filtrering
         #so the index from proxy model are different then the child model
         #a conversion it's need it from proxy index to child index in the view
-        
+
         source = self.proxyModel.mapToSource(index) #so we convert from proxy index to the table model index
         row = source.row()
-        
+
         nvdbId = None
         vref = None
-        
+
         try:
             #starts here ...
             for column in range(0, self.tableViewResultModel.columnCount()):
                 itemColumHeader = self.tableViewResultModel.horizontalHeaderItem(column)
-                
                 if itemColumHeader.text() == 'nvdbId':
                     resultNvdbId = self.tableViewResultModel.item(row, column)
                     nvdbId = resultNvdbId.text()
-                    
+
                 elif itemColumHeader.text() == 'vref':
                     resultVref = self.tableViewResultModel.item(row, column)
                     vref = resultVref.text()
-                
+
         except Exception:
             pass
-            
+
         return {'nvdbId': nvdbId, 'vref': vref}
-        
+
     def onEgenskapChanged(self):
         index = self.egenskapBox.currentIndex()
-        
+
         if self.egenskapBox.itemText(index) != 'ikke verdi':
 #            fetch sub egenskaper for better autocompletoin in verdi field
             self.subEgenskaper()
             self.operatorCombo.setEnabled(True)
-            
+
         else:
             idx = self.operatorCombo.findText('ikke verdi')
             self.operatorCombo.setCurrentIndex(idx) #on each iteration onOperatorChange method is also called
             self.operatorCombo.setEnabled(False)
-#        self.verdiField.setEnabled(True)
-        
+
     def onOperatorChanged(self):
         if self.operatorCombo.currentText() == 'ikke verdi':
             self.verdiField.clear()
             self.verdiField.setEnabled(False)
             self.operatorCombo.setEnabled(False)
-            
+
         else:
             self.verdiField.setEnabled(True)
-#            when operator is selected then we want auto-completion to verdie field
-#            self.subEgenskaper()
-            
+
     def removeActiveLayers(self):
         names = [layer.name() for layer in QgsProject.instance().mapLayers().values()]
-        
+
         for name in names:
             if name != 'OpenStreetMap':
                 self.removeL(name)
-            
+
     def subEgenskaper(self):
         nvdbid = 0
-        
+
         try:
             nvdbId = self.listOfnvdbObjects[self.nvdbIdField.text()]
-            
+
         except Exception:
             pass
-            
+
         especificEgenskap = self.egenskapBox.currentText()
-        
+
         verdier = AreaGeoDataParser.especificEgenskaper(nvdbId, especificEgenskap)
-        
+
         self.verdierDictionary = {}
         verdierList = []
-        
+
 #        cleaning verdierDictionary in case of already data in it
         if self.verdierDictionary:
             self.verdierDictionary.clear()
-        
+
 #        loop through list of verdier and set the auto-completion to verdi field in UI
         for key, value in verdier.items():
             verdierList.append(str(key)) #key should be string type
-            
+
             self.verdierDictionary[str(key)] = value #key should be string types
-            
+
         self.setCompleterVerdierObjects(verdierList)
-#        print(self.verdierDictionary)
-        
+
     def setCompleterVerdierObjects(self, data):
         autoCompleter = QCompleter(data)
         autoCompleter.setCaseSensitivity(False)
-        
+
         self.verdiField.setCompleter(autoCompleter)
-                
+
     def removeL(self, name):
         qinst = QgsProject.instance()
         qinst.removeMapLayer(qinst.mapLayersByName(name)[0].id())
-        
+
         iface.mapCanvas().refresh()
-    
-    def openSkrivWindow(self):        
+
+    def openSkrivWindow(self):
 #        only make instance of windows if this is None
         if self.skrivWindowInstance == None:
-            # self.skrivWindowInstance = QtWidgets.QDialog()
-            
-            # self.ui = SourceSkrivDialog(self.data, self.listOfEgenskaper) #instance self.v only exist after seacrh btn is pressed
-            # self.ui.setupUi(self.skrivWindowInstance)
-            
+
             self.skrivWindowInstance = SourceSkrivDialog(self.data, self.listOfEgenskaper)
             
             self.skrivWindowInstance.show()
-            
+
             self.skrivWindowOpened = True
-            
-#        only shows windows again if this is allready opened
+
+            self.skrivWindowInstance.userLogged.connect(self.onUserLoggedIn) #when user logged in
+            self.skrivWindowInstance.not_logged.connect(self.onUserNotLoggedIn) #when user not logged in
+
+#        only shows windows again if skriv window instance  already exists
         if self.skrivWindowOpened and self.skrivWindowInstance:
+            
+            new_list = self.get_new_egenskaper_list(self.nvdbIdField.text())
+            self.skrivWindowInstance.feed_new_list_egenskaper_and_data(self.data, new_list)
+            
             self.skrivWindowInstance.show()
-    
-    
+
+    def start_timer_refresh_status(self):
+        if not self.timer_for_refresh_status_after_openMoreWindow.isActive() and not self.timer_for_update_status_after_sendtEndring.isActive():
+            self.timer_for_refresh_status_after_openMoreWindow.setInterval(5000)
+            
+            self.timer_for_refresh_status_after_openMoreWindow.start()
+            
+            print("Timer has been started!")
+
     def open_more_window(self):
-        # self.more_window = QtWidgets.QWidget(None)
-        
-        self.source_more_window = SourceMoreWindow()
-        # self.source_more_window.setupUi(self.more_window)
-        
-        # self.more_window.show()
+        if self.source_more_window is None or self.reset_more_window:
+            self.source_more_window = SourceMoreWindow()
+
+        self.isSourceMoreWindowOpen = True
+
         self.source_more_window.show()
-        
+
+        #connecting signals from more_window instance
+
+        self.source_more_window.new_relation_event.connect(self.handle_relation) #to handle relation when clicked from source_more_window module
+        self.source_more_window.unlink_btn_clicked.connect(self.remove_relation_fromSourceData) #when event un disconnect relation from source_more_window
+        self.source_more_window.logging_btn_moreWindow_clicked.connect(self.openSkrivWindow) #when user open skriv window from more_window
+        #self.update_more_window_statusbar.connect(lambda value: self.source_more_window.relation_status_bar.setValue(value))
+
+        if self.status_login:
+            self.source_more_window.set_login_status(status="pålogget")
+        elif not self.status_login:
+            self.source_more_window.set_login_status(status="må logge på")
+
+
+        if self.source_more_window.isVisible():
+            if self.token_for_status and self.endpoint_for_status and self.fetch_status:
+                self.start_timer_refresh_status()
+
+                self.timer_for_refresh_status_after_openMoreWindow.timeout.connect(lambda: self.get_current_status(self.endpoint_for_status, self.token_for_status))
+
+    def get_related_parent(self, nvdbid: int = int()) -> dict:
+        #to get the current relationship on the current fetched data
+        #from the last search
+
+        relation_collection_parent = {}
+        relation_id = None
+
+        for refdata in self.data:
+            for key, value in refdata.items():
+                if key == 'nvdbId':
+                    if str(refdata[key]) == str(nvdbid):
+                        for field_name, field_values in refdata.items():                            
+                            if field_name == 'relasjoner':
+
+                                relation_type = None
+                                final_parsed_relation = None
+
+                                try:
+                                    relation_type = field_values['foreldre'] #parent
+                                    
+                                    '''
+                                    if road object has more then 1 relation, then
+                                    parsed relation only taking the last relation
+                                    
+                                    if not then take first and the only realtion
+                                    existing
+                                    '''
+                                    if len( relation_type ) > 1:
+                                        
+                                        parsed_relation = relation_type[len( relation_type ) - 1]
+                                        
+                                        final_parsed_relation = parsed_relation
+                                    
+                                    elif len( relation_type ) == 1:
+                                        
+                                        parsed_relation = relation_type[len( relation_type ) - 1]
+                                        
+                                        final_parsed_relation = parsed_relation
+                                    
+                                    ''' 
+                                    making sure that current selected child road object has a parent
+                                    road object related to, this is just to make the flag to True, for later
+                                    use and have a better control.
+                                    '''
+                                    self.hasChildParentRoadObject = True
+
+                                    #child objects has only one parent in all cases, never more then one
+                                    self.parent_roadObject_linked_nvdbid = final_parsed_relation['vegobjekter']
+                                    self.parent_roadObject_linked_type = final_parsed_relation['type']['id']
+                                    self.parent_roadObject_linked_navn = final_parsed_relation['type']['navn']
+
+                                except IndexError:
+                                    '''
+                                    turning flag to False anyway, in case of index error
+                                    exception, but for now is working, be carefull anyway
+                                    '''
+                                    
+                                    self.hasChildParentRoadObject = False
+                                    
+                                    print("no parent_index_error")
+                                    
+                                    return relation_collection_parent
+
+                                    #return {} #must watch this return
+                                    # pass
+                                    
+                                #except when road object do not have a parent
+                                except KeyError:
+                                    ''' 
+                                    turning False again before the return, because when exception is thrown, then
+                                    we know that child has no any parent related to
+                                    '''
+                                    self.hasChildParentRoadObject = False
+
+                                    print("No parent_key_error")
+                                    
+                                    return {}
+
+                                for item in relation_type:
+                                    for item_name, item_value in item.items():
+                                        if item_name == 'type':
+                                            type = item_value
+
+                                            type_id = type['id']
+                                            type_name = type['navn']
+
+                                            relation_collection_parent[type_name] = type_id
+                                            
+        return relation_collection_parent
+
+    def re_paint(self):
+        for layer in iface.mapCanvas().layers():
+            layer.triggerRepaint()
+
     def onAnyFeatureSelected(self):
+        # start of relation code
+
+        layer = iface.activeLayer()  # to get current active layer
+
+        parent_object_nvdbid: int = int()
+
+        '''
+        going through features in current active layer
+        and this only happens if possible parent is not selected yet
+        from source_more_window instance
+        '''
+
+        if not self.after_possible_parent_selected:
+            
+            for feature in layer.selectedFeatures():
+                for field in feature.fields():
+                    if field.name() == 'nvdbid':
+                        for road_object in self.data:
+                            if road_object['nvdbId'] == feature[field.name()]:
+
+                                self.data_fromSelectedObject_from_layer = road_object  # storaging road object just in case
+
+                                self.child_object_nvdbid = road_object['nvdbId']  # can only be declared once
+                                self.child_object_objectid = road_object["objekttype"]
+                                
+                                self.after_possible_chilld_selected = True
+
+                                if self.source_more_window:
+                                    self.source_more_window.set_child_id(self.child_object_nvdbid, self.child_object_objectid)
+
+                                self.selected_layer_from_map.append(layer.name())
+                                self.selected_object_from_map.append(layer.selectedFeatureIds())
+
+                                self.possible_child_name = self.nvdbIdField.text()
+
+                                try:
+                                    if self.source_more_window:
+                                        self.relations = self.get_related_parent(self.child_object_nvdbid)
+                                        
+                                        self.has_to_have_mor(self.child_object_objectid)
+
+                                        self.active_relation_parent = self.relations
+                                        
+                                        print('active relation parent', self.active_relation_parent)
+
+                                        # sync with source_more_window instance, to feed more data, in this case related to (relation = sammenkobling)
+                                        self.source_more_window.feed_data('relation', self.data_fromSelectedObject_from_layer, self.active_relation_parent)
+                                        
+                                        '''
+                                        creating an status info dict, for populating more window UI elements
+                                        when user select a road object from Kart/map in QGIS
+                                        '''
+                                        parent_status = {"parent_id": self.parent_roadObject_linked_type,
+                                                         "parent_name": self.parent_roadObject_linked_navn,
+                                                         "parent_nvdbid": self.parent_roadObject_linked_nvdbid[0]
+                                                         }
+                                        
+                                        #if no relation was found, then clear status, before sending
+                                        if not self.active_relation_parent:
+                                            parent_status.clear()
+                                        
+                                        '''
+                                        populating UI elem... status according to if has or not relation
+                                        this will be sent anyway has or not relation, but it will populate or clear UI elem...
+                                        '''
+                                        self.source_more_window.set_parent_status(parent_status)
+
+
+                                except AttributeError:
+                                    pass
+
+        '''
+        do something else with possible parents type and name
+        gotten from source_more_window, when possible parent road object
+        is already selected
+        '''
+        if self.after_possible_parent_selected:            
+            '''
+            from here and on, we have to think how to get the effects
+            for next road object we will connect
+            '''
+            for feature in layer.selectedFeatures():
+                for field in feature.fields():
+
+                    if field.name() == 'nvdbid':
+                        for road_object in self.data:
+
+                            if road_object['nvdbId'] == feature[field.name()]:
+                                if road_object['objekttype'] == self.possible_parent_type:            
+                                    
+                                    parent_object_nvdbid = road_object['nvdbId']
+                                    roadObjectTypeChild_toConnect = road_object['objekttype']
+
+                                    self.possible_selected_parent_nvdbid = parent_object_nvdbid
+                                    
+                                    #if possible parent type is equal to object child type
+                                    #user want to connect to, then is it a valid parent child relationship connection
+                                    if self.possible_parent_type == roadObjectTypeChild_toConnect:
+                                        # for now road object types are both same type,
+                                        self.valid_roadObject_types = True
+
+                                        '''
+                                        Case When child object has not a parent object relation
+                                        but possible parent is selected to be added as a relation, so here
+                                        we add the new selected parent from QGIS Kart/map as a relation
+                                        '''
+                                        if not self.hasChildParentRoadObject:
+                                            print('has not relation object')
+
+                                            self.add_single_relation_fromSourceData()
+
+                                        '''
+                                        Case When child object has a parent object relation
+                                        and possible parent is selected to be added as a relation, then
+                                        here we update the existing parent road object to the new selected one
+                                        '''
+                                        if self.hasChildParentRoadObject:
+                                            print('has relation object')
+
+                                            '''
+                                            when remove_road_object_signal is triggered then new relation object
+                                            will be add it.
+
+                                            Note: most probably we need to subclass delvis korrigering to make a new class
+                                            for updating road object when this is already related instead of adding a new one.
+
+
+                                            IF SUBCLASSING DONT WORK THEN:
+
+                                            the use of a timer must be consider, checking status response for every 2 or 3 seconds
+                                            until UTFØR_OG_ETTERBEHANDLET status changes are made, so then we can perform
+                                            the adding new road object relation operation
+                                            '''
+
+                                            self.remove_relation_fromSourceData()
+
+        # end of relation code
+
+        # may be start of location code
+
+        # end of location code
+
+        # enabeling open skriv window button, to make the effect: ONLY
+        # when any feaure from QGIS cart/map is selected
         self.openSkrivWindowBtn.setEnabled(True)
+
+        # refresh when we choose layer
+        #self.re_paint()
+
+        if self.source_more_window:
+            self.source_more_window.login_btn_more_window.setEnabled(True)
+
+        # if self.isSourceMoreWindowOpen:
+        #     self.source_more_window.action_()
+
+
+    def has_to_have_mor(self, object_type):
+        endpoint = f'https://nvdbapiles-v3.atlas.vegvesen.no/vegobjekttyper/{object_type}?inkluder=stedfesting'
+        response = requests.get(endpoint)
+        result_txt = json.loads(response.text)
+
+        if response.ok:
+            self.dependant_mor = result_txt["må_ha_mor"]
+            self.source_more_window.koble_fra_til_btn(self.dependant_mor, self.hasChildParentRoadObject, self.status_login)
+
+
+    def handle_relation(self, type: int = int(), name: str = str()):
+        self.after_possible_parent_selected = True
+
+        self.possible_parent_type = type
+        self.possible_parent_name = name
+
+    def on_remove_relation_completed(self, changeset):
+        # print(changeset)
+        
+        '''
+        when remove operation completed then trigger remove_object_signal
+        meaning that now make new relation operation can be executed
+        '''
+        self.remove_road_object_signal.emit()
+
+        endpoint = changeset['status_after_sent']
+        self.endpoint_for_status = endpoint
+
+        token = changeset["token"]
+        self.token_for_status = token
+
+        self.get_current_status(endpoint, token)
+        self.start_timer()
+        
+        self.continue_search_thread_status_loop = True
+        self.fetch_status = True
+        
+    def on_single_add_completed(self, changeset):
+        # print(changeset)
+
+        endpoint = changeset['status_after_sent']
+        self.endpoint_for_status = endpoint
+
+        token = changeset["token"]
+        self.token_for_status = token
+        
+        self.get_current_status(endpoint, token)
+        self.start_timer()
+        
+        self.continue_search_thread_status_loop = True
+        self.fetch_status = True
+    
+    def on_single_replace_completed(self, changeset):
+        # print(changeset)
+
+        endpoint = changeset['status_after_sent']
+        self.endpoint_for_status = endpoint
+
+        token = changeset["token"]
+        self.token_for_status = token
+
+        self.get_current_status(endpoint, token)
+        self.start_timer()
+
+        self.continue_search_thread_status_loop = True
+        self.fetch_status = True
+
+    def add_single_relation_fromSourceData(self):
+        '''
+        adding relationship between parent road object and child object
+        will be through a call to a new module, this module will be in a separate file.
+        '''
+        # only happens if child road object selected from QGIS kart has a parent
+        '''self.after_possible_parent_selected'''
+        if not self.hasChildParentRoadObject and self.isUserLogged():
+            print('start adding new')
+
+            # setting AreaGeoDataParser env, before using it
+            env = self.comboEnvironment.currentText()
+
+            AreaGeoDataParser.set_env(env)
+
+            username =                                  self.username_session
+            parent_nvdbid =                          self.possible_selected_parent_nvdbid  # self.parent_roadObject_linked_nvdbid[0]
+            object_type_id =                          self.possible_parent_type  # self.parent_roadObject_linked_type
+            version =                                       AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
+
+            last_time_road_object_modified = AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid, version)
+            datacatalog_version =                     AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
+            endpoint =                                      self.get_env_write_endpoint()
+            relation =                                      AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
+            id_token =                                      self.current_session_token['idToken']
+
+            child_roadobject_exist: bool = False
+
+            datacatalog_enumid =                        AreaGeoDataParser.get_datacatalog_relation_type(self.possible_parent_type, self.possible_child_name)
+
+            '''
+            now we have relation data, then now the child road object that was selected from kart in QGIS
+            must be tag as a remove child and that's the only one road object sent to be remove from parent.
+
+            If road object do not have relation, then, just add the child road object.
+            '''
+
+            # if relation not None
+            if relation != None:
+                for datacatalog_id, items in relation.items():
+                    print('comparing to add')
+
+                    # if child road object id not exist in substracted relation, then turn child_roadobject_exist to false
+                    if self.child_object_nvdbid not in items['vegobjekter']:
+                        child_roadobject_exist = False
+
+                    # otherwise turn it to true
+                    else:
+                        child_roadobject_exist = True
+
+            # already modified data
+            modified_data = {
+                'nvdbid': parent_nvdbid,
+                'versjon': version  # last version to road object
+            }
+
+            # extra data need it for xml escheme completion
+            extra_data = {
+                'current_nvdbid': parent_nvdbid,
+                'nvdb_object_type': object_type_id,
+                'datakatalog_version': datacatalog_version,  # datacatalog current version
+                'sistmodifisert': last_time_road_object_modified,
+                'username': username,
+                'endpoint': endpoint,
+                'objekt_navn': 'object_name',  # test name
+                'relation': relation,
+                'hasAnyRelation': child_roadobject_exist,
+                'datacatalog_enumId': datacatalog_enumid,
+                'add_child_nvdbid': self.child_object_nvdbid  # tagging road object to be removed
+            }
+
+            # writing to NVDB changes made in road object relationship
+            self.single_delvis_add_relation_instance = CustomDelvisKorrSingleAdd(id_token, modified_data, extra_data)
+
+            self.single_delvis_add_relation_instance.new_endringsset_sent.connect(self.on_single_add_completed)
+
+            self.single_delvis_add_relation_instance.endringsett_form_done.connect(self.single_delvis_add_relation_instance.prepare_post)
+
+            self.single_delvis_add_relation_instance.formXMLRequest(active_egenskap=False)
+
+    def replace_single_relation_fromSourceData(self):
+        '''
+        replacing relationship between parent road object and child object
+        will be through a call to a new module, this module will be in a separate file.
+        '''
+        # only happens if child road object selected from QGIS kart has a parent
+        if self.hasChildParentRoadObject and self.isUserLogged():
+            print('start replacing')
+
+            # setting AreaGeoDataParser env, before using it
+            env = self.comboEnvironment.currentText()
+
+            AreaGeoDataParser.set_env(env)
+
+            username =                                  self.username_session
+            parent_nvdbid =                         self.possible_selected_parent_nvdbid  # self.parent_roadObject_linked_nvdbid[0]
+            object_type_id =                        self.possible_parent_type  # self.parent_roadObject_linked_type
+            version =                                     AreaGeoDataParser.get_last_version(parent_nvdbid, object_type_id)
+
+            last_time_road_object_modified = AreaGeoDataParser.get_last_time_modified(object_type_id, parent_nvdbid,
+                                                                                      version)
+            datacatalog_version =                   AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
+            endpoint =                                     self.get_env_write_endpoint()
+            relation =                                      AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
+            id_token =                                      self.current_session_token['idToken']
+
+            '''
+            now we have relation data, then now the child road object that was selected from kart in QGIS
+            must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
+            '''
+
+            for datacatalog_id, items in relation.items():
+                # if child road object id not exist there, then added
+                if self.child_object_nvdbid not in items['vegobjekter']:
+                    print('comparing to replace')
+
+                    # already modified data
+                    modified_data = {
+                        'nvdbid': parent_nvdbid,
+                        'versjon': version  # last version to road object
+                    }
+
+                    # extra data need it for xml escheme completion
+                    extra_data = {
+                        'current_nvdbid': parent_nvdbid,
+                        'nvdb_object_type': object_type_id,
+                        'datakatalog_version': datacatalog_version,  # datacatalog current version
+                        'sistmodifisert': last_time_road_object_modified,
+                        'username': username,
+                        'endpoint': endpoint,
+                        'objekt_navn': 'object_name',  # test name
+                        'relation': relation,
+                        'replace_child_nvdbid': self.child_object_nvdbid
+                    }
+
+                    # writing to NVDB changes made in road object relationship
+                    self.single_delvis_replace_relation_instance = CustomDelvisKorrReplaceParent(id_token, modified_data, extra_data)
+
+                    self.single_delvis_replace_relation_instance.new_endringsset_sent.connect(self.on_single_replace_completed)
+
+                    self.single_delvis_replace_relation_instance.endringsett_form_done.connect(self.single_delvis_replace_relation_instance.prepare_post)
+
+                    self.single_delvis_replace_relation_instance.formXMLRequest(active_egenskap=False)
+
+    def remove_relation_fromSourceData(self) -> None:
+        '''
+        removing relationship between parent road object and child object
+        will be through a call to a new module, this module will be in a separate file
+        and will contain a class with a static member method, signals a slots
+        '''
+
+
+        #only happens if child road object selected from QGIS kart has a parent
+        if self.hasChildParentRoadObject and self.isUserLogged():
+            print('start removing')
+            
+            #setting AreaGeoDataParser env, before using it
+            env = self.comboEnvironment.currentText()
+            
+            AreaGeoDataParser.set_env(env)
+
+            username =                          self.username_session
+            parent_nvdbid =                     self.parent_roadObject_linked_nvdbid[0]
+            version =                           AreaGeoDataParser.get_last_version(parent_nvdbid, self.parent_roadObject_linked_type)
+            object_type_id =                    self.parent_roadObject_linked_type
+            
+            last_time_road_object_modified =    AreaGeoDataParser.get_last_time_modified(self.parent_roadObject_linked_type, parent_nvdbid, version)
+            datacatalog_version =               AreaGeoDataParser.get_datacatalog_version(self.comboEnvironment.currentText())
+            endpoint =                          self.get_env_write_endpoint()
+            relation =                          AreaGeoDataParser.get_children_relation_from_parent(object_type_id, parent_nvdbid)
+            id_token =                          self.current_session_token['idToken']
+            
+            '''
+            now we have relation data, then now the child road object that was selected from kart in QGIS
+            must be mark as a remove child and that's the only one road object nvdbid sent to be remove from parent
+            '''
+            child_in_parent_nvdbid_found: int = int()
+            
+            # print('relations', relation)
+            
+            for datacatalog_id, items in relation.items():
+                for nvdbid_ in items['vegobjekter']:
+                    if nvdbid_ == self.child_object_nvdbid:
+                        print('comparing to remove')
+                        
+                        child_in_parent_nvdbid_found = nvdbid_
+            
+            #already modified data
+            modified_data = {
+            'nvdbid': parent_nvdbid,
+            'versjon': version #last version to road object
+            }
+            
+            #extra data need it for xml escheme completion
+            extra_data = {
+            'current_nvdbid': parent_nvdbid,
+            'nvdb_object_type': object_type_id,
+            'datakatalog_version': datacatalog_version, #datacatalog current version
+            'sistmodifisert': last_time_road_object_modified,
+            'username': username,
+            'endpoint': endpoint,
+            'objekt_navn': 'object_name', #test name
+            'relation': relation,
+            'remove_child_nvdbid': child_in_parent_nvdbid_found
+            }
+            
+            #writing to NVDB changes made in road object relationship
+            self.delvis_remove_relation_instance = CustomDelvisKorrRemoveCase(id_token, modified_data, extra_data)
+            
+            self.delvis_remove_relation_instance.new_endringsset_sent.connect(self.on_remove_relation_completed)
+
+            self.delvis_remove_relation_instance.endringsett_form_done.connect(self.delvis_remove_relation_instance.prepare_post)
+            
+            self.delvis_remove_relation_instance.formXMLRequest(active_egenskap = False)
+
+    def reapply_old_selected_layers(self):
+        self.onVisIKart(True)
+        self.visKartCheck.setChecked(True)
+        self.openSkrivWindowBtn.setEnabled(True)
+
+        names = [layer.name() for layer in QgsProject.instance().mapLayers().values()]
+        
+        for name in names:
+            if name == self.selected_layer_from_map[-1]:
+                layer = QgsProject.instance().mapLayersByName(self.selected_layer_from_map[-1])[0]
+                iface.setActiveLayer(layer)
+                break
+
+        layer.select(self.selected_object_from_map[-1])
+
+        #parent_status = self.get_related_parent(self.child_object_nvdbid)
+        parent_status = {"parent_id": self.parent_roadObject_linked_type,
+                         "parent_name": self.parent_roadObject_linked_navn,
+                         "parent_nvdbid": self.parent_roadObject_linked_nvdbid[0]
+                         }
+
+        self.source_more_window.set_parent_status(parent_status)
+
+        self.after_possible_parent_selected = False
+
+    def prepare_refresh_search(self):
+        self.searchObjectBtn.setText("Søk Objekt")
+        self.removeActiveLayers()
+        self.layers_list = []
+
+        current_layer = self.selected_layer_from_map[-1]
+        position = current_layer.find("_")
+
+        if position != -1:
+            split_layer = current_layer[:position]
+            #print("split_layer", split_layer)
+            self.nvdbIdField.setText(split_layer)
+
+        else:
+            #print("last_layer", self.selected_layer_from_map[-1])
+            self.nvdbIdField.setText(self.selected_layer_from_map[-1])
+
+    def start_timer(self):
+        if self.timer_for_refresh_status_after_openMoreWindow.isActive():
+            self.timer_for_refresh_status_after_openMoreWindow.stop()
+
+        if not self.timer_for_update_status_after_sendtEndring.isActive():
+            self.timer_for_update_status_after_sendtEndring.setInterval(5000)
+            self.timer_for_update_status_after_sendtEndring.start()
+            self.times_to_refresh_status = 0
+            
+            print("Timer has been started!")
+
+    def get_current_status(self, endpoint, token):
+        if self.timer_for_refresh_status_after_openMoreWindow.isActive():
+            if not self.source_more_window.isVisible():
+                self.timer_for_refresh_status_after_openMoreWindow.stop()
+                
+                print("Timer stopped!")
+
+        # get the xml response
+        response = requests.get(endpoint, headers={'Authorization': f'Bearer {token}'})
+
+        if response.ok:
+
+            # parsing the response
+            root = ET.fromstring(response.text)
+
+            for child in root:
+                if "fremdrift" in child.tag:
+                    status = child.text
+                    # display the status_message in mer vindu
+                    self.source_more_window.set_status(status)
+                    self.timer_for_update_status_after_sendtEndring.timeout.connect(lambda: self.check_status(status, endpoint, token))
+                    break
+
+            if status == "AVVIST":
+                # Finding the error message
+                melding = root.find('.//{http://nvdb.vegvesen.no/apiskriv/domain/changeset/v3}melding').text
+
+                position = melding.find(",")
+                if position != -1:
+                    split_melding = melding[:position]
+                    
+                    #print("Melding:", split_melding)
+                    
+                    self.source_more_window.set_msg_avvist(split_melding)
+                    
+                else:
+                    self.source_more_window.set_msg_avvist(melding)
+
+            if status in ("VENTER", "UTFØRT_OG_ETTERBEHANDLET", "AVVIST"):
+                self.fetch_status = False
+                self.reset_more_window = True
+
+
+        else:
+            print("response not ok!")
+
+    def check_status(self, status, endpoint, token):
+        if self.timer_for_update_status_after_sendtEndring.isActive():
+            # continuously update the status of the endringssett until a status message appears
+            if status == "UTFØRT":
+                self.timer_for_update_status_after_sendtEndring.setInterval(8000)
+                self.cnt_more_window_statusbar = 70
+                self.times_to_refresh_status += 1
+                print(self.times_to_refresh_status)
+
+            if status in ("VENTER", "UTFØRT_OG_ETTERBEHANDLET","AVVIST") or self.times_to_refresh_status == 5:
+                #if status == "UTFØRT_OG_ETTERBEHANDLET":
+                    #self.update_more_window_statusbar.emit(100)
+
+                print("Timer is done!")
+                self.timer_for_update_status_after_sendtEndring.stop()
+
+                self.prepare_refresh_search()
+
+                self.searchObj()
+                self.thread_search_objekt.join()
+
+                self.reapply_old_selected_layers()
+
+                #self.source_more_window.display_msg()
+
+            elif not self.source_more_window.isVisible():
+                self.timer_for_update_status_after_sendtEndring.stop()
+
+            else:
+                self.get_current_status(endpoint, token)
+                self.cnt_more_window_statusbar += 10
+
+                #self.update_more_window_statusbar.emit(self.cnt_more_window_statusbar)
+
+
+    def isUserLogged(self):
+        #first checking if user is logged in
+        isLogged: bool = False
+        
+        try:
+            
+            if self.current_session_token['idToken']:
+                isLogged = True
+            
+        except KeyError:
+            return isLogged
+        
+        return isLogged
+        
+    def get_env_write_endpoint(self):
+        currentMiljo = self.comboEnvironment.currentText()
+        url = None
+
+        if 'Produksjon' in currentMiljo:
+            url = 'https://nvdbapiskriv.atlas.vegvesen.no/rest/v3/endringssett'
+
+        if 'Akseptansetest' in currentMiljo:
+            url = 'https://nvdbapiskriv.test.atlas.vegvesen.no/rest/v3/endringssett'
+
+        if 'Utvikling' in currentMiljo:
+            url = 'https://nvdbapiskriv.utv.atlas.vegvesen.no/rest/v3/endringssett'
+
+        return url
+
+    def onUserLoggedIn(self, username, token):
+        self.username_session = username
+        self.current_session_token = token
+
+        #make it decouple, into another function
+
+        if self.source_more_window:
+            self.source_more_window.set_login_status(status="pålogget")
+        
+            self.status_login = True
+
+            self.source_more_window.koble_fra_til_btn(self.dependant_mor, self.hasChildParentRoadObject, self.status_login)
+
+    def onUserNotLoggedIn(self):
+        self.status_login = False
+        self.source_more_window.set_login_status(status="må logge på")
 
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
-    
         renderer = layer.renderer()
-    
+
         symbol = None #for symbol
         symbolColor = None #for symbol color
-        
-#        getting properties from the features already in layer
+
+#       getting properties from the features already in layer
         properties = renderer.symbol().symbolLayers()[0].properties()
-        
+
 #        looping to find color key and substracting color, for later use
 #        and avoid change of color when resizing the features in the current layer
         for key, val in properties.items():
             if key == 'color':
                 symbolColor = val
-    
+
         if renderer.symbol().type() == QgsSymbol.Fill:
             symbol = QgsFillSymbol.createSimple({'outline_width': value, 'color': symbolColor})
             renderer.setSymbol(symbol)
-        
+
         if renderer.symbol().type() == QgsSymbol.Marker:
             symbol = QgsMarkerSymbol.createSimple({'size' : value, 'color': symbolColor})
             renderer.setSymbol(symbol)
-            
+
         if renderer.symbol().type() == QgsSymbol.Line:
             symbol = QgsLineSymbol.createSimple({'line_width': value, 'color': symbolColor})
             renderer.setSymbol(symbol)
-                
-                
+
         # show the change
         layer.triggerRepaint()
