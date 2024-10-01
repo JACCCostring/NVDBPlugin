@@ -16,7 +16,6 @@ from qgis.PyQt import uic
 import requests, io
 import os
 
-from .helper import Logger
 
 # import inspect
 

@@ -112,6 +112,8 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     def set_parent_status(self, status_info: dict = {}):
         if not status_info:
             self.current_linked_parent_lbl.clear()
+            self.avvist_lbl.setText("Ikke koblet til mor!")
+            self.avvist_lbl.setStyleSheet("color: grey; font: 14pt 'MS Shell Dlg 2';")
             
         if status_info:
             self.current_linked_parent_lbl.setText(f"Koblinger - {status_info['parent_id']} - {status_info['parent_name']} - {status_info['parent_nvdbid']}")
@@ -168,12 +170,21 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
     def set_status(self, status):
         if status in ("BEHANDLES", "VENTER"):
             self.status_fremdrfit_lbl.setStyleSheet(f"color: grey; font: 12pt 'MS Shell Dlg 2';")
-            
+            if status == "BEHANDLES":
+                self.relation_status_bar.setValue(40)
+            else:
+                self.relation_status_bar.setValue(20)
+
         elif status in ("UTFØRT", "UTFØRT_OG_ETTERBEHANDLET"):
             self.status_fremdrfit_lbl.setStyleSheet(f"color: green; font: 12pt 'MS Shell Dlg 2';")
-            
+            if status == "UTFØRT_OG_ETTERBEHANDLET":
+                self.relation_status_bar.setValue(100)
+            else:
+                self.relation_status_bar.setValue(80)
+
         elif status in ("AVVIST", "KANSELLERT"):
             self.status_fremdrfit_lbl.setStyleSheet(f"color: red; font: 12pt 'MS Shell Dlg 2';")
+            self.relation_status_bar.setValue(0)
 
         self.status_fremdrfit_lbl.setText(status)
         self.avvist_lbl.clear()
@@ -183,13 +194,13 @@ class SourceMoreWindow(BASE_CLASS, FORM_CLASS):
         self.avvist_lbl.setText(msg)
 
     def set_login_status(self, status):
-        if status == "logged":
-            self.status_innlogging_lbl.setText("Logged")
+        if status == "pålogget":
+            self.status_innlogging_lbl.setText("Pålogget")
             self.status_innlogging_lbl.setStyleSheet("color: green; font: 14pt 'MS Shell Dlg 2';")
             self.login_btn_more_window.setEnabled(False)
             
         else:
-            self.status_innlogging_lbl.setText('må logg på')
+            self.status_innlogging_lbl.setText('må logge på')
             self.status_innlogging_lbl.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")
             self.login_btn_more_window.setEnabled(True)
 

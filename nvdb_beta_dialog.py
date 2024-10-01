@@ -12,22 +12,18 @@ try:
     import nvdbapiv3
 except ModuleNotFoundError:
     print( "Fant ikke nvdbapiv3 i sys.path, legger til mappen", nvdblibrary)
-    #my_logger.logger.info(f"Fant ikke nvdbapiv3 i sys.path, legger til mappen {nvdblibrary}")
     sys.path.append( nvdblibrary )
 
     try:
         import nvdbapiv3
     except ModuleNotFoundError as e:
         print( "\nImport av nvdbapiv3 feiler for", nvdblibrary  )
-        #my_logger.logger.info(f"\nImport av nvdbapiv3 feiler for {nvdblibrary}")
         raise ModuleNotFoundError( "==> Variabel nvdblibrary skal peke til mappen https://github.com/LtGlahn/nvdbapi-V3  <==" )
 
     else:
         print( "SUKSESS - kan importere nvdbapiv3 etter at vi la til", nvdblibrary, "i sys.path" )
-        #my_logger.logger.info(f"SUKSESS - kan importere nvdbapiv3 etter at vi la til {nvdblibrary} i sys.path")
 else:
     print( "HURRA - vi kan importere nvdbapiv3 " )
-    #my_logger.logger.info("HURRA - vi kan importere nvdbapiv3")
 
 #PyQt5 libs
 from PyQt5.QtWidgets import QCompleter, QVBoxLayout, QLabel, QTableWidgetItem, QAbstractItemView
@@ -132,7 +128,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.current_session_token: dict = {} #current session tokens for current logged user
         self.possible_selected_parent_nvdbid: int = int() #possible selected parent nvdbId from QGIS kart layer
         self.cnt_more_window_statusbar: int = int() #for counting progress for statusbar in source_more_window
-
+        self.times_to_refresh_status = 0
 #        development starts here
 #        setting up all data need it for starting up
 
@@ -220,7 +216,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
             if os.environ['logged']:
                 print('there is a session !, removing it ...')
-                #self.my_logger.logger.info("There is a session!, removing it ...")
                 os.environ['svv_username'] = ''
                 os.environ['svv_pass'] = ''
                 os.environ['logged'] = ''
@@ -337,7 +332,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         except Exception:
             print('flyke ikke lastett opp!')
-            #self.my_logger.logger.debug("fylke ikke lastet opp!")
 
 
         return listOfCountiesNames
@@ -359,7 +353,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         except Exception:
             print('kommuner ikke lastett opp!')
-            #self.my_logger.logger.debug("kommuner ikke lastet opp!")
 
         return listOfCommunities
 
@@ -424,7 +417,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         '''
         if not self.after_possible_parent_selected and not self.after_possible_chilld_selected:
             self.removeActiveLayers()
-            self.set_layer_size()
+            #self.set_layer_size()
 
 #        when searchObj execute then vis kart options is enabled and checked is falsed
         self.visKartCheck.setEnabled(True)
@@ -613,7 +606,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
             self.current_num_road_objects = len(sliced_data)
         print('size: ', len(sliced_data))
-        #self.my_logger.logger.info(f"Size: {len(sliced_data)}")
 
         objects_for_ui = self.makeMyDataObjects(sliced_data)
 
@@ -848,7 +840,6 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
             except Exception: #try ends here ...
                 print('exception!')
-                #self.my_logger.logger.debug("exception")
 
          # making it zero again
         self.times_to_run = 0
@@ -1061,10 +1052,13 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.source_more_window.new_relation_event.connect(self.handle_relation) #to handle relation when clicked from source_more_window module
         self.source_more_window.unlink_btn_clicked.connect(self.remove_relation_fromSourceData) #when event un disconnect relation from source_more_window
         self.source_more_window.logging_btn_moreWindow_clicked.connect(self.openSkrivWindow) #when user open skriv window from more_window
-        self.update_more_window_statusbar.connect(lambda value: self.source_more_window.relation_status_bar.setValue(value))
+        #self.update_more_window_statusbar.connect(lambda value: self.source_more_window.relation_status_bar.setValue(value))
 
         if self.status_login:
-            self.source_more_window.set_login_status(status="logged")
+            self.source_more_window.set_login_status(status="pålogget")
+        elif not self.status_login:
+            self.source_more_window.set_login_status(status="må logge på")
+
 
         if self.source_more_window.isVisible():
             if self.token_for_status and self.endpoint_for_status and self.fetch_status:
@@ -1234,6 +1228,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                                         '''
                                         self.source_more_window.set_parent_status(parent_status)
 
+
                                 except AttributeError:
                                     pass
 
@@ -1321,6 +1316,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         # if self.isSourceMoreWindowOpen:
         #     self.source_more_window.action_()
 
+
     def has_to_have_mor(self, object_type):
         endpoint = f'https://nvdbapiles-v3.atlas.vegvesen.no/vegobjekttyper/{object_type}?inkluder=stedfesting'
         response = requests.get(endpoint)
@@ -1338,7 +1334,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.possible_parent_name = name
 
     def on_remove_relation_completed(self, changeset):
-        # print(changeset)
+        print(changeset)
         
         '''
         when remove operation completed then trigger remove_object_signal
@@ -1638,11 +1634,11 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
         if position != -1:
             split_layer = current_layer[:position]
-            print("split_layer", split_layer)
+            #print("split_layer", split_layer)
             self.nvdbIdField.setText(split_layer)
 
         else:
-            print("last_layer", self.selected_layer_from_map[-1])
+            #print("last_layer", self.selected_layer_from_map[-1])
             self.nvdbIdField.setText(self.selected_layer_from_map[-1])
 
     def start_timer(self):
@@ -1652,6 +1648,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         if not self.timer_for_update_status_after_sendtEndring.isActive():
             self.timer_for_update_status_after_sendtEndring.setInterval(5000)
             self.timer_for_update_status_after_sendtEndring.start()
+            self.times_to_refresh_status = 0
             
             print("Timer has been started!")
 
@@ -1697,6 +1694,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.fetch_status = False
                 self.reset_more_window = True
 
+
         else:
             print("response not ok!")
 
@@ -1706,10 +1704,12 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
             if status == "UTFØRT":
                 self.timer_for_update_status_after_sendtEndring.setInterval(8000)
                 self.cnt_more_window_statusbar = 70
+                self.times_to_refresh_status += 1
+                print(self.times_to_refresh_status)
 
-            if status in ("VENTER", "UTFØRT_OG_ETTERBEHANDLET","AVVIST"):
-                if status == "UTFØRT_OG_ETTERBEHANDLET":
-                    self.update_more_window_statusbar.emit(100)
+            if status in ("VENTER", "UTFØRT_OG_ETTERBEHANDLET","AVVIST") or self.times_to_refresh_status == 5:
+                #if status == "UTFØRT_OG_ETTERBEHANDLET":
+                    #self.update_more_window_statusbar.emit(100)
 
                 print("Timer is done!")
                 self.timer_for_update_status_after_sendtEndring.stop()
@@ -1730,9 +1730,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.get_current_status(endpoint, token)
                 self.cnt_more_window_statusbar += 10
 
-                self.update_more_window_statusbar.emit(self.cnt_more_window_statusbar)
-
-                #print("Timer is active!")
+                #self.update_more_window_statusbar.emit(self.cnt_more_window_statusbar)
 
 
     def isUserLogged(self):
@@ -1771,7 +1769,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         #make it decouple, into another function
 
         if self.source_more_window:
-            self.source_more_window.set_login_status(status="logged")
+            self.source_more_window.set_login_status(status="pålogget")
         
             self.status_login = True
 
@@ -1779,9 +1777,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def onUserNotLoggedIn(self):
         self.status_login = False
-        
-        if self.source_more_window:
-            self.source_more_window.set_login_status(self.status_login)
+        self.source_more_window.set_login_status(status="må logge på")
 
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()
