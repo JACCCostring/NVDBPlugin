@@ -44,8 +44,9 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.progressWindowOpened = False  # to check if windows is allready opened
         self.progressWindowOpened = False  # to check if windows is already opened
         self.info_after_sent_objects = []  # all endringer sent to NVDB
-        self.session_expired = False
+        self.session_expired = False #for controlling time session expiration
         self.nvdbids_counter: int = int( 0 ) #for counting number of road objects sent
+        self.list_of_nvdbids_var: list = []
 
 
         # setting up all UI
@@ -386,10 +387,24 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             if 'vegsystemreferanse' in object:
                 for key in object:
                     fullInfoObjects.append({key: object[key]})
-
+        
+        #clrearing colors from old selected road objects or features
+        self.reset_color_selected_rows()
+        
         #        draw/set objects to UI
         self.setSelectedObjectsToUI(fullInfoObjects)
-
+        
+    def reset_color_selected_rows(self):
+        for row in range(self.tableSelectedObjects.rowCount()):
+            if self.list_of_nvdbids_var:
+                if self.tableSelectedObjects.item(row, self.tableSelectedObjects.columnCount() - 1): #grunn av column
+                    self.tableSelectedObjects.item(row, self.tableSelectedObjects.columnCount() - 1).setBackground(QtGui.QColor(255, 255, 255)) #last colum (grunn av)
+                    self.tableSelectedObjects.setItem(row, self.tableSelectedObjects.columnCount() - 1, QTableWidgetItem(str('')))
+                
+                if self.tableSelectedObjects.item(row, self.tableSelectedObjects.columnCount() - 2): #status column
+                    self.tableSelectedObjects.setItem(row, self.tableSelectedObjects.columnCount() - 2, QTableWidgetItem(str('')))
+            
+            
     def setSelectedObjectsToUI(self, objects):
         rows = 0  # rows for how many items will be laying
 
@@ -432,13 +447,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     self.tableSelectedObjects.setItem(row, 3, QTableWidgetItem('ikke sent'))
                     self.tableSelectedObjects.setItem(row, 4, QTableWidgetItem(main_reason)) #reason
                     
-                    self.tableSelectedObjects.item(row, 4).setBackground(QtGui.QColor(255, 0, 0)) #backgound red color
+                    self.tableSelectedObjects.item(row, 4).setBackground(QtGui.QColor(255, 153, 153)) #backgound red color
             
                 if isSent:
                     self.tableSelectedObjects.setItem(row, 3, QTableWidgetItem('sent'))
                     self.tableSelectedObjects.setItem(row, 4, QTableWidgetItem(reason)) #reason
                     
-                    self.tableSelectedObjects.item(row, 4).setBackground(QtGui.QColor(0, 255, 0)) #backgound green color
+                    self.tableSelectedObjects.item(row, 4).setBackground(QtGui.QColor(204, 255, 153)) #backgound green color
     
     def on_removeSelectedObject(self):
         layer = iface.activeLayer()
@@ -760,7 +775,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 self.delvis.endringsett_form_done.connect(self.preparePost)
                 
-                self.delvis.onEndringsett_fail.connect(self.set_status_sent_or_not) #when endringsett fail in Delvis object
+                self.delvis.onEndringsett_fail.connect(self.set_status_sent_or_not) #when endringsett success/fail in Delvis object
                 
                 '''
                 TODO:

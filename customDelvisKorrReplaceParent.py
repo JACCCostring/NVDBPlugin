@@ -57,7 +57,7 @@ class CustomDelvisKorrReplaceParent(DelvisKorrEgenskaperCase):
         
         self.xml_string = ET.tostring(root, encoding='utf-8') #be carefull with the unicode
 
-        print(self.xml_string) #debuging info of hole formed XML endingsett
+        # print(self.xml_string) #debuging info of hole formed XML endingsett
         
         # emiting signal
         self.endringsett_form_done.emit()

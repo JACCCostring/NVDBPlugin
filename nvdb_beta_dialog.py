@@ -1334,7 +1334,7 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
         self.possible_parent_name = name
 
     def on_remove_relation_completed(self, changeset):
-        print(changeset)
+        # print(changeset)
         
         '''
         when remove operation completed then trigger remove_object_signal
