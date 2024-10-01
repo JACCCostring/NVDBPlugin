@@ -1779,6 +1779,9 @@ class NvdbBetaProductionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def onUserNotLoggedIn(self):
         self.status_login = False
+        
+        if self.source_more_window:
+            self.source_more_window.set_login_status(self.status_login)
 
     def on_objectSizeOnLayerChange(self, value):
         layer = iface.activeLayer()

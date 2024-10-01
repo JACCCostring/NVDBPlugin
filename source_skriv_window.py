@@ -349,6 +349,8 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.successLogin = False  # setting login to false again
         self.defaultUILogin()  # calling default ui again to set up default ui values
+        
+        self.not_logged.emit() #emitting signal again, for letting know in more_window
 
         self.usernameLine.setEnabled(True)
         self.passwordLine.setEnabled(True)
