@@ -203,7 +203,7 @@
       <item>
        <widget class="QPushButton" name="login_btn_more_window">
         <property name="text">
-         <string>Log-In</string>
+         <string>Logg-på</string>
         </property>
        </widget>
       </item>
@@ -264,7 +264,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Valgt Barn - Forelder </string>
+         <string>Forelder - Objekt</string>
         </property>
        </widget>
       </item>

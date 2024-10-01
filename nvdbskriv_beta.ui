@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="mainTab">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tabObjectList">
       <attribute name="title">
@@ -157,7 +157,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;må logg in&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;må logge in&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
       <widget class="QLabel" name="loginMsg">
@@ -186,7 +186,7 @@
         <rect>
          <x>0</x>
          <y>720</y>
-         <width>363</width>
+         <width>385</width>
          <height>45</height>
         </rect>
        </property>
@@ -200,7 +200,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Log In</string>
+           <string>Logg på</string>
           </property>
          </widget>
         </item>
@@ -226,7 +226,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Log Out</string>
+           <string>Logg ut</string>
           </property>
          </widget>
         </item>

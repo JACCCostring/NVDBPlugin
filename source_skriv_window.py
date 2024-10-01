@@ -19,8 +19,6 @@ import requests, io, json, time
 import threading
 import os
 
-from .helper import Logger  # for logging, watch out
-
 from qgis.PyQt import uic
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -248,7 +246,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.response_endringsset.setText("")
 
         if self.successLogin:
-            self.statusLabel.setText('Logged')
+            self.statusLabel.setText('Pålogget')
             self.statusLabel.setStyleSheet("color: green; font: 14pt 'MS Shell Dlg 2';")
             self.loginBtn.setEnabled(False)
             self.usernameLine.setEnabled(False)
@@ -258,7 +256,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             self.login_status = True
 
         else:
-            self.statusLabel.setText('må logg på')
+            self.statusLabel.setText('må logge på')
             self.statusLabel.setStyleSheet("color: red; font: 14pt 'MS Shell Dlg 2';")
             self.loginBtn.setEnabled(True)
             self.usernameLine.setEnabled(True)
