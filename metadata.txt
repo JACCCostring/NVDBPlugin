@@ -7,8 +7,8 @@ name=NVDB Les og Skriv
 qgisMinimumVersion=3.0
 description= NVDB (Norwegian Administration Road Database) it's a Plugin for analyse and manipulate road objects, like (road references, trees, light poles, traffic signs, construction area, smart devices like IP Camera, tunnels, bridges, etc)
 
-version=0.7
-author=Alexander Casado
+version=0.8
+author=NVDB Utvikling Team
 email=alexander.casado@vegvesen.no
 
 about= (NVDB) (Norwegian Administration Road Database) it's a Plugin for analyse and manipulate road objects, like (road references, trees, light poles, traffic signs, construction area, smart devices like IP Camera, tunnels, bridges, etc).The only dependency is a third party python library that is already there, this library is for reading NVDB data from the Norwegian Road Administration Database, the library is already there in a folder called 'nvdbapi', and plugin does the job to find the library itself. So no need for manual installation. Plug-In has been run on Windows and Mac OS.
