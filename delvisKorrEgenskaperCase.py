@@ -6,13 +6,11 @@ import requests, json, io
 
 
 class DelvisKorrEgenskaperCase(QObject):
+    
     new_endringsset_sent = pyqtSignal(dict)
     endringsett_form_done = pyqtSignal()
     
     onEndringsett_fail = pyqtSignal(int, bool, str)
-    
-    # response_error = pyqtSignal(str)
-    # response_success = pyqtSignal(str)
     
 #new changes for Senay
 
@@ -29,24 +27,6 @@ class DelvisKorrEgenskaperCase(QObject):
 
         self.extra = extra  # data coming from writeToNVB method and need it
         self.xml_string = None  # to form xml template
-        # self.vegobjekter_after_send = []  # to store important info about vegobjekter endepunkter sent til nvdb
-        
-    def parseXml_prepare_method(self, xml_text):
-        # Parse the XML content
-        root = ET.fromstring(xml_text)
-
-        # Defining the namespace input
-        ns = {'fault': 'http://nvdb.vegvesen.no/apiskriv/fault/v1'}
-
-        # Finding the message element and getting its text
-        msg = root.find('.//fault:message', ns)
-
-        if msg is not None:
-            # Sending message using a signal to display to user
-            self.response_error.emit(msg.text)
-
-        else:
-            print("Message element not found")
 
     def formXMLRequest(self, egenskaper_list, active_egenskap=True):
         root = ET.Element('endringssett')
@@ -210,16 +190,8 @@ class DelvisKorrEgenskaperCase(QObject):
         remember xml_string variable is comming from formXMLRequest method
         '''
         response = requests.post(endpoint, headers=header, data=self.xml_string)
-        
-        #not need for now, dont want to show any msg from here
-        
+
         if not response.ok:
-        #     self.parseXml_prepare_method(response.text)
-            
-            # print('<========DEBUG RESPONSE===========>', response.text)
-            
-            # print(self.extra['current_nvdbid'])
-            # print(type(self.extra['current_nvdbid']))
             
             #emiting signal to comunicate with table widget in skriv window module
             self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False, response.text)
@@ -227,10 +199,6 @@ class DelvisKorrEgenskaperCase(QObject):
             # return
         
         if response.ok:
-            #not need for now, dont want to show any msg from here
-            
-            # successful = "Status: OK"
-            # self.response_success.emit(successful)
             
             file_stream = io.StringIO(response.text)
             
@@ -239,14 +207,9 @@ class DelvisKorrEgenskaperCase(QObject):
                 tree = ET.parse(file_stream)
                 
             except ET.ParseError:
-                # print('xml parser exception raised!')
                 
-                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False, 'error: parsing XML')
-                
-                print('xml parser exception raised!')
-                
-                # return self.prepare_post()
-                
+                #emiting to comunicate something went wrong when preparing post
+                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False, response.text)
                 return
                 
             root = tree.getroot()
@@ -276,15 +239,11 @@ class DelvisKorrEgenskaperCase(QObject):
                     'fremdrift': fremdrift
                 }
 
-                # print('prepare post: ', self.tokensBeforePost['status'])
-                
             '''
             now start/send the current data to NVDB
             only if start endpoint exist
             '''
-            if self.tokensBeforePost['start']:
-                # print('===========POSTING===========')
-                
+            if self.tokensBeforePost['start']:                
                 #emiting signal to comunicate with table widget in skriv window module
                 self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), True, 'utført og startet')
                 
@@ -310,16 +269,19 @@ class DelvisKorrEgenskaperCase(QObject):
         
         if not response.ok:
             pass
-            # print('bad request======================', response.text)
 
         if response.ok:
-        
-            # print('===== result posting======')
-            # print(response.text)
             
             file_stream = io.StringIO(response.text)
             
-            tree = ET.parse(file_stream)
+            try:
+                tree = ET.parse(file_stream)
+                
+            except ET.ParseError:
+                #emiting signal to comunicate with table widget in skriv window module
+                self.onEndringsett_fail.emit(int(self.extra['current_nvdbid']), False, response.text)
+                return
+                
             root = tree.getroot()
 
             # parsing endpoints after sending start request
@@ -360,4 +322,4 @@ class DelvisKorrEgenskaperCase(QObject):
                 self.new_endringsset_sent.emit(list_vegobjekter_info)
                 
             except AttributeError:
-                print('error found, endringsett missing UIID and could not be delivered')
+                pass

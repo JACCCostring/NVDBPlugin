@@ -204,45 +204,53 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
         self.passwordLine.setText(password)
 
         tkManager = TokenManager(username, password, url)
-
-        tokenObj = tkManager.getToken()
-
+        
+        try:
+            tokenObj = tkManager.getToken()
+            
         # print(tokenObj) debug
 
-        idToken = tokenObj['idToken']
-        refreshToken = tokenObj['refreshToken']
-        accessToken = tokenObj['accessToken']
+            idToken = tokenObj['idToken']
+            refreshToken = tokenObj['refreshToken']
+            accessToken = tokenObj['accessToken']
 
-        if idToken and refreshToken and accessToken != ' ':
-            self.successLogin = True
+            if idToken and refreshToken and accessToken != ' ':
+                self.successLogin = True
 
-            # print('logged in')
+                # print('logged in')
 
-            self.tokens = {
-                'idToken': idToken,
-                'accessToken': accessToken,
-                'refreshToken': refreshToken
-            }
+                self.tokens = {
+                    'idToken': idToken,
+                    'accessToken': accessToken,
+                    'refreshToken': refreshToken
+                }
 
-            # emiting signal from here to nvdb_beta_dialog.py module
-            self.userLogged.emit(self.usernameLine.text(), self.tokens)
+                # emiting signal from here to nvdb_beta_dialog.py module
+                self.userLogged.emit(self.usernameLine.text(), self.tokens)
 
 
-        # if logging not succeded then, clear enviroment variables
-        # pass, username and logged flag
-        if not self.successLogin:
-            os.environ['svv_user_name'] = ''
-            os.environ['svv_pass'] = ''
-            os.environ['logged'] = ''
+            # if logging not succeded then, clear enviroment variables
+            # pass, username and logged flag
+            if not self.successLogin:
+                os.environ['svv_user_name'] = ''
+                os.environ['svv_pass'] = ''
+                os.environ['logged'] = ''
 
-        self.defaultUILogin()  # calling to set new default UI according to access or not
+            self.defaultUILogin()  # calling to set new default UI according to access or not
 
-        if self.successLogin == False and self.usernameLine.text() != '' or self.passwordLine.text() != '':
-            self.loginMsg.setText('Brukernavn eller passord er feil!')
+            if self.successLogin == False and self.usernameLine.text() != '' or self.passwordLine.text() != '':
+                self.loginMsg.setText('Brukernavn eller passord er feil!')
 
-        if self.successLogin:
-            self.loginMsg.setText('')
-
+            if self.successLogin:
+                self.loginMsg.setText('')
+            
+        except TypeError:
+            pass
+        ''' 
+        if we come here, it measn at we are having problem with log-in first time,
+        may be it will ork second time when opening skriv vinduet, because this function/method
+        is being called at the starting of the plug-in
+        '''
     def defaultUILogin(self):
         self.response_endringsset.setText("")
 
@@ -432,6 +440,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                 row += 1
     
     def set_status_sent_or_not(self, nvdbid: int, isSent: bool, reason: str) -> None:
+            
         #first loop through all items
         for row in range(self.tableSelectedObjects.rowCount()):
             
@@ -439,6 +448,13 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
             
             if item.text() == str(nvdbid):
                 if not isSent:
+                    
+                    #first must check that reason is or not a media unsupport status exception
+                    if 'HTTP Status 415' or 'fremdrift' in reason:
+                        self.tableSelectedObjects.setItem(row, 4, QTableWidgetItem('Prøver Igjen')) #reason
+                        self.tableSelectedObjects.item(row, 4).setBackground(QtGui.QColor(255, 153, 153)) #backgound red color
+                        return
+                
                     start_msg_tag = reason.find('<message>')
                     end_msg_tag = reason.rfind('</message>')
                     

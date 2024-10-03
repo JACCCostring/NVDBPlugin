@@ -108,7 +108,8 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
 
         #if response is not ok, then we just clear all the items
         if response.ok != True:
-            print("Response in nvdb_endringsett_status::check_status not ok: ",response)
+            print("Response in nvdb_endringsett_status::check_status not ok: ",response.text)
+            return
             
             if self.tableProgress.rowCount() > 0:
                 self.tableProgress.clear()
@@ -116,29 +117,37 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
 
         if response.ok:
             file_stream = io.StringIO(response.text)
-            tree = ET.parse(file_stream)
-            root = tree.getroot()
             
-            concat_str = str('')
-            show_melding = str('')
-     
-            for element in root.findall('.//'):
-                if 'vegobjekt' in element.tag:
-                    
-                    for melding in element.findall('.//'):
-                        if 'melding' in melding.tag:
-                            show_melding += f'<p style="color:blue">{melding.text}</p>'
+            try:
+                tree = ET.parse(file_stream)
                 
-                if 'fremdrift' in element.tag:
-                    if 'BEHANDLES' or 'UTFØRT_OG_ETTERBEHANDLET' in element.text:
-                        concat_str += f'<p style="color:green">{element.text}</p>'
+                root = tree.getroot()
+                
+                concat_str = str('')
+                show_melding = str('')
+         
+                for element in root.findall('.//'):
+                    if 'vegobjekt' in element.tag:
                         
-                    if 'AVVIST' in element.text:
-                        concat_str = f'<p style="color:red">{element.text}</p>'
+                        for melding in element.findall('.//'):
+                            if 'melding' in melding.tag:
+                                show_melding += f'<p style="color:blue">{melding.text}</p>'
+                    
+                    if 'fremdrift' in element.tag:
+                        if 'BEHANDLES' or 'UTFØRT_OG_ETTERBEHANDLET' in element.text:
+                            concat_str += f'<p style="color:green">{element.text}</p>'
+                            
+                        if 'AVVIST' in element.text:
+                            concat_str = f'<p style="color:red">{element.text}</p>'
+                
+                # if concat_str:
+                #     self.statusText.setText(concat_str + show_melding)
+                    
+            except ET.ParseError:
+                concat_str = f'<p style="color:red">prøver igjen</p>'
             
             if concat_str:
-                self.statusText.setText(concat_str + show_melding)
-
+                self.statusText.setText(concat_str)
         
     def cancell_endringssett(self):
         if self.tableProgress.rowCount() > 0:

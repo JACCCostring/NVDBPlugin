@@ -28,7 +28,13 @@ class TokenManager:
         refreshToken = ''
         
         file_stream = io.StringIO(response.text)
-        tree = ET.parse(file_stream)
+        
+        try:
+            tree = ET.parse(file_stream)
+            
+        except ET.ParseError:
+            return
+            
         root = tree.getroot()
 
         for child in root:
