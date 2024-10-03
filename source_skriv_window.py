@@ -451,6 +451,7 @@ class SourceSkrivDialog(QtWidgets.QDialog, FORM_CLASS):
                     
                     #first must check that reason is or not a media unsupport status exception
                     if 'HTTP Status 415' or 'fremdrift' in reason:
+                        self.tableSelectedObjects.setItem(row, 3, QTableWidgetItem('ikke sent'))
                         self.tableSelectedObjects.setItem(row, 4, QTableWidgetItem('Prøver Igjen')) #reason
                         self.tableSelectedObjects.item(row, 4).setBackground(QtGui.QColor(255, 153, 153)) #backgound red color
                         return
