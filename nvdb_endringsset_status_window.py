@@ -145,9 +145,10 @@ class Ui_windowProgress(BASE_CLASS, FORM_CLASS):
                     
             except ET.ParseError:
                 concat_str = f'<p style="color:red">prøver igjen</p>'
-            
+                show_melding = ''
+                
             if concat_str:
-                self.statusText.setText(concat_str)
+                self.statusText.setText(concat_str + show_melding)
         
     def cancell_endringssett(self):
         if self.tableProgress.rowCount() > 0:
